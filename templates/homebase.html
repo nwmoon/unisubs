@@ -1,14 +1,11 @@
 {% load i18n announcement_tags messages_tags profiles_tags media_compressor auth_tags %}
-
-{% get_current_language_bidi as LANGUAGE_BIDI %}
-
 <!DOCTYPE html>
 <html {% if LANGUAGE_BIDI %}dir="rtl"{% endif %} xmlns:og="http://opengraphprotocol.org/schema/" xmlns:fb="http://www.facebook.com/2008/fbml" xml:lang="en" lang="en" {% block html_attrs %}{% endblock %} class="base">
 
 <head>
-    <title>{% block title %}Amara - {% trans 'Caption, translate, subtitle and transcribe video.' %}{% endblock %}</title>
+    <title>{% block title %}Amara - {% trans 'Caption, translate, subtitle and transcribe videos.' %}{% endblock %}</title>
 
-    <meta name="description" content="The easiest way to caption and translate any video, with crowdsourcing, volunteers, and professional services." />
+    <meta name="description" content="Fastest and easiest video captions; professional or crowd-sourced."/>
 
     <meta charset="utf-8" />
     {% if not current_site.name == 'amara-production' %}
@@ -22,6 +19,13 @@
     <link rel="icon" type="image/png" href="{{ STATIC_URL }}images/favicon.png" />
     {% block css %}{% include_bundle "base" %}{% endblock %}
     <link href="{{ STATIC_URL }}css/homebody.css" media="all" type="text/css" rel="stylesheet" />
+
+
+    <!script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+        <script type="text/javascript" src="js/jquery.main.js"></script>
+        <!--[if lt IE 9 ]>
+                <script type="text/javascript" src="js/modernizr-1.7.min.js"></script>
+        <![endif]-->
     <!--[if IE]>
         <style type="text/css"> .group { display: block; zoom: 1; } </style>
     <![endif]-->
@@ -52,9 +56,6 @@
     {% announcement %}
     {% if user.is_authenticated %}
         {% messages %}
-        {% block email_confirmation_block %}
-            {% email_confirmation_notification %}
-        {% endblock %}
     {% endif %}
     {% require_email_dialog %}
     <div id="main_bar">
@@ -67,9 +68,9 @@
                     </form>
                 </div>
                 <ul id="bar_menu" class="clearfix">
-                    <li id="nav_submit"><a href="{% url videos:create %}">{% trans 'Subtitle Videos' %}</a></li>
-                    <li><a href="{% url videos:watch_page %}">{% trans 'Watch' %}</a></li>
-                    <li><a href="{% url teams:index %} ">{% trans "Volunteer" %}</a></li>
+                    <li id="nav_submit"><a href="{% url videos:create %}">{% trans 'Add a video' %}</a></li>
+                    <li><a href="{% url videos:watch_page %}">{% trans 'Browse' %}</a></li>
+                    <li><a href="http://amara.org/teams/">{% trans "Volunteer" %}</a></li>
                     <li><a href="http://about.amara.org/enterprise/">{% trans "Order Captions" %}</a></li>
                     <li><a href="http://support.universalsubtitles.org/solution/categories/13504">{% trans 'Help' %}</a></li>
                     {% if user.is_authenticated %}
@@ -81,31 +82,6 @@
             </div>
         </div>
     </div>
-    <div id="lang_bar">
-        {% block select_language_dialog %}
-            {% select_language_dialog %}
-        {% endblock %}
-    </div>
-    <div class="content container_12 wrapper clearfix">
-        {% if request|show_youtube_prompt and not hide_prompt %}
-            <div id="youtube-prompt">
-                <img src="{{ STATIC_URL }}images/partners/youtube.png" alt="YouTube"/>
-                <h2>{% trans "Got a YouTube account?<" %}/h2>
-                <p>{% trans "New: enable viewer-created translations and captions on your YouTube channel!" %}</p>
-                <ul>
-                    <li><a href="{% url profiles:account %}?prompt=true" class="proceed">{% trans "Connect to YouTube" %}</a></li>
-                    <li><a href="#" class="hide">{% trans "No thanks" %}</a></li>
-                </ul>
-            </div>
-        {% endif %}
-        {% if messages %}
-            <div id="messages">
-                {% for message in messages %}
-                    <h2 class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message|safe }}</h2>
-                {% endfor %}
-                <a href="#" id="closeBut" style="display: block; float: right;">x</a>
-            </div>
-        {% endif %}
         {% block main_content %}{% endblock %}
     </div>
     <div class="footer">

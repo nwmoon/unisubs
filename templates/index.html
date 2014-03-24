@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "homebase.html" %}
 {% load i18n media_compressor feedback recent_activity widget i18n announcement_tags messages_tags profiles_tags teams_tags %}
 {% block body_attrs %}id="index"{% endblock %}
 
@@ -7,193 +7,439 @@
 {% include_bundle "new_home" %}
 {% endblock %}
 
-{% block scripts %}
-{% include_bundle "unisubs-onsite-compiled" %}
-<script src="{% url videos:rpc_api %}" type="text/javascript"></script>  
-{% endblock %}
-
 {% block main_content %}
-    
-<div id="home-blurb">
-    <h1>{% trans "The easiest way to caption and translate any video." %}</h1>
-    <p>{% trans "The most powerful and flexible subtitling platform in the world." %}</p>
-</div>
-<div id="home-left">
-    <div id="subtitle" class="clearfix">
-        <form action="{% url videos:create %}" method="POST">
-            <h2>{% trans "Add a Video" %}</h2>
-            <input type="text" name="video_url" />
-            <button class="button" type="submit">{% trans "Subtitle" %}</button>
-            <p>
-                {% trans "Works with YouTube, Vimeo, HTML5, and more." %}
-            </p>
-            <p>
-                {% trans "Using YouTube?" %} <a href="{% url profiles:account %}?prompt=true">{% trans "Sync automatically" %}</a>
-            </p>
-        </form>
-        <div id="features">
-            <h3>{% trans "Features" %}</h3>
-            <ul>
-                <li>{% trans "Embed the video anywhere" %}</li>
-                <li>{% trans "Add subtitles yourself or ask viewers to help." %}</li>
-            </ul>
-        </div>
-    </div>
-    <div>
-        <h2>{% trans "Help Create Captions and Subtitles" %}</h2>
-        <p>
-        {% blocktrans %}
-            Help organizations and deaf and hard of hearing viewers make videos accessible around the world.
-        {% endblocktrans %}
-        <a href="http://blog.universalsubtitles.org/volunteer/">{% trans "Take a Look." %}</a>
-        </p>
-    </div>
-    <div>
-        <h2>{% trans "Groundbreaking Crowdsource Platform" %}</h2>
-        <p>
-        {% blocktrans %}
-            Revolutionize how you create subtitles and reach viewers. Increase viewership with transcription, captioning, and translation services, and flexible API and integration options.
-        {% endblocktrans %}
-        <a href="http://about.amara.org/enterprise/">{% trans "See our pro services." %}</a>
-        </p>
-    </div>
-    <div>
-        <h2>{% trans "Order Captions" %}</h2>
-        <p>
-            {% trans "Lower costs and higher quality. Order captions and translations from Amara now, with rapid turnaround." %}
-            <a href="http://about.amara.org/order-subtitles/">{% trans "Learn more." %}</a>
-        </p>
-    </div>
-</div>
+	<!-- wrapper  start -->
 
-<div id="home-right">
-    {% block widget_container %}
-        <div id="widget_div" class="unisubs-widget"></div> 
-        <script type="text/javascript"> 
-            var widget_widget_div = unisubs.widget.SameDomainEmbed.embed(
-                document.getElementById('widget_div'), { 
-                    base_state: {},
-                    video_config: {
-                    poster: "https://s3.amazonaws.com/s3.www.universalsubtitles.org/images/about-poster.png",
-                    style: "width:460px;height:348px;",
-                    play_to_click: true
-                },
-                video_url: "http://vimeo.com/39734142",
-                alternate_video_urls: []});
-        </script>
-    {% endblock %}
+ <div id="new-homepage">
+	<div id="wrapper">
+
+		<div class="w1">
+
+			<!-- header  start -->
+
+			<div class="top-info">
+
+					<div class="info-holder">
+
+					<div class="center-info">
+
+						<strong class="subtitles">We <span class="heart">love</span>subtitles!</strong>
+
+						<h1>Amara is the largest and most advanced captioning and subtitling platform in the world.</h1>
+
+						<div class="caption">
+
+							<div class="caption-block">
+
+								<div class="caption-hold">
+
+									<strong class="head-caption">Need captions or subtitles?</strong>
+
+									<a href="http://pro.amara.org/order.html" class="btn-red">CONTACT US</a>
+
+								</div>
+
+							</div>
+
+						</div>
+
+						<div class="info-box">
+
+							<p>Over 300,000 sets of subtitles created in more than 130 languages.</p>
+
+							<a class="video" href="{{BASE_URL}}{% url videos:featured_videos %}">Recently Featured Videos</a>
+
+						</div>
+
+					</div>
+
+				</div>
+
+			</div>
+
+			<!-- header  end 
+
+			     main  start -->
+
+			<div id="main">
+
+
+				<nav id="nav">
+					<ul class="menu">
+						<li><a href="#01">Individuals</a></li>
+						<li><a href="#02">Volunteers</a></li>
+						<li><a href="#03">Companies</a></li>
+						<li><a href="#04">YouTube Channels</a></li>
+						<li><a href="#05">Film</a></li>
+						<li><a href="#06">Education and Non­Profit</a></li>
+					</ul>
+				</nav>
+
+				<div class="block" id="01">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img16.jpg" alt="cartoon computer" width="289" height="236" />
+
+							<h2>For Individuals</h2>
+
+							<strong class="title">Amara’s open, collaborative subtitlecreator isn’t just free­­ it's the best in the world.  Try it!</strong>
+
+							<form action="#" class="form">
+								<fieldset>
+									<div class="text">
+
+										<input type="text" class="text-input" value="" placeholder="Enter video url" />
+
+										<button class="btn-red" type="submit">Submit video</button>
+
+									</div>
+								</fieldset>
+							</form>
+
+							<p>Just enter a YouTube, Vimeo, HTML5, Brightcove, Kaltura, or MP4 video and get started. Invite anyone to help</p>
+
+							<a class="watch-channel" href="{% url profiles:account %}">Sync subtitles to your personal YouTube channel</a>
+
+							<a class="watch-channel" href="/embedder-offsite/">Try our interactive transcript viewer</a>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block aside" id="02">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img17.jpg" alt="cartoon girl" width="237" height="236" />
+
+							<h2>For Volunteers</h2>
+
+							<strong class="title">Amara is the largest captioning and subtitling community in the world! Join over 150,000 people that are contributing to make video accessible for everyone.</strong>
+
+							<p>Our groundbreaking collaborative subtitling process makes it possible, but it all depends on you. And don’t worry­­ we’ve made subtitling fun and easy.</p>
+
+							<p>Dozens of organizations need you now:  <a href="http://about.amara.org/volunteer">Volunteer Opportunities</a></p>
+
+							<ul class="list">
+
+								<li><a href="http://about.amara.org/order-subtitles" class="btn-blue">Order Captions or Subtitles</a></li>
+								<li><a href="http://about.amara.org/enterprise-features" class="btn-blue">Create a Volunteer Community</a></li>
+								<li><a href="http://about.amara.org/enterprise-features/#quality-control" class="btn-blue">Manage Internal Subtitling Projects</a></li>
+
+							</ul>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block" id="03">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img18.jpg" alt="cartoon suits" width="243" height="276" />
+
+							<h2>For Companies</h2>
+
+							<strong class="title">Amara provides captions and subtitles for global companies­­ public web videos, internal corporate videos, staff training videos, and much more.</strong>
+
+							<p>Use our professional caption and translation services, manage your own internal captioning and translation project, or create a public community.</p>
+
+							<div class="text-box">
+
+								<ul class="list">
+
+									<li><a href="http://about.amara.org/order-subtitles" class="btn-blue">Order Captions or Subtitles</a></li>
+
+									<li><a href="http://about.amara.org/enterprise-features" class="btn-blue">Create a Volunteer Community</a></li>
+
+									<li><a href="http://about.amara.org/enterprise-features/#quality-control" class="btn-blue">Manage Internal Subtitling Projects</a></li>
+
+								</ul>
+
+							</div>
+
+							<ul class="list-img">
+
+								<li><img src="{{ STATIC_URL }}images/homebody/img26.jpg" alt="swarovski logo" width="103" height="70" /></li>
+								<li><img src="{{ STATIC_URL }}images/homebody/img27.jpg" alt="twitter logo" width="70" height="70" /></li>
+								<li><img src="{{ STATIC_URL }}images/homebody/img28.jpg" alt="firefox logo" width="75" height="70" /></li>
+
+							</ul>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block aside" id="04">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img19.jpg" alt="image" width="237" height="236" />
+
+							<h2>For Youtube Channels</h2>
+
+							<strong class="title">Caption and translate your YouTube channel easily and more affordably than ever before.</strong>
+
+							<p>Use Amara’s professional caption and translation services or create a volunteer community to engage your viewers in making high quality translations in dozens of languages.</p>
+
+							<p><a href="http://about.amara.org/enterprise">Get Started</a></p>
+
+							<div class="holder-list">
+
+								<ul class="list">
+
+									<li><a href="http://about.amara.org/order-subtitles" class="btn-blue">Order Captions or Subtitles</a></li>
+
+									<li><a href="http://about.amara.org/enterprise-features" class="btn-blue">Create a Volunteer Community</a></li>
+
+								</ul>
+
+								<ul class="list-img">
+
+									<li>
+
+										<img src="{{ STATIC_URL }}images/homebody/img30.jpg" alt="TED Talks" width="100" height="62" />
+
+										<span class="figcaption">1.5 Million Subscribers </span>
+
+									</li>
+
+									<li>
+
+										<img src="{{ STATIC_URL }}images/homebody/img29.jpg" alt="Epic Rap" width="103" height="62" />
+
+										<span class="figcaption">8 Million Subscribers</span>
+
+									</li>
+
+									<li>
+
+										<img src="{{ STATIC_URL }}images/homebody/img31.jpg" alt="justin guitar" width="114" height="62" />
+
+										<span class="figcaption">400k Subscribers </span>
+
+									</li>
+
+								</ul>
+
+							</div>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block"  id="06">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img20.jpg" alt="cartoon graduation cap" width="257" height="246" />
+
+							<h2>Education</h2>
+
+							<p>Amara works with colleges, universities, and the leading online  education companies in the world.</p>
+
+							<ul class="list">
+
+								<li><a href="http://about.amara.org/order-subtitles" class="btn-blue">Order Captions or Subtitles</a></li>
+
+								<li><a href="http://about.amara.org/enterprise" class="btn-blue">Create a Volunteer Community</a></li>
+
+								<li><a href="http://about.amara.org/enterprise-features/#quality-control" class="btn-blue">Manage Internal Subtitling Projects</a></li>
+
+							</ul>
+
+							<div class="list-block">
+
+								<ul class="list-img">
+
+									<li><img src="{{ STATIC_URL }}images/homebody/img32.jpg" alt="Dallas CC" width="284" height="70" /></li>
+
+									<li><img src="{{ STATIC_URL }}images/homebody/img33.jpg" alt="Khan Academy" width="145" height="70" /></li>
+
+									<li><img src="{{ STATIC_URL }}images/homebody/img34.jpg" alt="Udacity" width="59" height="70" /></li>
+
+									<li><img src="{{ STATIC_URL }}images/homebody/img35.jpg" alt="Stanford" width="105" height="70" /></li>
+
+								</ul>
+
+							</div>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block aside">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img21.jpg" alt="image" width="271" height="237" />
+
+							<h2>Organizations</h2>
+
+							<strong class="title">Non­profit organizations use Amara to share their message and work around the world.</strong>
+
+							<p>Use our professional caption and translation services, manage your own internal captioning and translation project, or create a public community.</p>
+
+							<ul class="list">
+
+								<li><a href="http://about.amara.org/order-subtitles" class="btn-blue">Order Captions or Subtitles</a></li>
+
+								<li><a href="http://about.amara.org/enterprise" class="btn-blue">Create a Volunteer Community</a></li>
+
+								<li><a href="http://about.amara.org/enterprise-features" class="btn-blue">Manage Internal Subtitling Projects</a></li>
+
+							</ul>
+
+							<ul class="list-img">
+
+								<li><img src="{{ STATIC_URL }}images/homebody/img28.jpg" alt="Firefox logo" width="75" height="70" /></li>
+
+								<li><img src="{{ STATIC_URL }}images/homebody/img36.jpg" alt="TED logo" width="232" height="70" /></li>
+
+							</ul>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block"  id="05">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<h2>Film and Television</h2>
+
+							<p>Amara captions and translates films and television shows for Netflix, iTunes, DVDs, and online streaming.</p>
+
+							<div class="customer-hold">
+
+								<div class="customer">
+
+									<strong class="denote">Customers:</strong>
+
+									<ul class="list-img">
+
+										<li><img src="{{ STATIC_URL }}images/homebody/img37.jpg" alt="GirlRising" width="169" height="93" /></li>
+
+										<li><img src="{{ STATIC_URL }}images/homebody/img38.jpg" alt="ro*co" width="63" height="93" /></li>
+
+										<li><img src="{{ STATIC_URL }}images/homebody/img39.jpg" alt="gravitas" width="78" height="93" /></li>
+
+									</ul>
+
+								</div>
+
+								<div class="customer">
+
+									<strong class="denote">Delivering to:</strong>
+
+									<ul class="list-img">
+
+										<li><img src="{{ STATIC_URL }}images/homebody/img40.jpg" alt="iTunes" width="106" height="93" /></li>
+
+										<li><img src="{{ STATIC_URL }}images/homebody/img41.jpg" alt="Netflix" width="141" height="93" /></li>
+
+										<li><img src="{{ STATIC_URL }}images/homebody/img42.jpg" alt="DVD" width="79" height="93" /></li>
+
+									</ul>
+
+								</div>
+
+							</div>
+
+							<ul class="list">
+
+								<li><a href="http://about.amara.org/order-subtitles" class="btn-blue">Order Captions or Subtitles</a></li>
+
+								<li><a href="http://about.amara.org/enterprise" class="btn-blue">Create a Volunteer Community</a></li>
+
+								<li><a href="http://about.amara.org/enterprise-features/#quality-control" class="btn-blue">Manage Internal Subtitling Projects</a></li>
+
+							</ul>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block aside">
+
+					<div class="block-img">
+
+						<div class="holder">
+
+							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img22.jpg" alt="cartoon film and graph" width="288" height="236" />
+
+							<h2>Service Providers</h2>
+
+							<p>Amara is the most advanced cloud subtitle platform in the world.  Captioning and subtitling companies and film companies use Amara to manage and coordinate their own subtitling work.</p>
+
+							<p><a href="http://pro.amara.org/order-subtitles">Contact us</a></p>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<div class="block-hold">
+
+						<div class="info">
+
+						<img src="{{ STATIC_URL }}images/homebody/img24.jpg" alt="outlineline camera" width="128" height="106" />
+
+						<h2>Professional caption and translation</h2>
+
+						<p>Amara’s world class team delivers quickly at extremely high quality and value.</p>
+
+					</div>
+
+					<div class="info">
+
+						<img src="{{ STATIC_URL }}images/homebody/img25.jpg" alt="outline globe and head" width="158" height="106" />
+
+						<h2>Build a volunteer community</h2>
+
+						<p>Engage your viewers to create high quality translations in dozens of languages</p>
+
+					</div>
+
+				</div>
+
+			</div>
+
+			<!-- main  end -->
+
+		</div>
+
+	</div>
 </div>
-<div class="clearfix"></div>
-<div id="benefits" class="clearfix">
-    <a class="button" href="http://about.amara.org/enterprise/">{% trans "Pro Services" %}</a>
-    <h2>{% trans "See how these companies use Amara to caption and subtitle more effectively." %}</h2>
-</div>
-<div id="partners">
-    <ul class="clearfix">
-        <li>
-            <a target="_blank" title="TED" href="http://amara.org/en/teams/ted/">
-                <span style="padding-top:32px;"><img src="{{ STATIC_URL }}images/partners/ted.png" alt="{% trans 'TED' %}"/></span>
-            </a>
-            <a class="button" href="http://amara.org/en/teams/ted/">{% trans "TED Community" %}</a>
-        </li>
-        <li>
-            <a target="_blank" title="Mozilla" href="http://amara.org/en/teams/mozilla/">
-                <span><img src="{{ STATIC_URL }}images/partners/mozilla.png" alt="{% trans 'Mozilla' %}"/></span>
-            </a>
-            <a class="button" href="http://amara.org/en/teams/mozilla/">{% trans "Mozilla Community" %}</a>
-        </li>
-        <li>
-            <a target="_blank" title="Netflix" href="http://eepurl.com/n24oH">
-                <span style="padding-top:22px;"><img src="{{ STATIC_URL }}images/partners/netflix.png" alt="{% trans 'Netflix' %}"/></span>
-            </a>
-            <a class="button" href="http://eepurl.com/n24oH">{% trans "Netflix Community" %}</a>
-        </li>
-        <li>
-            <a target="_blank" title="ERB" href="http://amara.org/en/teams/erb/">
-                <span style="padding-top:24px;"><img src="{{ STATIC_URL }}images/partners/erb.png" alt="ERB"/></span>
-            </a>
-            <a class="button" href="http://amara.org/en/teams/erb/">{% trans "ERB Community" %}</a>
-        </li>
-    </ul>
-    <ul class="clearfix" style="margin-top:24px;">
-        <li>
-            <a target="_blank" title="Twitter" href="http://amara.org/en/teams/twitter/">
-                <span><img src="{{ STATIC_URL }}images/partners/twitter.png" alt="{% trans 'Twitter' %}"/></span>
-            </a>
-            <a class="button" href="http://amara.org/en/teams/twitter/">{% trans "Twitter Community" %}</a>
-        </li>
-        <li>
-            <a target="_blank" title="Udacity" href="http://amara.org/en/teams/udacity/">
-                <span><img src="{{ STATIC_URL }}images/partners/udacity.png" alt="{% trans 'Udacity' %}"/></span>
-            </a>
-            <a class="button" href="http://amara.org/en/teams/udacity/">{% trans "Udacity Community" %}</a>
-        </li>
-        <li>
-            <a target="_blank" title="ro*co films" href="http://www.rocofilms.com ">
-                <span><img src="{{ STATIC_URL }}images/partners/roco.png" alt="{% trans 'Roco Films' %}" style="padding-top:30px;"/></span>
-            </a>
-            <a class="button" href="http://www.rocofilms.com ">{% trans "Roco Films" %}</a>
-        </li>
-        <li>
-            <a target="_blank" title="PBS Newshour" href="http://amara.org/en/teams/newshour/">
-                <span><img src="{{ STATIC_URL }}images/partners/new_partner_pbs.png" alt="{% trans 'PBS Newshour' %}"/></span>
-            </a>
-            <a class="button" href="http://amara.org/en/teams/newshour/">{% trans "PBS Newshour Community" %}</a>
-        </li>
-    </ul>
-</div>
-<div id="most-popular" class="featured">
-    <a class="more" href="{% url videos:popular_videos %}">{% trans "More Popular" %}</a>
-    <h2>{% trans "Most Popular Today" %}</h2>
-    <p class="links">
-        <a href="{% url videos:popular_videos %}#?sort=month">{% trans "Top this month" %}</a>
-        <a href="{% url videos:popular_videos %}#?sort=total">{% trans "Top all-time" %}</a>
-    </p>
-    {% with popular_videos as video_list %}
-        {% include 'videos/_watch_page.html' %}
-    {% endwith %}    
-</div>
-<div id="featured-videos" class="featured">
-    <a class="more" href="{% url videos:featured_videos %}">{% trans "More Featured" %}</a>
-    <h2>{% trans "Featured Videos" %}</h2>
-    <p class="links">
-    &nbsp;
-    </p>
-    {% with featured_videos as video_list %}
-        {% include 'videos/_watch_page.html' %}
-    {% endwith %}
-</div>
-<div id="support-rec" class="clearboth">
-    <div class="grid_6 alpha">
-        <ul class="press">
-            <li>
-                <a href="http://www.forbes.com/sites/jamesmarshallcrotty/2012/08/31/amaras-wiki-style-translation-platform-enables-global-expansion-of-education-startups/">
-                    <img alt="" src="http://amarasubs.files.wordpress.com/2012/12/forbes.png?w=625"><br>
-                    <blockquote><p>Amara’s Wiki-Style Translation Platform Enables Global Growth Of Education Startups</p></blockquote>
-                </a>
-                <p><a href="http://www.forbes.com/sites/jamesmarshallcrotty/2012/08/31/amaras-wiki-style-translation-platform-enables-global-expansion-of-education-startups/"></a></p>
-            </li>
-            <li>
-                <a href="http://gigaom.com/video/netflix-amara-closed-captions-crowdsourcing/">
-                    <img alt="" src="http://amarasubs.files.wordpress.com/2012/12/gigaom.png?w=625"><br>
-                    <blockquote><p>Netflix experiments with crowd-sourced captioning</p></blockquote>
-                </a>
-                <p><a href="http://gigaom.com/video/netflix-amara-closed-captions-crowdsourcing/"></a></p>
-            </li>
-        </ul>
-    </div>
-    <div id="recognition" class="grid_6 omega">
-        <p>{% trans "Awards for Amara" %}<br />
-            <a href="/about#fcc-award">
-                <img src="{{ STATIC_URL }}images/awards/fcc.png" alt="FCC Award Advancement in Accessibility"/>
-            </a><br />
-            <a href="/about#tech-award">
-                <img src="{{ STATIC_URL }}images/awards/tech_awards.png" alt="Tech Awards 2011"/>
-            </a><br />
-            <a href="/about#iia-award">
-                <img src="{{ STATIC_URL }}images/awards/iia.png" alt="Intercultural Innovation Award"/>
-            </a>
-        </p>
-    </div>
-</div>
+    
 {% endblock %}
