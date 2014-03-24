@@ -21,8 +21,8 @@
         {% comment %}<p class="toggle-additional"><a href="">{% trans "Show more providers" %}</a></p>{% endcomment %}
     </div>
     <form class="auth-form" action="{% url auth:login_post %}" method="post">
-        <h3>{% trans "Or use your Amara account" %}</h3>
-        <p class="help"><a href="#" class="form-swap">{% trans "Don't have one?" %}</a></p>
+        <button class="green_button big"><a href="#" class="form-swap">{% trans "Create a new account" %}</a></button>
+        <h3>{% trans "Or use your existing Amara account" %}</h3>
         {% csrf_token %}
         {{ login_form.as_p }}
         <p class="help"><a href="{% url password_reset %}">{% trans 'Forgot your password?' %}</a></p>
