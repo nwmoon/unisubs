@@ -646,6 +646,7 @@ div#new-homepage {
 	float:left;
 	text-align:center;
 	width:460px;
+        padding-top: 15px;
 	margin:0 0  10px 114px;
 }
 #new-homepage .block-hold .info:first-child{
