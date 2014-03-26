@@ -17,15 +17,15 @@
 
 			<!-- header  start -->
 
-			<div class="top-info">
+			<div class="top-info grid_24">
 
 					<div class="info-holder">
 
 					<div class="center-info">
 
-						<strong class="subtitles">We <span class="heart">love</span>subtitles!</strong>
+						<strong class="subtitles">Videos <span class="heart">love</span>subtitles!</strong>
 
-						<h1>Amara is the largest and most advanced captioning and subtitling platform in the world.</h1>
+						<h1>Amara is the largest and most advanced captioning and subtitling platform</h1>
 
 						<div class="caption">
 
@@ -44,10 +44,7 @@
 						</div>
 
 						<div class="info-box">
-
-							<p>Over 300,000 sets of subtitles created in more than 130 languages.</p>
-
-							<a class="video" href="{{BASE_URL}}{% url videos:featured_videos %}">Recently Featured Videos</a>
+                                                       <p> <a href="#nav">Learn more about the Amara advantage</a></p>
 
 						</div>
 
@@ -63,25 +60,75 @@
 
 			<div id="main">
 
-
-				<nav id="nav">
+			<nav id="nav">
 					<ul class="menu">
 						<li><a href="#01">Individuals</a></li>
 						<li><a href="#02">Volunteers</a></li>
 						<li><a href="#03">Companies</a></li>
-						<li><a href="#04">YouTube Channels</a></li>
+						<li><a href="#04">Web Media</a></li>
 						<li><a href="#05">Film</a></li>
-						<li><a href="#06">Education and Non­Profit</a></li>
+						<li><a href="#06">Education</a></li>
+                                                <li><a href="#07">Non-profit</a></li>
 					</ul>
 				</nav>
 
+                           <div id="features" class="grid_12">
+
+                               <h2>What can you do with Amara?</h2>
+
+                              <div class="grid_4">
+                                <a href="#01"><img src="{{ STATIC_URL }}images/homebody/img16.jpg" alt="cartoon computer" height="120"/></a>
+                                <p> <strong class="feature">Create subtitles yourself!  </strong></p>
+                                <p>You can add any youtube, vimeo, mp4, flv, or html5 audio of video to amara, and subtitle it yourself, or ask a friend to help.
+                                </p>
+                            </div>
+
+
+                              <div class="grid_4">
+                                    <a href="#02"><img src="{{ STATIC_URL }}images/homebody/img17.jpg" alt="cartoon volunteer" height="120" /></a>
+                                <p>    <strong class="feature">Join a volunteer community</strong></p>
+                                <p>Exceptional organizations like GirlRising and WorldVision need your help translating and captioning.
+                                </p>
+                            </div>
+
+                              <div class="grid_4">
+                                   <a href="#03"><img src="{{ STATIC_URL }}images/homebody/img22.jpg" alt="film cartoon" height="120"/> </a>
+                                   <p> <strong class="feature">Purchase captions and subtitles</strong></p>
+                                <p>We create professional captions and subtitles at affordable prices. Film distributors like ro*co have purchased captions for speedy delivery to netflix.
+                                </p>
+                            </div>
+                           </div>
+                           <div id="features" class="grid_12">
+                              <div class="grid_4">
+                                   <a href="#04"> <img src="{{ STATIC_URL }}images/homebody/img07.png" alt="erb" height="120" /></a>
+                                    <p><strong class="feature">Make your video global</strong></p>
+                                <p>Video is a powerful way to spread messages &mdash; we can help you translate it! Epic Rap Battles of History videos have been translated into more than 60 languages and shared around the world in just days!
+                                </p>
+                            </div>
+
+                              <div class="grid_4">
+                                <a href="#06"><img src="{{ STATIC_URL }}images/homebody/img20.jpg" alt="cap and gown"  height="120"/> </a>
+                                <p><strong class="feature">Engage your crowd</strong></p>
+                                <p>Amara help you harness the power of a crowd. Teams like Udacity have more than 1500 members captioning their online eductional videos.
+                                </p>
+                            </div>
+
+                              <div class="grid_4">
+                                    <a href="#07"><img src="{{ STATIC_URL }}images/homebody/img30.jpg" alt="ted logo" height="120" /></a>
+                                    <p><strong class="feature">Easy platform integration</strong></p>
+                                <p>We have a powerful API and support most video platforms and subtitle formats.  TED.com gets their subtitles from Amara and keeps their websites and mobile apps up to date.
+                                </p>
+                            </div>
+
+               </div>
+
 				<div class="block" id="01">
 
-					<div class="block-img">
+					<div class="block-img grid_12">
 
-						<div class="holder">
+						<div class="holder grid_8">
 
-							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img16.jpg" alt="cartoon computer" width="289" height="236" />
+							<img class="img-view grid_4" src="{{ STATIC_URL }}images/homebody/img16.jpg" alt="cartoon computer" width="289" height="236" />
 
 							<h2>For Individuals</h2>
 
@@ -114,11 +161,11 @@
 
 				<div class="block aside" id="02">
 
-					<div class="block-img">
+					<div class="block-img grid_12">
 
-						<div class="holder">
+						<div class="holder grid_6">
 
-							<img class="img-view" src="{{ STATIC_URL }}images/homebody/img17.jpg" alt="cartoon girl" width="237" height="236" />
+							<img class="img-view grid_2" src="{{ STATIC_URL }}images/homebody/img17.jpg" alt="cartoon girl" width="237" height="236" />
 
 							<h2>For Volunteers</h2>
 
@@ -292,7 +339,7 @@
 
 				<div class="block aside">
 
-					<div class="block-img">
+					<div class="block-img" id="07">
 
 						<div class="holder">
 
@@ -300,7 +347,7 @@
 
 							<h2>Organizations</h2>
 
-							<strong class="title">Non­profit organizations use Amara to share their message and work around the world.</strong>
+							<strong class="title">Non-profit organizations use Amara to share their message and work around the world.</strong>
 
 							<p>Use our professional caption and translation services, manage your own internal captioning and translation project, or create a public community.</p>
 
@@ -410,29 +457,6 @@
 
 				</div>
 
-				<div class="block-hold">
-
-						<div class="info">
-
-						<img src="{{ STATIC_URL }}images/homebody/img24.jpg" alt="outlineline camera" width="128" height="106" />
-
-						<h2>Professional caption and translation</h2>
-
-						<p>Amara’s world class team delivers quickly at extremely high quality and value.</p>
-
-					</div>
-
-					<div class="info">
-
-						<img src="{{ STATIC_URL }}images/homebody/img25.jpg" alt="outline globe and head" width="157" height="88" />
-
-						<h2>Build a volunteer community</h2>
-
-						<p>Engage your viewers to create high quality translations in dozens of languages</p>
-
-					</div>
-
-				</div>
 
 			</div>
 
