@@ -22,7 +22,7 @@ var angular = angular || null;
     var module = angular.module('amara.SubtitleEditor.lock', []);
 
     function getLockingUrl(videoId, languageCode, type){
-        return '/' + languageCode + '/subtitles/editor/' + videoId + '/' + languageCode + '/' + type + "/";
+        return '/subtitles/editor/' + videoId + '/' + languageCode + '/' + type + "/";
     }
 
     module.factory('LockService', function($http, $cookies){
