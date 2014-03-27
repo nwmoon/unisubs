@@ -955,7 +955,7 @@ try:
         return False
 
     DEBUG_TOOLBAR_CONFIG = {
-        'INTERCEPT_REDIRECTS': False,
+        'INTERCEPT_REDIRECTS': True,
         'SHOW_TOOLBAR_CALLBACK': custom_show_toolbar,
         'EXTRA_SIGNALS': [],
         'HIDE_DJANGO_SQL': False,
