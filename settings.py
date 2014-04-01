@@ -933,7 +933,15 @@ try:
 
     EVERYONE_CAN_DEBUG = False
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+    middleware_top = (
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    )
+    middleware_bottom = tuple(m for m in MIDDLEWARE_CLASSES
+                              if m not in middleware_top)
+
+    MIDDLEWARE_CLASSES = middleware_top + middleware_bottom
 
     DEBUG_TOOLBAR_PANELS = (
         'debug_toolbar.panels.timer.TimerDebugPanel',
@@ -945,6 +953,7 @@ try:
     )
 
     def custom_show_toolbar(request):
+        return True
         from django.conf import settings
         can_debug = settings.EVERYONE_CAN_DEBUG or request.user.is_staff
 
