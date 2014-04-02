@@ -236,21 +236,19 @@
               Editing {{ language }}&hellip;
               {% endblocktrans %}
             </div>
-	    <div class="toolbox">
-	      <div class="toolbox-inside">
-		<a href="#"><img src="{{ STATIC_URL }}images/subtitle-editor/glyphicons_halflings_135_wrench.png" alt="Tools"></img></a>
-		<ul class="toolbox-menu">
-		  <li ng-show="copyTimingEnabled()"><a href="#" class="copyover" ng-click="showCopyTimingModal($event)" title="Copy timing and paragraphs from reference language">{% trans "Copy Timing" %}</a></li>
-                  <li><a href="#" ng-click="toggleTimelineShown()" class="show-timeline">
-		      <span ng-show="timelineShown">{% trans "Hide" %}</span>
-		      <span ng-show="!timelineShown">{% trans "Show" %}</span>
-		      {% trans "Timeline" %}
-                  </a></li>
-		  <li><a href="#" class="clear-timing" ng-click="showClearTimingModal($event)" title="Clear timing of all subtitles">{% trans "Clear timing" %}</a></li>
-		  <li><a href="#" class="clear-text" ng-click="showClearTextModal($event)" title="Clear text of all subtitles">{% trans "Clear text" %}</a></li>
-		  <li><a href="#" class="revert-saved" ng-click="showResetModal($event)" title="Revert to last saved version">{% trans "Revert to last saved version" %}</a></li>
-		</ul>
-	      </div>
+            <div class="toolbox">
+              <img src="{{ STATIC_URL }}images/subtitle-editor/glyphicons_halflings_135_wrench.png" alt="Tools"></img>
+              <ul class="toolbox-menu">
+                <li ng-show="copyTimingEnabled()"><a href="#" class="copyover" ng-click="showCopyTimingModal($event)" title="Copy timing and paragraphs from reference language">{% trans "Copy Timing" %}</a></li>
+                <li><a href="#" ng-click="toggleTimelineShown()" class="show-timeline">
+                    <span ng-show="timelineShown">{% trans "Hide" %}</span>
+                    <span ng-show="!timelineShown">{% trans "Show" %}</span>
+                    {% trans "Timeline" %}
+                </a></li>
+                <li><a href="#" class="clear-timing" ng-click="showClearTimingModal($event)" title="Clear timing of all subtitles">{% trans "Clear timing" %}</a></li>
+                <li><a href="#" class="clear-text" ng-click="showClearTextModal($event)" title="Clear text of all subtitles">{% trans "Clear text" %}</a></li>
+                <li><a href="#" class="revert-saved" ng-click="showResetModal($event)" title="Revert to last saved version">{% trans "Revert to last saved version" %}</a></li>
+              </ul>
 	    </div>
           </div>
           <div class="subtitles-wrapper"

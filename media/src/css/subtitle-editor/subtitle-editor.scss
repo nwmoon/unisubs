@@ -1053,28 +1053,14 @@ section.main {
                 line-height: 1.34em;
             }
 	    div.toolbox {
-                padding-top: 5px;
-                padding-right: 10px;
+                padding: 8px 15px 0 0;
+                margin: 0 10px 0 0;
                 float: right;
-                div.toolbox-inside:hover ul.toolbox-menu {
+                position: relative;
+
+                &:hover ul.toolbox-menu {
                   display:block;
                 }
-                div.toolbox-inside {              
-                   width: 150px;
-		   position: relative;
-                }
-                div.toolbox-inside > a {
-		color: black;
-                font-weight: 900;
-                font-size: 18px;
-                line-height: 1.34em;
-                text-decoration: none;
-                text-align: right;
-                position: absolute;
-                right: 15px;
-                padding: 3px 0px 10px 20px;
-                }
-
 
                 ul.toolbox-menu {
                    &:before {
@@ -1094,7 +1080,7 @@ section.main {
                    display:none;
                    position: absolute;
                    text-align: left;
-                   top: 0;
+                   top: 5px;
                    right: -200px;
                    width: 200px;
                    z-index: 62;
