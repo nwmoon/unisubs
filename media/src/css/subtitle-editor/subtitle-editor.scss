@@ -1118,31 +1118,6 @@ section.main {
 		      }
                 }
 	    }
-            div.switches {
-                float: right;
-
-                a {
-                    background: transparent url('../../../images/editor/icons.png') top left no-repeat;
-                    color: #7A7B7C;
-                    display: inline-block;
-                    padding: 10px;
-                    padding-left: 22px;
-                    text-decoration: none;
-
-                    &:hover {
-                        text-decoration: underline;
-                    }
-                    &.timeline-display {
-                        background-position: left -88px;
-                    }
-                    &.copyover-display {
-                        background-position: left -88px;
-                    }
-                    &.video-display {
-                        background-position: left -63px;
-                    }
-                }
-            }
         }
     }
     section.right {
