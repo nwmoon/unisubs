@@ -100,7 +100,17 @@ var angular = angular || null;
                 } else if (time > this.duration()) {
                     time = this.duration();
                 }
+                var formerCurrentTime = pop.currentTime();
                 pop.currentTime(time / 1000);
+                // On some video players (vimeo flash), current time does not update if video is paused
+                // so we hack it that way, until that is solved in the player directly
+                if ((formerCurrentTime == pop.currentTime()) && pop.paused() && (formerCurrentTime > 0)) {
+                    pop.play();
+                    // Time gets updated after a little bit of playback
+		    setTimeout(function() {
+			pop.pause();
+		    },500);
+                }
             },
             togglePlay: function() {
                 if (pop.paused()) {
