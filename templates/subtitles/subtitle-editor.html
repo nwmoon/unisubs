@@ -250,6 +250,14 @@
                 <li><a href="#" class="revert-saved" ng-click="showResetModal($event)" title="Revert to last saved version">{% trans "Revert to last saved version" %}</a></li>
               </ul>
 	    </div>
+            <div class="playback-mode" ng-controller="PlaybackModeController">
+                {% trans "Playback mode: " %}
+                <select id="playback-mode" ng-model="playbackMode">
+                    <option value="standard">{% trans "Standard: use tab key to pause" %}</option>
+                    <option value="magic">{% trans "Magic: auto-pauses as you type" %}</option>
+                    <option value="beginner">{% trans "Beginner: play 4 seconds, then pause" %}</option>
+                </select>
+            </div>
           </div>
           <div class="subtitles-wrapper"
                ng-controller="WorkingSubtitlesController"

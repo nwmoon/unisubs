@@ -91,4 +91,178 @@
         });
 
     }]);
+
+    module.controller('PlaybackModeController', function($scope, $log, $timeout, VideoPlayer) {
+        $scope.playbackMode = 'standard';
+
+        // The playbackTimer is used by both magic and beginner modes to
+        // schedule timeouts.  It automatically cancels the timeout if
+        // playback is started or paused or if the mode is switched.
+
+        var playbackTimerPromises = [];
+
+        $scope.playbackTimer = function(callback, delay) {
+            var promise = $timeout(function() {
+                removePlaybackTimerPromise(promise);
+                callback();
+            }, delay);
+            playbackTimerPromises.push(promise);
+            return promise;
+        }
+
+        function removePlaybackTimerPromise(promise) {
+            playbackTimerPromises = _.filter(playbackTimerPromises,
+                function(other) {
+                return other !== promise;
+            });
+        }
+
+        $scope.playbackTimer.cancel = function(promise) {
+            removePlaybackTimerPromise(promise);
+            $timeout.cancel(promise);
+        };
+
+        function cancelPlaybackTimers() {
+            var oldPromises = playbackTimerPromises;
+            playbackTimerPromises = [];
+            _.each(oldPromises, function(promise) {
+                $timeout.cancel(promise);
+            });
+        }
+
+        // Define objects to handle the various modes
+        function ModeHandler() {};
+        ModeHandler.prototype = {
+            activate: function() {
+                // Called when the mode is switched to
+            },
+            deactivate: function() {
+                // Called when the mode is switched away from
+            },
+            onVideoUpdate: function() {
+            },
+            onSubtitleEditKeyPress: function(evt) {
+            }
+        };
+
+        function BeginnerModeHandler() {};
+        BeginnerModeHandler.prototype = Object.create(ModeHandler.prototype);
+        _.extend(BeginnerModeHandler.prototype, {
+            timeoutScheduled: false,
+            onVideoUpdate: function() {
+                var that = this;
+
+                if(VideoPlayer.isPlaying() && !this.timeoutScheduled) {
+                    var promise = $scope.playbackTimer(function() {
+                        VideoPlayer.pause();
+                        that.timeoutScheduled = false;
+                    }, 4000).then(null, function() {
+                        that.timeoutScheduled = false;
+                    });
+                    that.timeoutScheduled = true;
+                }
+            },
+        });
+
+        function MagicModeHandler() {};
+        MagicModeHandler.prototype = Object.create(ModeHandler.prototype);
+        _.extend(MagicModeHandler.prototype, {
+            timeoutScheduled: false,
+            sawKeyPress: false,
+            autopaused: false,
+            scheduleTimeout: function(callback, delay) {
+                if(this.timeoutScheduled) {
+                    $log.warn("timeout already scheduled");
+                    return;
+                }
+
+                var that = this;
+                $scope.playbackTimer(function() {
+                    that.timeoutScheduled = false;
+                    callback();
+                }, delay).then(null, function onCancel() {
+                    that.timeoutScheduled = false;
+                });
+                this.timeoutScheduled = true;
+                this.sawKeyPress = false;
+            },
+            onSubtitleEditKeyPress: function(evt) {
+                this.sawKeyPress = true;
+            },
+            onVideoUpdate: function() {
+                if(VideoPlayer.isPlaying() && !this.timeoutScheduled) {
+                    this.schedulePauseTimeout(0);
+                } else if(!VideoPlayer.isPlaying()) {
+                    if(this.autopaused) {
+                        this.schedulePlayTimeout();
+                        this.autopaused = false;
+                    }
+                }
+            },
+            schedulePauseTimeout: function(count) {
+                var that = this;
+
+                this.scheduleTimeout(function() {
+                    if(that.sawKeyPress) {
+                        if(count < 3) {
+                            that.schedulePauseTimeout(count+1);
+                        } else {
+                            VideoPlayer.pause();
+                            that.seekBackwards();
+                            that.autopaused = true;
+                        }
+                    } else {
+                        that.schedulePauseTimeout(0);
+                    }
+                }, 1000);
+            },
+            schedulePlayTimeout: function() {
+                var that = this;
+                this.scheduleTimeout(function() {
+                    if(that.sawKeyPress) {
+                        that.schedulePlayTimeout();
+                    } else {
+                        VideoPlayer.play();
+                    }
+                }, 1000);
+            },
+            seekBackwards: function() {
+                var currentTime = VideoPlayer.currentTime();
+                if(currentTime) {
+                    var newTime = VideoPlayer.currentTime() - 3000;
+                    VideoPlayer.seek(Math.max(0, newTime));
+                }
+            }
+        });
+
+        var modeHandlers = {
+            standard: new ModeHandler(),
+            beginner: new BeginnerModeHandler(),
+            magic: new MagicModeHandler()
+        };
+
+        currentModeHandler = modeHandlers.standard;
+
+        $scope.$watch('playbackMode', function(newMode, oldMode) {
+            cancelPlaybackTimers();
+            VideoPlayer.pause();
+            currentModeHandler.deactivate();
+            currentModeHandler = modeHandlers[newMode];
+            currentModeHandler.activate();
+        });
+
+        var videoWasPlaying = VideoPlayer.isPlaying();
+        $scope.$root.$on('video-update', function() {
+            var videoIsPlaying = VideoPlayer.isPlaying();
+            if(videoIsPlaying != videoWasPlaying) {
+                cancelPlaybackTimers();
+                videoWasPlaying = videoIsPlaying;
+            }
+            currentModeHandler.onVideoUpdate();
+        });
+
+        $scope.$root.$on('subtitle-edit-key-press', function(evt) {
+            currentModeHandler.onSubtitleEditKeyPress(evt);
+        });
+    });
 }).call(this);

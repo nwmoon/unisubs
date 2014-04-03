@@ -420,6 +420,7 @@ var USER_IDLE_MINUTES = 15;
                             draft.markdown = val;
                         });
                     }
+                    $scope.$root.$emit('subtitle-edit-key-press', evt);
                 });
                 if($scope.onEditKeydown) {
                     textarea.on('keydown', function(evt) {

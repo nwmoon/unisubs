@@ -3,7 +3,7 @@
     var module = angular.module('amara.SubtitleEditor.mocks', []);
 
     module.factory('VideoPlayer', function() {
-        return jasmine.createSpyObj('VideoPlayer', [
+        var MockVideoPlayer = jasmine.createSpyObj('VideoPlayer', [
             'init',
             'play',
             'pause',
@@ -16,6 +16,24 @@
             'setVolume',
             'playChunk',
         ]);
+        MockVideoPlayer.playing = false;
+        MockVideoPlayer.time = 10000; // 10 seconds
+        MockVideoPlayer.isPlaying.andCallFake(function() {
+            return MockVideoPlayer.playing;
+        });
+        MockVideoPlayer.currentTime.andCallFake(function() {
+            return MockVideoPlayer.time;
+        });
+        MockVideoPlayer.seek.andCallFake(function(newTime) {
+            MockVideoPlayer.time = newTime;
+        });
+        MockVideoPlayer.play.andCallFake(function() {
+            MockVideoPlayer.playing = true;
+        });
+        MockVideoPlayer.pause.andCallFake(function() {
+            MockVideoPlayer.playing = false;
+        });
+        return MockVideoPlayer;
     });
 
     module.factory('SubtitleStorage', function($q) {
@@ -112,5 +130,29 @@
             ],
             'staticURL': 'http://example.com/'
         };
+    });
+
+    module.factory('$timeout', function($q) {
+        var deferreds = [];
+
+        var mockTimeout = jasmine.createSpy('$timeout')
+                            .andCallFake(function(callback) {
+            var deferred = $q.defer();
+            var promise = deferred.promise;
+            deferreds.push(deferred);
+            promise.number = deferreds.length - 1;
+            mockTimeout.promisesReturned.push(promise);
+            mockTimeout.lastPromiseReturned = promise;
+            mockTimeout.lastCallback = callback;
+            return promise;
+        });
+        mockTimeout.promisesReturned = [];
+        mockTimeout.lastPromiseReturned = null;
+        mockTimeout.lastCallback = null;
+        mockTimeout.cancel = jasmine.createSpy('cancel')
+            .andCallFake(function(promise) {
+                deferreds[promise.number].reject("timeout canceled");
+        });
+        return mockTimeout;
     });
 }).call(this);
