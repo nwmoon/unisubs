@@ -133,6 +133,8 @@
         // Define objects to handle the various modes
         function ModeHandler() {};
         ModeHandler.prototype = {
+            // name for the mode.  subclasses should override this
+            name: 'base',
             activate: function() {
                 // Called when the mode is switched to
             },
@@ -145,9 +147,14 @@
             }
         };
 
+        function StandardModeHandler() {};
+        StandardModeHandler.prototype = Object.create(ModeHandler.prototype);
+        _.extend(StandardModeHandler.prototype, { name: 'standard' });
+
         function BeginnerModeHandler() {};
         BeginnerModeHandler.prototype = Object.create(ModeHandler.prototype);
         _.extend(BeginnerModeHandler.prototype, {
+            name: 'beginner',
             timeoutScheduled: false,
             onVideoUpdate: function() {
                 var that = this;
@@ -167,6 +174,7 @@
         function MagicModeHandler() {};
         MagicModeHandler.prototype = Object.create(ModeHandler.prototype);
         _.extend(MagicModeHandler.prototype, {
+            name: 'magic',
             timeoutScheduled: false,
             sawKeyPress: false,
             autopaused: false,
@@ -236,20 +244,31 @@
         });
 
         var modeHandlers = {
-            standard: new ModeHandler(),
+            standard: new StandardModeHandler(),
             beginner: new BeginnerModeHandler(),
             magic: new MagicModeHandler()
         };
 
-        currentModeHandler = modeHandlers.standard;
+        $scope.currentModeHandler = modeHandlers.standard;
 
-        $scope.$watch('playbackMode', function(newMode, oldMode) {
-            cancelPlaybackTimers();
-            VideoPlayer.pause();
-            currentModeHandler.deactivate();
-            currentModeHandler = modeHandlers[newMode];
-            currentModeHandler.activate();
-        });
+        function updateModeHandler() {
+            if($scope.workflow.stage == 'type') {
+                var newModeHandler = modeHandlers[$scope.playbackMode];
+            } else {
+                var newModeHandler = modeHandlers['standard'];
+            }
+            if(newModeHandler !== $scope.currentModeHandler) {
+                VideoPlayer.pause();
+                cancelPlaybackTimers();
+                $scope.currentModeHandler.deactivate();
+                $scope.currentModeHandler = newModeHandler;
+                $scope.currentModeHandler.activate();
+            }
+        }
+
+        $scope.$watch('playbackMode', updateModeHandler);
+
+        $scope.$watch('workflow.stage', updateModeHandler);
 
         var videoWasPlaying = VideoPlayer.isPlaying();
         $scope.$root.$on('video-update', function() {
@@ -258,11 +277,11 @@
                 cancelPlaybackTimers();
                 videoWasPlaying = videoIsPlaying;
             }
-            currentModeHandler.onVideoUpdate();
+            $scope.currentModeHandler.onVideoUpdate();
         });
 
         $scope.$root.$on('subtitle-edit-key-press', function(evt) {
-            currentModeHandler.onSubtitleEditKeyPress(evt);
+            $scope.currentModeHandler.onSubtitleEditKeyPress(evt);
         });
     });
 }).call(this);

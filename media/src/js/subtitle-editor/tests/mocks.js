@@ -3,7 +3,7 @@
     var module = angular.module('amara.SubtitleEditor.mocks', []);
 
     module.factory('VideoPlayer', function() {
-        var MockVideoPlayer = jasmine.createSpyObj('VideoPlayer', [
+        var mockMethods = [
             'init',
             'play',
             'pause',
@@ -15,7 +15,9 @@
             'getVolume',
             'setVolume',
             'playChunk',
-        ]);
+        ];
+        var MockVideoPlayer = jasmine.createSpyObj('VideoPlayer',
+            mockMethods);
         MockVideoPlayer.playing = false;
         MockVideoPlayer.time = 10000; // 10 seconds
         MockVideoPlayer.isPlaying.andCallFake(function() {
@@ -33,6 +35,12 @@
         MockVideoPlayer.pause.andCallFake(function() {
             MockVideoPlayer.playing = false;
         });
+        MockVideoPlayer.reset = function() {
+            var that = this;
+            _.each(mockMethods, function(methodName) {
+                that[methodName].reset();
+            });
+        }
         return MockVideoPlayer;
     });
 

@@ -14,12 +14,15 @@ describe('The playback mode controller', function() {
         $timeout = $injector.get('$timeout');
         $rootScope = $injector.get('$rootScope');
         $scope = $rootScope.$new();
+        $scope.workflow = { stage: 'type' };
         $controller('PlaybackModeController', {
             $scope: $scope
         });
         var oldCancel = $scope.playbackTimer.cancel;
         spyOn($scope, 'playbackTimer').andCallThrough();
         $scope.playbackTimer.cancel = oldCancel;
+        $scope.$digest();
+        VideoPlayer.reset();
     }));
 
     function invokePlaybackTimerCallback() {
@@ -36,6 +39,37 @@ describe('The playback mode controller', function() {
         $scope.playbackMode = 'magic';
         $scope.$digest();
         expect(VideoPlayer.pause).toHaveBeenCalled();
+    });
+
+    it('switches to standard mode when we are not in the typing stage', function() {
+        $scope.workflow.stage = 'review';
+        $scope.$digest();
+        expect($scope.currentModeHandler.name).toEqual('standard');
+    });
+
+    it('stays in standard mode when not in the typing stage', function() {
+        $scope.workflow.stage = 'review';
+        $scope.$digest();
+        expect($scope.currentModeHandler.name).toEqual('standard');
+
+        $scope.playbackMode = 'magic';
+        $scope.$digest();
+        expect($scope.currentModeHandler.name).toEqual('standard');
+    });
+
+
+    it('reactivates the old mode if we switch back to the typing stage', function() {
+        $scope.playbackMode = 'magic';
+        $scope.$digest();
+        VideoPlayer.pause.reset();
+
+        $scope.workflow.stage = 'review';
+        $scope.$digest();
+        expect($scope.currentModeHandler.name).toEqual('standard');
+
+        $scope.workflow.stage = 'type';
+        $scope.$digest();
+        expect($scope.currentModeHandler.name).toEqual('magic');
     });
 
     describe('playback mode timer', function() {
