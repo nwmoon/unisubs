@@ -2679,7 +2679,7 @@ class BillingReport(models.Model):
                 video.title_display(),
                 video.video_id,
                 approve_task.language,
-                get_minutes_for_version(version, False),
+                self.get_minutes(round_up_to_integer=False),
                 language.is_primary_audio_language(),
                 subtitle_task.type==Task.TYPE_IDS['Translate'],
                 unicode(approve_task.assignee),
@@ -2736,7 +2736,7 @@ class BillingReport(models.Model):
                     video.title_display(),
                     video.video_id,
                     language.language_code,
-                    get_minutes_for_version(version, False),
+                    self.get_minutes(round_up_to_integer=False),
                     language.is_primary_audio_language(),
                     unicode(approve_task.assignee),
                     unicode(task.body),
@@ -2815,9 +2815,7 @@ class BillingReportGenerator(object):
             self.rows = [self.header()]
         else:
             self.rows = []
-
         all_records = list(all_records)
-
         self.make_language_number_map(all_records)
         self.make_languages_without_records(all_records)
 
@@ -3069,8 +3067,13 @@ class BillingRecord(models.Model):
 
         return super(BillingRecord, self).save(*args, **kwargs)
 
-    def get_minutes(self):
-        return get_minutes_for_version(self.new_subtitle_version, True)
+    def get_minutes(self, round_up_to_integer=True):
+        if self.video and self.video.duration:
+            minutes = self.video.duration/60.0
+            if round_up_to_integer:
+                minutes = int(ceil(minutes))
+            return minutes
+        return get_minutes_for_version(self.new_subtitle_version, round_up_to_integer)
 
 class Partner(models.Model):
     name = models.CharField(_(u'name'), max_length=250, unique=True)
