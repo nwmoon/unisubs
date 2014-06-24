@@ -32,3 +32,11 @@ When the host page is fully loaded, it does the following actions:
 ----------------------
 
 The iframe added by ``embedder-iframe.js`` loads a web page which basically is populated by ``embedder.js``. It is based on ``backbone`` and ``jQuery``. It includes a video player, managed by ``popcorn.js`` and a custom menu. The menu controls the diplayed languages and is also used to toggle subtiltes and the transcript viewer.
+
+
+Dependencies
+-------------
+
+The dependencies can be found in ``settings.py`` which describes which files must be compiled. The JavaScript dependencies include ``backbone``, ``jQuery``, ``popcorn`` and the ``jQuery`` ``mCustomScrollbar`` plugin.
+
+For CSS, the sass file ``embedder.scss`` must be compiled, and the CSS for ``mCustomScrollbar`` must be loaded.
