@@ -4028,6 +4028,11 @@
       // Set wmode to transparent to show video overlays
       playerVars.wmode = playerVars.wmode || "opaque";
 
+      // For HTML5 on Firefox, at least until flash is fixed in
+      // youtube API
+      if ( playerVars.html5 !== 0 )
+        playerVars.html5 = 1;
+
       // Get video ID out of youtube url
       aSrc = regexYouTube.exec( aSrc )[ 1 ];
 
