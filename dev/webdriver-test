@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd "$( unisubs-root )"
+fig run --rm app xvfb-run --server-args="-screen 0 2048x1600x24" python manage.py test --settings=dev_settings_test $1
