@@ -32,6 +32,7 @@ from django.utils.translation import ugettext as _
 from django.views.decorators.http import require_POST
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template.defaultfilters import urlize, linebreaks, force_escape
+from django.views.decorators.clickjacking import xframe_options_exempt
 
 from subtitles import shims
 from subtitles.models import SubtitleLanguage, SubtitleVersion
@@ -185,6 +186,7 @@ def old_editor(request, video_id, language_code):
                                     request.GET.get('task_id'))
     return redirect("http://%s%s" % (request.get_host(), url_path))
 
+@xframe_options_exempt
 @login_required
 def subtitle_editor(request, video_id, language_code):
     '''
