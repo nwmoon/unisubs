@@ -92,6 +92,10 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 
+# -- Autodoc options
+autodoc_member_order = 'bysource'
+
+
 # -- Options for HTML output ---------------------------------------------------
 
 html_theme = "sphinx_rtd_theme"

@@ -28,7 +28,7 @@ Contents:
    syncing-and-importing
    bugs
    languages
-
+   programming-details
 
 Contributing
 ------------

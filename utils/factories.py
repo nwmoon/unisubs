@@ -294,7 +294,7 @@ class SubtitleSetFactory(Factory):
     @factory.post_generation
     def num_subs(self, create, extracted, **kwargs):
         for i in xrange(extracted):
-            self.append_subtitle(i*1000, i*1000 - 1, "Sub %s" % i)
+            self.append_subtitle(i*1000, i*1000 + 999, "Sub %s" % i)
 
 def bulk_subs(sub_data):
     """Create a bunch of videos/languages/versions
