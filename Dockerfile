@@ -39,8 +39,6 @@ RUN pip install uwsgi
 RUN (cd $APP_DIR/deploy && pip install --src /opt/src/unisubs/ -r requirements.txt)
 # this fixes the nose bug (https://github.com/django-nose/django-nose/issues/54)
 RUN rm /usr/local/man
-RUN (cd $APP_DIR/deploy && pip install --src /opt/src/unisubs/ -r requirements-test.txt)
-RUN (cd $APP_DIR/deploy && pip install --src /opt/src/unisubs/ -r requirements-doc.txt)
 ADD .docker/run.sh /usr/local/bin/run
 
 WORKDIR /opt/apps/unisubs
