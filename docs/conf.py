@@ -21,7 +21,7 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath('../apps'))
 sys.path.insert(0, os.path.abspath('../'))
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'dev_settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 # -- General configuration -----------------------------------------------------
 
