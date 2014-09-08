@@ -1,5 +1,7 @@
 Django==1.4.13
-Sphinx==1.1.3
 sphinxcontrib-httpdomain
 sphinxcontrib-napoleon
 sphinx_rtd_theme
+-e git+https://github.com/pculture/unilangs.git#egg=unilangs
+celery==3.0.11
+django-celery==3.0.10
