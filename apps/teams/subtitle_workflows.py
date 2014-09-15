@@ -143,10 +143,13 @@ class TaskTeamEditorNotes(TeamEditorNotes):
         subject = fmt(
             _(u'%(user)s added a note while editing %(title)s'),
             user=unicode(note.user), title=self.video.title_display())
+        tasks_url = "{0}&assignee=anyone&language_code={1}".format(
+            self.team_video.get_tasks_page_url(),
+            self.language_code)
         data = {
             'note_user': unicode(note.user),
             'body': note.body,
-            'tasks_url': self.team_video.get_tasks_page_url()+'&assignee=me',
+            'tasks_url': tasks_url,
             'video': self.video.title_display(),
             'language': translation.get_language_label(self.language_code),
         }
