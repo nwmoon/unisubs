@@ -435,10 +435,8 @@ class APIComplete(Action):
     def do_perform(self, user, video, subtitle_language, saved_version):
         # we only use this action from pipeline.add_subtitles, so we can
         # assume saved_version is not None
-        if (saved_version is None or not saved_version.is_synced()):
-            subtitle_language.subtitles_complete = False
-        else:
-            subtitle_language.subtitles_complete = True
+        # Temporarily, until we see if it fixes 1735
+        subtitle_language.subtitles_complete = True
 
     def send_signals(self, subtitle_language, version):
         if subtitle_language.subtitles_complete:
