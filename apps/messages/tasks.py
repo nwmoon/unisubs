@@ -42,7 +42,6 @@ from localeurl.utils import universal_url
 from teams.moderation_const import REVIEWED_AND_PUBLISHED, \
      REVIEWED_AND_PENDING_APPROVAL, REVIEWED_AND_SENT_BACK
 
-
 from messages.models import Message
 from utils import send_templated_email
 from utils.metrics import Meter
@@ -526,6 +525,7 @@ def approved_notification(task_pk, published=False):
     from teams.models import Task
     from videos.models import Action
     from messages.models import Message
+    from teams.models import TeamNotificationSetting
     try:
         task = Task.objects.select_related(
             "team_video__video", "team_video", "assignee", "subtitle_version").get(
@@ -541,6 +541,12 @@ def approved_notification(task_pk, published=False):
         subject = ugettext(u"Your subtitles have been approved and published!")
         template_txt = "messages/team-task-approved-published.txt"
         template_html ="messages/email/team-task-approved-published.html"
+        # Not sure whether it is the right place to send notification
+        # but should work around the approval when there is no new sub version
+        version = task.get_subtitle_version()
+        TeamNotificationSetting.objects.notify_team(task.team.pk, TeamNotificationSetting.EVENT_SUBTITLE_APPROVED,
+                                                    video_id=version.video.video_id,
+                                                    language_pk=version.subtitle_language.pk, version_pk=version.pk)
     else:
         template_txt = "messages/team-task-approved-sentback.txt"
         template_html ="messages/email/team-task-approved-sentback.html"
