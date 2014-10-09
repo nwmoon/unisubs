@@ -108,10 +108,10 @@ class Command(BaseCommand):
 
     def upload_app_static_media(self):
         for root_dir in utils.app_static_media_dirs():
-            for dirpath, dirs, files in os.walk(root_dir):
+            for dirpath, dirs, files in os.walk(root_dir["path"]):
                 for filename in files:
                     path = os.path.join(dirpath, filename)
-                    s3_path = os.path.relpath(path, root_dir)
+                    s3_path = os.path.join(root_dir["label"], os.path.relpath(path, root_dir["path"]))
                     self.upload_file(path, s3_path)
 
     def should_gzip(self, content_type):

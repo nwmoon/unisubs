@@ -20,7 +20,6 @@ import os
 import subprocess
 
 from django.conf import settings
-
 import commit
 
 def s3_subdirectory():
@@ -76,5 +75,5 @@ def app_static_media_dirs():
         module = __import__(app)
         static_dir = os.path.join(os.path.dirname(module.__file__), 'static')
         if os.path.exists(static_dir):
-            static_media_dirs.append(static_dir)
+            static_media_dirs.append({"path": static_dir, "label": app})
     return static_media_dirs

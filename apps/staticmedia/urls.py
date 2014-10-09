@@ -23,7 +23,8 @@ from django.conf.urls.defaults import patterns, url
 from django.conf.urls.static import static
 
 from staticmedia import utils
-
+import logging
+logger= logging.getLogger("urls")
 if settings.STATIC_MEDIA_USES_S3:
     # don't serve up the media from the local server if we're using S3
     urlpatterns = patterns('staticmedia.views')
@@ -43,10 +44,8 @@ else:
     ) + static(
         '/fonts/', document_root=os.path.join(settings.STATIC_ROOT, 'fonts')
     )
-
     for static_dir in utils.app_static_media_dirs():
-        urlpatterns += static('/', document_root=static_dir)
-
+        urlpatterns += static('/' + static_dir["label"], document_root=static_dir["path"])
 if settings.DEBUG:
     urlpatterns += patterns(
         'staticmedia.views',
