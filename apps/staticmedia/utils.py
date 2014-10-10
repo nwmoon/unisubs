@@ -75,5 +75,8 @@ def app_static_media_dirs():
         module = __import__(app)
         static_dir = os.path.join(os.path.dirname(module.__file__), 'static')
         if os.path.exists(static_dir):
-            static_media_dirs.append({"path": static_dir, "label": app})
+            label = ""
+            if os.path.commonprefix([static_dir, settings.PROJECT_ROOT]) == settings.PROJECT_ROOT:
+                label = app
+            static_media_dirs.append({"path": static_dir, "label": label})
     return static_media_dirs
