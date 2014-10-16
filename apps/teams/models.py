@@ -50,6 +50,7 @@ from teams.permissions_const import (
 )
 from teams import tasks
 from teams import workflows
+from videos.tasks import video_changed_tasks
 from utils import DEFAULT_PROTOCOL
 from utils.amazon import S3EnabledImageField, S3EnabledFileField
 from utils.panslugify import pan_slugify
@@ -800,7 +801,7 @@ class TeamVideo(models.Model):
         if not self.pk:
             self.created = datetime.datetime.now()
         super(TeamVideo, self).save(*args, **kwargs)
-
+        video_changed_tasks(self.video.pk)
 
     def is_checked_out(self, ignore_user=None):
         '''Return whether this video is checked out in a task.
