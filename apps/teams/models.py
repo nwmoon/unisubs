@@ -2692,7 +2692,7 @@ class TeamNotificationSetting(models.Model):
 
     def get_notification_class(self):
         try:
-            from notificationclasses import NOTIFICATION_CLASS_MAP
+            from ted.notificationclasses import NOTIFICATION_CLASS_MAP
 
             return NOTIFICATION_CLASS_MAP[self.notification_class]
         except ImportError:

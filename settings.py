@@ -357,12 +357,7 @@ ROSETTA_EXCLUDED_APPLICATIONS = (
 )
 
 INSTALLED_APPS += optionalapps.get_apps()
-try:
-    from integration_settings import *
-except ImportError:
-    pass
-# paths from MEDIA URL
-# this needs to run after the integration player has loaded
+
 MEDIA_BUNDLES = {
     "base.css": {
         "files": (
