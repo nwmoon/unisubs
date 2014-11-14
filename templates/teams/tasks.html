@@ -203,7 +203,7 @@
         {% with member.has_max_tasks as has_max_tasks %}
             {% for task in tasks %}
                 {% with task.new_subtitle_version.subtitle_language.get_translation_source_language as translated_from %}
-                    <li
+                    <li class="packed"
                           {% if task.is_blocked  %}
                               {%if  task.get_type_display == 'Translate' %}
                                   class="disabled">
@@ -246,6 +246,12 @@
                         {% endif %}
                     </h3>
 
+		    {% if task.team_video.video.language %}
+                    <p>
+                         <strong>{% trans "Original Language" %}:</strong>
+                         {{ task.team_video.video.language|display_language }}
+                    </p>
+                    {% endif %}
                     <p>
                         <strong>{% trans "Video" %}:</strong>
                         <a href="{{ task.team_video.video.get_absolute_url }}"

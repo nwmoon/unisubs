@@ -343,7 +343,8 @@ class TestViews(WebUseTest):
             if sub_data.text is None:
                 self.assertEquals(column.string.strip(), "")
                 return
-            time_span, text_span = column.findAll('span', recursive=False)
+            time_span = column.findAll('span', recursive=False)[0]
+            text_span = column.findAll('div', recursive=False)[0]
             self.assertEquals(text_span.string.strip(),
                               sub_data.text)
             time_child_spans = time_span.findAll('span',
@@ -365,7 +366,7 @@ class TestViews(WebUseTest):
             check_column_data(li.find('div', {'class': 'right_column'}),
                               diff_sub_data_item['subtitles'][0])
             # we use the time_change class for either text or time changes.
-            time_changes = li.findAll('span', {'class': 'time_change'})
+            time_changes = li.findAll('div', {'class': 'time_change'})
             if (diff_sub_data_item['time_changed'] or
                 diff_sub_data_item['text_changed']):
                 self.assertNotEqual(len(time_changes), 0)

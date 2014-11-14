@@ -23,6 +23,7 @@ from collections import namedtuple
 
 import simplejson as json
 from babelsubs.storage import diff as diff_subs
+from babelsubs.generators.html import HTMLGenerator
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -796,7 +797,7 @@ def diffing(request, first_version, second_pk):
         first_version, second_version = second_version, first_version
 
     video = first_version.subtitle_language.video
-    diff_data = diff_subs(first_version.get_subtitles(), second_version.get_subtitles())
+    diff_data = diff_subs(first_version.get_subtitles(), second_version.get_subtitles(), mappings=HTMLGenerator.MAPPINGS)
     team_video = video.get_team_video()
 
     context = {

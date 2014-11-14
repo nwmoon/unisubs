@@ -428,6 +428,13 @@ div.fix-chosen div.chzn-container {
         color: #555;
     }
 }
+
+.v1 .listing > li.packed {
+    h3, p {
+            line-height: 1.0em;
+            padding-bottom: 0;
+        }
+}
 .v1 .listing {
     clear: both;
     padding: 0;

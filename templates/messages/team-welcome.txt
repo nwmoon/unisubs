@@ -7,6 +7,10 @@ Hi {{ user }},
 
 Congratulations! You are now a member of the {{ team.name }} team.
 
+{% if custom_message %}
+{{ custom_message|safe }}
+{% endif %}
+
 Start browsing team videos at {{url_base}}{% url teams:detail slug=team.slug %} 
 or look for tasks at {{url_base}}{% url teams:team_tasks slug=team.slug %} you can take on to help out.
 

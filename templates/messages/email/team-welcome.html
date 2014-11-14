@@ -9,7 +9,7 @@ This gets sent to the rest of the team, notifying about the new member
 Hi {{ user }},<br/>
 
 <p>Congratulations! You are now a member of the {{ team.name }} team.</p>
-
+{% if custom_message %}<p>{{ custom_message }}</p>{% endif %}
 <p>Start browsing <a href="{{url_base}}{% url teams:detail slug=team.slug %}">team videos</a> 
 or look for <a href="{{url_base}}{% url teams:team_tasks slug=team.slug %}">tasks</a> you can take on to help out.</p>
 

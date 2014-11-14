@@ -127,6 +127,26 @@ class Build(Command):
     def run_inner(self, args, options):
         subprocess.call(["docker", "build", "--no-cache", "-t", "amara-app", "."])
 
+class Bump(Command):
+    """Build the app container."""
+
+    def run_inner(self, args, options):
+        self.bump_repo('amara-enterprise')
+        os.chdir(unisubs_root())
+        subprocess.call(['git', 'commit', '-m', 'Bumping version'])
+
+    def bump_repo(self, repo_name):
+        os.chdir(os.path.join(unisubs_root(), repo_name))
+        p = subprocess.Popen(['git', 'rev-parse', 'master'],
+                             stdout=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        commit_id = stdout.strip()
+        print 'bumping {0} commit to {1}'.format(repo_name, commit_id)
+        commit_path = os.path.join(unisubs_root(), 'optional', repo_name)
+        open(commit_path, 'w').write(commit_id + "\n")
+        os.chdir(unisubs_root())
+        subprocess.call(['git', 'add', commit_path])
+
 class Manage(Command):
     """Run manage.py inside the app container."""
 

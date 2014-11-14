@@ -143,7 +143,7 @@ class TeamsApiV2Class(object):
 
         langs = []
         writeable_languages = team.get_writable_langs()
-        for code, name in [l for l in translation.ALL_LANGUAGE_CHOICES if l[0] in writeable_languages]:
+        for code, name in [l for l in translation.SUPPORTED_LANGUAGE_CHOICES if l[0] in writeable_languages]:
             lang = {
                 'selected': True if code in current_languages else False,
                 'code': code,

@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+
 from django.core import mail
 from django.core import management
+from django.contrib.sites.models import Site
 
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages.teams_dir_page import TeamsDirPage
 from webdriver_testing.pages.site_pages.teams.tasks_tab import TasksTab
 from webdriver_testing.pages.site_pages.teams.videos_tab import VideosTab
-from webdriver_testing.data_factories import TeamMemberFactory
-from webdriver_testing.data_factories import TeamVideoFactory
-from webdriver_testing.data_factories import TeamLangPrefFactory
-from webdriver_testing.data_factories import UserLangFactory
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import VideoFactory
-from webdriver_testing.data_factories import WorkflowFactory
+from webdriver_testing.data_factories import *
 from webdriver_testing.pages.editor_pages import subtitle_editor
 from webdriver_testing import data_helpers
 from webdriver_testing.pages.site_pages import video_page
@@ -897,6 +893,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         email_to = mail.outbox[0].to     
         msg = str(mail.outbox[0].message())
         self.assertIn(note_text, msg)
+        self.assertIn(Site.objects.get_current().domain, msg)
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
         self.assertIn(self.contributor.email, email_to)

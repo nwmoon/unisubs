@@ -9,12 +9,8 @@ from webdriver_testing.pages.site_pages.teams import messages_tab
 from webdriver_testing.pages.site_pages.teams import members_tab
 from webdriver_testing.pages.site_pages import user_messages_page
 from webdriver_testing.pages.site_pages import new_message_page
-from webdriver_testing.data_factories import TeamMemberFactory
-from webdriver_testing.data_factories import TeamVideoFactory
+from webdriver_testing.data_factories import *
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import TeamProjectFactory
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import UserLangFactory
 
 class TestCaseMessageUsers(WebdriverTestCase):
     """Team admin can send bulk messages to members.  """
@@ -212,7 +208,8 @@ class TestCaseTeamMessages(WebdriverTestCase):
         'APPLICATION': ('Thank you for applying to the team, we will review ' 
                         'your qualifications and get back to you.'),
         'NEW_MANAGER': ('Congrats, you have been promoted to Manager.'),
-        'NEW_ADMIN': ('Congrats, you have been promoted to Admin status.')
+        'NEW_ADMIN': ('Congrats, you have been promoted to Admin status.'),
+        'NEW_MEMBER': ('We have approved your application.  Welcome!')
         }
 
     @classmethod
@@ -276,7 +273,15 @@ class TestCaseTeamMessages(WebdriverTestCase):
         self.assertIn('team has added new videos, and they need your help:', 
                       msg)
 
- 
+
+    def test_message_new_user(self):
+        """message sent when user joins the team."""
+        member = UserFactory()
+        langs = ['en', 'cs', 'ru', 'ar']
+        for lc in langs:
+            UserLangFactory(user = member,
+                            language = lc)
+        self.members_ 
         
     def test_messages_edit(self):
         """Change the default messages via the UI and verify they are stored.

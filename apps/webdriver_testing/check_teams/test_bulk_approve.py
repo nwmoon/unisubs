@@ -4,13 +4,9 @@ from django.core import management
 
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages.teams.tasks_tab import TasksTab
-from webdriver_testing.data_factories import TeamMemberFactory
-from webdriver_testing.data_factories import TeamVideoFactory
+from utils.factories import *
 from webdriver_testing.data_factories import TeamLangPrefFactory
 from webdriver_testing.data_factories import UserLangFactory
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import VideoFactory
-from webdriver_testing.data_factories import WorkflowFactory
 from webdriver_testing import data_helpers
 
 class TestCaseBulkApprove(WebdriverTestCase):    
@@ -22,16 +18,17 @@ class TestCaseBulkApprove(WebdriverTestCase):
         cls.data_utils = data_helpers.DataHelpers()
         cls.tasks_tab = TasksTab(cls)
         #Create a partner user to own the team.
-        cls.owner = UserFactory.create(is_partner=True, 
-                                       email='owner@example.com')
-
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.contributor = UserFactory() 
         #CREATE AN OPEN TEAM WITH WORKFLOWS and AUTOTASKS
-        cls.team = TeamMemberFactory.create(
-            team__workflow_enabled = True,
-            user = cls.owner,
-            ).team
+        cls.team = TeamFactory(member = cls.contributor,
+                               manager = cls.manager,
+                               admin = cls.admin,
+                               workflow_enabled = True,
+            )
 
-        cls.workflow = WorkflowFactory.create(
+        cls.workflow = WorkflowFactory(
             team = cls.team,
             autocreate_subtitle = True,
             autocreate_translate = True,
@@ -43,14 +40,6 @@ class TestCaseBulkApprove(WebdriverTestCase):
                 team = cls.team,
                 language_code = language,
                 preferred = True)
-        #Create a member of the team
-        cls.contributor = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                ).user
-        cls.manager = TeamMemberFactory(role="ROLE_MANAGER",
-                team = cls.team,
-                ).user
-
 
     def setUp(self):
         self.tasks_tab.open_page('teams/%s/approvals/' %self.team.slug)
@@ -72,12 +61,12 @@ class TestCaseBulkApprove(WebdriverTestCase):
 
     def test_bulk_approve(self):
         """bulk accept approval tasks """
-        self.tasks_tab.log_in(self.owner.username, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('teams/%s/approvals/' %self.team.slug)
         lang_list = ('en', 'fr', 'de', 'it', 'hr', 'ro', 'ru', 'sv', 'es', 'pt')
-        for x in range(100):
+        for x in range(20):
             video = self.data_utils.create_video()
-            tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+            tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
             for lc in lang_list:
                 defaults = {
@@ -85,7 +74,7 @@ class TestCaseBulkApprove(WebdriverTestCase):
                             'language_code': lc,
                             'complete': True, 
                             'visibility': 'private',
-                            'committer': self.owner
+                            'committer': self.admin,
                            }
 
                 self.data_utils.add_subs(**defaults)

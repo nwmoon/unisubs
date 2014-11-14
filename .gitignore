@@ -83,7 +83,6 @@ unisubsdevemails/
 testacular-test-results.xml
 .idea/
 amara-fabric/
-babelsubs/
 tmp.sql
 node_modules/
 /buildout
@@ -92,7 +91,9 @@ frontend-unit-tests-results.xml
 /docker-dev-environment/cidfiles
 .deploy_keys
 dev_settings_local.py
-babelsubs
-babelsubs-git
+/babelsubs
+/babelsubs-git
+/unilangs
+/unilangs-git
 /amara-enterprise
 /amara-vimeo

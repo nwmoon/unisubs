@@ -16,7 +16,7 @@
   {% else %}
     <span class="time-span"><span class="badgy no-sync">{% trans 'Not Synced' %}</span></span>
   {% endif %}
-  <span {% if text_changed or time_changed %}class="time_change"{% endif %}>
+  <div {% if text_changed or time_changed %}class="time_change"{% endif %}>
     {{ subtitle.text|display_subtitle|safe }}
-  </span>
+  </div>
 {%  endif %}

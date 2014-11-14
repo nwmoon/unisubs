@@ -474,7 +474,11 @@ class EditorPage(UnisubsPage):
             if el.text == action:
                 el.click()
                 self.wait_for_element_not_present(self._SESSION_BUTTONS)
+                time.sleep(2)
                 return
+            else:
+                self.logger.info("%s button not found" % action)
+
 
     def sendback_collab(self):
         self.click_by_css(self._COLLAB_SENDBACK)

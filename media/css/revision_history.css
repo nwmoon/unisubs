@@ -75,6 +75,9 @@ a.new_edit {
 .time_change, div.changed {
     color: #e45129
 }
+div.time_change {
+    padding-left: 150px;
+}
 .diff_title {
     font-weight: normal
 }

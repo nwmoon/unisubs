@@ -26,6 +26,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy
 
+from localeurl.utils import universal_url
 from messages.models import Message
 from subtitles.signals import subtitles_published
 from teams.models import Task
@@ -128,13 +129,17 @@ class TaskTeamEditorNotes(TeamEditorNotes):
         subject = fmt(
             _(u'%(user)s added a note while editing %(title)s'),
             user=unicode(note.user), title=self.video.title_display())
-        tasks_url = "{0}&assignee=anyone&language_code={1}".format(
-            self.team_video.get_tasks_page_url(),
-            self.language_code)
+
+        tasks_url = universal_url('teams:team_tasks', kwargs={
+            'slug': self.team.slug,
+        })
+        filter_query = '?team_video={0}&assignee=anyone&language_code={1}'
+        filter_query = filter_query.format(self.team_video.pk,
+                                           self.language_code)
         data = {
             'note_user': unicode(note.user),
             'body': note.body,
-            'tasks_url': tasks_url,
+            'tasks_url': tasks_url + filter_query,
             'video': self.video.title_display(),
             'language': translation.get_language_label(self.language_code),
         }

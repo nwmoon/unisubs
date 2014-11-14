@@ -43,6 +43,10 @@
                     <label for="id_messages_admin">{% trans 'When a member is given the Admin role' %}</label>
                     {{ form.messages_admin.errors }}
                     {{ form.messages_admin }}
+
+                    <label for="id_messages_joins">{% trans 'When a member joins the team' %}</label>
+                    {{ form.messages_joins.errors }}
+                    {{ form.messages_joins }}
                 </fieldset>
                 <fieldset>
                     <legend>{% trans 'Guidelines' %}</legend>
