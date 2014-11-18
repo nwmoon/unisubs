@@ -27,7 +27,6 @@ class VideoType(object):
 
     CAN_IMPORT_SUBTITLES = False
 
-    requires_url_exists = True
     def __init__(self, url):
         self.url = url
 

@@ -69,20 +69,6 @@ class TestVideoForm(TestCase):
     def test_dailymotion_urls(self):
         self._test_urls(self.daily_motion_urls)
 
-    @test_utils.patch_for_test('utils.http.url_exists')
-    def test_file_not_found_urls(self, mock_url_exists):
-        mock_url_exists.return_value = False
-        urls_to_test = [
-            self.youtube_urls[0],
-            self.vimeo_urls[0],
-            self.html5_urls[0],
-            self.daily_motion_urls[0],
-        ]
-
-        for url in urls_to_test:
-            form = VideoForm(data={"video_url":url})
-            self.assertFalse(form.is_valid())
-
 class AddFromFeedFormTestCase(TestCase):
     @test_utils.patch_for_test('videos.forms.FeedParser')
     def setUp(self, MockFeedParserClass):

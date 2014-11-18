@@ -8,7 +8,6 @@ from django.utils.translation import ugettext_lazy as _
 from utils import DEFAULT_PROTOCOL
 from utils.http import url_exists
 
-
 class MaxFileSizeValidator(object):
     def __init__(self, max_size, message=_(u'Please keep file size under %(required_size)s. Current file size %(current_size)s')):
         self.max_size = max_size

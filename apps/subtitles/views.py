@@ -342,7 +342,7 @@ def download(request, video_id, language_code, filename, format,
 
     public_only = workflow.user_can_view_private_subtitles(request.user,
                                                            language_code)
-    version = language.version(public_only=public_only,
+    version = language.version(public_only=not public_only,
                                version_number=version_number)
 
     if not version:

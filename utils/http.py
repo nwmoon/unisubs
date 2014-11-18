@@ -17,7 +17,6 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 import requests
 
-
 def url_exists(url):
     """Check that a url (when following redirection) exists.
 
