@@ -168,7 +168,8 @@ class TeamsDirPage(UnisubsPage):
 
     def leave_team_failed(self):
         if self.is_text_present(self._ERROR_MESSAGE, 
-                'You are the last member of this team.'):
+                'You are the last owner of this team.'):
+
             return True
 
     def _hover_team(self, team):

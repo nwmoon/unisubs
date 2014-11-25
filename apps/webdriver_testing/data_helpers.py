@@ -81,7 +81,10 @@ class DataHelpers(object):
         subs = load_from_file(s, language=defaults['language_code'])
         sub_items = subs.to_internal()
         defaults['subtitles'] = sub_items
-        v = pipeline.add_subtitles(**defaults)
+        try:
+            v = pipeline.add_subtitles(**defaults)
+        except: 
+            pass
         return v
 
     def create_video_with_subs(self, user, **kwargs ):

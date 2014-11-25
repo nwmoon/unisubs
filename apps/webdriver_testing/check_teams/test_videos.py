@@ -16,9 +16,6 @@ from webdriver_testing import data_helpers
 from testhelpers.views import _create_videos
 from django.core import management
 
-
-
-
 class TestCaseSearch(WebdriverTestCase):
     """TestSuite for searching team videos
     """
@@ -492,8 +489,6 @@ class TestCaseVideosDisplay(WebdriverTestCase):
         cls.videos_tab.open_videos_tab(cls.team.slug)
         cls.videos_tab.log_in(cls.admin.username, 'password')
 
-    def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
 
     def turn_on_automatic_tasks(self):
         self.logger.info('Turning on automatic task creation')

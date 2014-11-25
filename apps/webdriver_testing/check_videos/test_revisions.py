@@ -4,13 +4,13 @@ import string
 from django.core import mail
 from django.contrib.sites.models import Site
 
+from utils.factories import *
 from localeurl.templatetags.localeurl_tags import rmlocale
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import diffing_page
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing import data_helpers
-from utils.factories import *
 
 
 class TestCaseRevisionNotifications(WebdriverTestCase):
@@ -50,14 +50,13 @@ class TestCaseRevisionNotifications(WebdriverTestCase):
         self.video_pg.upload_subtitles('English', rev2)
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
-        #self.logger.info("MESSAGE: %s" % msg)
         v2 = sl.get_tip().id
         diffing_page = ('videos/diffing/{0}/{1}/'.format(v2, v1))
         self.video_pg.open_page(diffing_page)
         self.assertIn(diffing_page, msg)
         self.assertIn(self.user.email, email_to)
 
-    def test_notify__language_follower(self):
+    def test_notify_language_follower(self):
         """Language follower gets an email when new revision added.
 
         """
@@ -82,7 +81,6 @@ class TestCaseRevisionNotifications(WebdriverTestCase):
 
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
-        self.logger.info("MESSAGE: %s" % msg)
         self.assertIn(follower.email, email_to)
 
         urlstart = 'http://' + Site.objects.get_current().domain
@@ -103,9 +101,11 @@ class TestCaseRevisionNotifications(WebdriverTestCase):
                 'user_url': urlstart + rmlocale(self.user.get_absolute_url()),
                 'user_name': self.user.username,
             })
-        self.assertIn(correct_message, msg)
 
-    def test_notify__video_follower_revisions(self):
+        self.assertIn(follower.email, email_to)
+        self.assertIn(urlstart + rmlocale(video.get_absolute_url()), msg)
+
+    def test_notify_video_follower_revisions(self):
         """Video follower gets an email when new revision added.
 
         """
@@ -131,10 +131,9 @@ class TestCaseRevisionNotifications(WebdriverTestCase):
 
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
-        self.logger.info("MESSAGE: %s" % msg)
         self.assertIn(follower.email, email_to)
 
-    def test_notify__video_follower_initial(self):
+    def test_notify_video_follower_initial(self):
         """Video follower gets an email when first revision of subtitles added.
 
         """
@@ -157,7 +156,6 @@ class TestCaseRevisionNotifications(WebdriverTestCase):
         self.assertEqual(1, len(mail.outbox))
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
-        self.logger.info("MESSAGE: %s" % msg)
         self.assertIn(follower.email, email_to)
 
 
@@ -221,7 +219,7 @@ class TestCaseRevisionEdits(WebdriverTestCase):
         v1, _ = self._create_complete_rev(video, self.user1)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-        self.video_lang_pg.log_in(self.user1, 'password')
+        self.video_lang_pg.log_in(self.user1.username, 'password')
 
         self.video_lang_pg.open_page(v1.get_absolute_url())
         self.assertTrue(self.video_lang_pg.rollback())
@@ -240,7 +238,7 @@ class TestCaseRevisionEdits(WebdriverTestCase):
         v1, v2 = self._create_complete_rev(video, self.user1)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-        self.video_lang_pg.log_in(self.user1, 'password')
+        self.video_lang_pg.log_in(self.user1.username, 'password')
 
         self.video_lang_pg.open_page(v1.get_absolute_url())
         self.assertTrue(self.video_lang_pg.rollback())
@@ -260,7 +258,7 @@ class TestCaseRevisionEdits(WebdriverTestCase):
         v1, _ = self._create_two_incomplete(video, self.user1)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-        self.video_lang_pg.log_in(self.user1, 'password')
+        self.video_lang_pg.log_in(self.user1.username, 'password')
 
         self.video_lang_pg.open_page(v1.get_absolute_url())
         self.assertTrue(self.video_lang_pg.rollback())
@@ -280,7 +278,7 @@ class TestCaseRevisionEdits(WebdriverTestCase):
         v1, _ = self._create_two_incomplete(video, self.user1)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-        self.video_lang_pg.log_in(self.user2, 'password')
+        self.video_lang_pg.log_in(self.user2.username, 'password')
 
         self.video_lang_pg.open_page(v1.get_absolute_url())
         self.assertTrue(self.video_lang_pg.rollback())
@@ -301,7 +299,7 @@ class TestCaseRevisionEdits(WebdriverTestCase):
         v1, v2 = self._create_two_incomplete(video, self.user1)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-        self.video_lang_pg.log_in(self.user2, 'password')
+        self.video_lang_pg.log_in(self.user2.username, 'password')
 
         self.video_lang_pg.open_page(v2.get_absolute_url())
         self.assertEqual('active', self.video_lang_pg.edit_subtitles_active())
@@ -314,7 +312,7 @@ class TestCaseRevisionEdits(WebdriverTestCase):
         _, v2 = self._create_complete_rev(video, self.user1)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-        self.video_lang_pg.log_in(self.user2, 'password')
+        self.video_lang_pg.log_in(self.user2.username, 'password')
 
         self.video_lang_pg.open_page(v2.get_absolute_url())
         self.assertEqual('active', self.video_lang_pg.edit_subtitles_active())
@@ -326,7 +324,7 @@ class TestCaseRevisionEdits(WebdriverTestCase):
         v1, v2 = self._create_complete_rev(video, self.user1)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-        self.video_lang_pg.log_in(self.user1, 'password')
+        self.video_lang_pg.log_in(self.user1.username, 'password')
 
         self.video_lang_pg.open_page(v2.get_absolute_url())
         self.assertEqual('active', self.video_lang_pg.edit_subtitles_active())

@@ -4,16 +4,10 @@ import csv
 from collections import defaultdict
 import time
 
+from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
-from webdriver_testing.data_factories import TeamMemberFactory
-from webdriver_testing.data_factories import TeamVideoFactory
-from webdriver_testing.data_factories import WorkflowFactory
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import VideoUrlFactory
 from webdriver_testing.data_factories import BillingFactory
 from webdriver_testing.data_factories import TeamLangPrefFactory
-
-
 
 from webdriver_testing import data_helpers
 from webdriver_testing.pages.site_pages import billing_page
@@ -27,8 +21,15 @@ class TestCaseBilling(WebdriverTestCase):
         super(TestCaseBilling, cls).setUpClass()
         cls.data_utils = data_helpers.DataHelpers()
         cls.billing_pg = billing_page.BillingPage(cls)
-        cls.terri = UserFactory.create(is_staff=True, is_superuser=True)
-        cls.user = UserFactory.create()
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member)
+
+        cls.terri = UserFactory(is_staff=True, is_superuser=True)
+        TeamMemberFactory(team=cls.team, user=cls.terri)
         cls.team = TeamMemberFactory.create(user = cls.user).team
         cls.video, cls.tv = cls._create_tv_with_original_subs(cls.user, cls.team)
         cls._upload_sv_translation(cls.video, cls.user, complete=True)
@@ -108,8 +109,8 @@ class TestCaseBilling(WebdriverTestCase):
 
     def test_incomplete(self):
         """Incomplete languages have no billing record. """
-        video, tv = self._create_tv_with_original_subs(self.user, self.team)
-        inc_video, inc_tv = self._create_tv_with_original_subs(self.user, 
+        video, tv = self._create_tv_with_original_subs(self.member, self.team)
+        inc_video, inc_tv = self._create_tv_with_original_subs(self.member, 
                                                                self.team, 
                                                                complete=False)
 
@@ -162,7 +163,7 @@ class TestCaseBilling(WebdriverTestCase):
 
         """
         testuser = TeamMemberFactory.create().user
-        video, tv = self._create_tv_with_original_subs(self.user, self.team)
+        video, tv = self._create_tv_with_original_subs(self.member, self.team)
         self._upload_sv_translation(video, testuser, complete=True)
         report = BillingFactory(start_date=(datetime.date.today() - 
                                             datetime.timedelta(1)),
@@ -173,7 +174,7 @@ class TestCaseBilling(WebdriverTestCase):
         report.process()
         bill = 'user-data/%s' % report.csv_file
         bill_dict = self._bill_dict(bill)
-        self.assertEqual(self.user.username, bill_dict[video.video_id]['en']['User'])
+        self.assertEqual(self.member.username, bill_dict[video.video_id]['en']['User'])
         self.assertEqual(testuser.username, bill_dict[video.video_id]['sv']['User'])
 
 
@@ -202,8 +203,8 @@ class TestCaseBilling(WebdriverTestCase):
 
     def test_delete_video(self):
 
-        video1, tv1 = self._create_tv_with_original_subs(self.user, self.team)
-        video, tv = self._create_tv_with_original_subs(self.user, self.team)
+        video1, tv1 = self._create_tv_with_original_subs(self.member, self.team)
+        video, tv = self._create_tv_with_original_subs(self.member, self.team)
         video.delete()
         report = BillingFactory(start_date=(datetime.date.today() - 
                                             datetime.timedelta(1)),
@@ -217,7 +218,7 @@ class TestCaseBilling(WebdriverTestCase):
         self.assertIn('deleted', bill_dict.keys())
 
     def test_crowd_billing_fields(self):
-        video, tv = self._create_tv_with_original_subs(self.user, self.team)
+        video, tv = self._create_tv_with_original_subs(self.member, self.team)
         report = BillingFactory(start_date=(datetime.date.today() - 
                                             datetime.timedelta(1)),
                                 end_date=datetime.datetime.now(),
@@ -235,7 +236,7 @@ class TestCaseBilling(WebdriverTestCase):
 
         """
         for x in range(3):
-            video, tv = self._create_tv_with_original_subs(self.user, self.team)
+            video, tv = self._create_tv_with_original_subs(self.member, self.team)
         self.billing_pg.open_billing_page()
         self.billing_pg.log_in(self.terri.username, 'password')
         self.billing_pg.open_billing_page()
@@ -608,6 +609,3 @@ class TestCaseDemandReports(WebdriverTestCase):
                                                   'On-demand translators')
         report_dl = self.billing_pg.check_latest_report_url()
         self.assertEqual(18, len(report_dl))
-
-
-

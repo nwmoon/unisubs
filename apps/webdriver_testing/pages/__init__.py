@@ -496,6 +496,7 @@ class Page(object):
         """Open a page by the full url.
 
         """
+        self.browser.execute_script("window.stop()")
         self.browser.get(self.get_absolute_url(url))
         if alert_check:
             self.handle_js_alert('accept')
