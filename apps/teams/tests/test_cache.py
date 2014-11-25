@@ -21,14 +21,32 @@ from __future__ import absolute_import
 from django.test import TestCase
 
 from caching.tests.utils import assert_invalidates_model_cache
+from teams.models import MembershipNarrowing
 from utils.factories import *
 
 class TeamCacheInvalidationTest(TestCase):
+    def setUp(self):
+        self.team = TeamFactory()
+
     def test_change_team(self):
-        pass
+        with assert_invalidates_model_cache(self.team):
+            self.team.save()
 
     def test_change_team_member(self):
-        pass
+        with assert_invalidates_model_cache(self.team):
+            member = TeamMemberFactory(team=self.team)
+        with assert_invalidates_model_cache(self.team):
+            member.save()
+        with assert_invalidates_model_cache(self.team):
+            member.delete()
 
     def test_change_membership_narrowing(self):
-        pass
+        admin = TeamMemberFactory(team=self.team)
+        member = TeamMemberFactory(team=self.team)
+        with assert_invalidates_model_cache(self.team):
+            narrowing = MembershipNarrowing.objects.create(
+                member=member, language='en', added_by=admin)
+        with assert_invalidates_model_cache(self.team):
+            narrowing.save()
+        with assert_invalidates_model_cache(self.team):
+            narrowing.delete()

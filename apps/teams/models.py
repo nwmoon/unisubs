@@ -297,6 +297,7 @@ class Team(models.Model):
     def save(self, *args, **kwargs):
         creating = self.pk is None
         super(Team, self).save(*args, **kwargs)
+        self.cache.invalidate()
         if creating:
             # create a default project
             self.default_project
@@ -1181,6 +1182,13 @@ class TeamMember(models.Model):
     def __unicode__(self):
         return u'%s' % self.user
 
+    def save(self, *args, **kwargs):
+        super(TeamMember, self).save(*args, **kwargs)
+        Team.cache.invalidate_by_pk(self.team_id)
+
+    def delete(self):
+        super(TeamMember, self).delete()
+        Team.cache.invalidate_by_pk(self.team_id)
 
     def project_narrowings(self):
         """Return any project narrowings applied to this member."""
@@ -1294,7 +1302,12 @@ class MembershipNarrowing(models.Model):
 
             assert not duplicate_exists, "Duplicate project narrowing detected!"
 
-        return super(MembershipNarrowing, self).save(*args, **kwargs)
+        super(MembershipNarrowing, self).save(*args, **kwargs)
+        Team.cache.invalidate_by_pk(self.member.team_id)
+
+    def delete(self):
+        super(MembershipNarrowing, self).delete()
+        Team.cache.invalidate_by_pk(self.member.team_id)
 
 class TeamSubtitleNote(SubtitleNoteBase):
     team = models.ForeignKey(Team, related_name='+')
