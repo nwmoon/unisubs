@@ -172,6 +172,7 @@ urlpatterns = patterns('',
 urlpatterns += optionalapps.get_urlpatterns()
 
 if settings.DEBUG:
+    import debug_toolbar
     urlpatterns += patterns('',
         (r'^site_media/(?P<path>.*)$', 'django.views.static.serve',
          {'document_root': settings.STATIC_ROOT, 'show_indexes': True}),
@@ -179,6 +180,7 @@ if settings.DEBUG:
          {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
         (r'^raw_template/(?P<template>.*)',
             'django.views.generic.simple.direct_to_template'),
+        url(r'^__debug__/', include(debug_toolbar.urls)),
     )
 
 def handler500(request, template_name='500.html'):

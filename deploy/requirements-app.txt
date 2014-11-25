@@ -46,7 +46,7 @@ raven==1.8.2
 transifex-client==0.8
 django-extensions==0.4.1
 # do we really need this in prod?
-django-debug-toolbar==0.9.4
+django-debug-toolbar==1.2
 # This can be commented out if you're using sqlite
 MySQL_python>=1.2.2
 Sphinx==1.1.3

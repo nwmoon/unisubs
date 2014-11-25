@@ -58,7 +58,6 @@ from subtitles.permissions import (user_can_view_private_subtitles,
                                    user_can_edit_subtitles)
 from subtitles.forms import SubtitlesUploadForm
 from subtitles.pipeline import rollback_to
-from subtitles.workflows import get_workflow
 from teams.models import Task
 from videos import permissions
 from videos.decorators import (get_video_revision, get_video_from_code,
@@ -351,7 +350,7 @@ def video(request, video, video_url=None, title=None):
     if not video_url and ((video.title_for_url() and not video.title_for_url() == title) or (not video.title and title)):
         return redirect(video, permanent=True)
 
-    workflow = get_workflow(video)
+    workflow = video.get_workflow()
 
     tab = calc_tab(request, workflow)
     template_name = 'videos/video-%s.html' % tab

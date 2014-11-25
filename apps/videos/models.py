@@ -28,6 +28,7 @@ import urlparse
 
 from django.utils.safestring import mark_safe
 from django.core.cache import cache
+from django.dispatch import receiver
 from django.db import models
 from django.db.models.signals import post_save, pre_delete
 from django.db.models import Q
@@ -542,6 +543,12 @@ class Video(models.Model):
         """Return the video URLs for this video."""
         return self.videourl_set.all()
 
+    def url_count(self):
+        return self.cache.get_or_calc('url-count', self._calc_url_count)
+
+    def _calc_url_count(self):
+        return self.videourl_set.count()
+
     @classmethod
     def get_or_create_for_url(cls, video_url=None, vt=None, user=None, timestamp=None, fetch_subs_async=True):
         assert video_url or vt, 'should be video URL or VideoType'
@@ -999,16 +1006,21 @@ class Video(models.Model):
                 language_code=self.primary_audio_language_code)
 
     def comment_count(self):
-        if hasattr(self, '_comment_count'):
-            return self._comment_count
-        self._comment_count = Comment.get_for_object(self).count()
-        return self._comment_count
+        return self.cache.get_or_calc('comment-count',
+                                      self._calc_comment_count)
+
+    def _calc_comment_count(self):
+        return Comment.get_for_object(self).count()
 
     class Meta(object):
         permissions = (
             ("can_moderate_version"   , "Can moderate version" ,),
         )
 
+@receiver(post_save, sender=Comment)
+def on_comment_save(sender, instance, **kwargs):
+    if isinstance(instance.content_object, Video):
+        instance.content_object.cache.invalidate()
 
 def create_video_id(sender, instance, **kwargs):
     """Generate (and set) a random video_id for this video before saving.
@@ -1029,7 +1041,6 @@ def video_delete_handler(sender, instance, **kwargs):
     from haystack import site
     search_index = site.get_index(Video)
     search_index.backend.remove(instance)
-
 
 models.signals.pre_save.connect(create_video_id, sender=Video)
 models.signals.pre_delete.connect(video_delete_handler, sender=Video)

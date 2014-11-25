@@ -219,13 +219,10 @@ class CustomUser(BaseUser):
         """
         Just to control this query
         """
-        languages = cache.get('user_languages_%s' % self.pk)
+        return self.cache.get_or_calc("languages", self.calc_languages)
 
-        if languages is None:
-            languages = self.userlanguage_set.all()
-            cache.set('user_languages_%s' % self.pk, languages, 60*24*7)
-
-        return languages
+    def calc_languages(self):
+        return list(self.userlanguage_set.values_list('language', flat=True))
 
     def speaks_language(self, language_code):
         return language_code in [l.language for l in self.get_languages()]

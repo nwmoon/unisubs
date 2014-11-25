@@ -1045,6 +1045,9 @@ LIMIT 1;""", (self.id, self.id))
         return SubtitleLanguage.objects.having_nonempty_versions().filter(
                 video=self.video).exists()
 
+    def user_is_follower(self, user):
+        return self.followers.filter(id=user.id).exists()
+
     def notification_list(self, exclude=None):
         qs = self.followers.filter(notify_by_email=True, is_active=True)
 

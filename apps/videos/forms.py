@@ -337,7 +337,7 @@ class CreateSubtitlesFormBase(forms.Form):
 
     def setup_subtitle_language_code(self):
         if self.user.is_authenticated():
-            user_langs = [l.language for l in self.user.get_languages()]
+            user_langs = self.user.get_languages()
         else:
             user_langs = get_user_languages_from_request(self.request)
         if not user_langs:

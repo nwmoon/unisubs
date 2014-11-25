@@ -1427,7 +1427,7 @@ def _tasks_list(request, team, project, filters, user):
         if filters['language'] != 'all':
             tasks = tasks.filter(language=filters['language'])
     elif request.user.is_authenticated() and request.user.get_languages():
-        languages = [ul.language for ul in request.user.get_languages()] + ['']
+        languages = request.user.get_languages() + ['']
         tasks = tasks.filter(language__in=languages)
 
     if filters.get('q'):
@@ -1570,7 +1570,7 @@ def old_dashboard(request, team):
             for tv in team_videos:
                 videos.append(tv.teamvideo)
         else:
-            lang_list = [l.language for l in user_languages]
+            lang_list = user_languages
 
             for video in team_videos.all():
                 subtitled_languages = (video.newsubtitlelanguage_set

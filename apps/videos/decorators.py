@@ -33,6 +33,7 @@ def get_cached_video_from_code(cache_pattern):
                                                              cache_pattern)
             except Video.DoesNotExist:
                 raise Http404
+            request.use_cached_user()
             if not video.can_user_see(request.user):
                 raise PermissionDenied()
             return func(request, video, *args, **kwargs)
@@ -54,6 +55,5 @@ def get_video_revision(func):
         if not video.can_user_see(request.user):
             raise Http404
 
-        request.use_cached_user()
         return func(request, version, *args, **kwargs)
     return wraps(func)(wrapper)

@@ -122,7 +122,6 @@ TEMPLATE_LOADERS = (
 
 
 MIDDLEWARE_CLASSES = (
-    'middleware.ResponseTimeMiddleware',
     'middleware.StripGoogleAnalyticsCookieMiddleware',
     'utils.ajaxmiddleware.AjaxErrorMiddleware',
     'localeurl.middleware.LocaleURLMiddleware',
@@ -135,7 +134,6 @@ MIDDLEWARE_CLASSES = (
     'openid_consumer.middleware.OpenIDMiddleware',
     'middleware.P3PHeaderMiddleware',
     'middleware.UserUUIDMiddleware',
-    'middleware.SaveUserIp',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
@@ -632,32 +630,27 @@ from task_settings import *
 try:
     import debug_toolbar
 
-    EVERYONE_CAN_DEBUG = False
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+    MIDDLEWARE_CLASSES = (
+        ('debug_toolbar.middleware.DebugToolbarMiddleware',) +
+        MIDDLEWARE_CLASSES
+    )
+    DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
     DEBUG_TOOLBAR_PANELS = (
-        'debug_toolbar.panels.timer.TimerDebugPanel',
-        # 'apps.testhelpers.debug_toolbar_extra.ProfilingPanel',
-        # 'apps.testhelpers.debug_toolbar_extra.HaystackDebugPanel',
-        'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
-        'debug_toolbar.panels.template.TemplateDebugPanel',
-        'debug_toolbar.panels.sql.SQLDebugPanel',
+        'debug_toolbar.panels.timer.TimerPanel',
+        'debug_toolbar.panels.request.RequestPanel',
+        'debug_toolbar.panels.templates.TemplatesPanel',
+        'debug_toolbar.panels.sql.SQLPanel',
+        'caching.debug_toolbar_panels.CachePanel',
     )
 
     def custom_show_toolbar(request):
-        from django.conf import settings
-        can_debug = settings.EVERYONE_CAN_DEBUG or request.user.is_staff
-
-        if can_debug:
-            if '__debug__/m/' in request.path or 'debug_toolbar' in request.GET:
-                return True
-
-        return False
+        return 'debug_toolbar' in request.GET
 
     DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
-        'SHOW_TOOLBAR_CALLBACK': custom_show_toolbar,
+        'SHOW_TOOLBAR_CALLBACK': 'settings.custom_show_toolbar',
         'EXTRA_SIGNALS': [],
         'HIDE_DJANGO_SQL': False,
         'TAG': 'div',
