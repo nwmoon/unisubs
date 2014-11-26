@@ -463,9 +463,6 @@ class TestCaseTED(WebdriverTestCase):
             self.fail('speaker name not found in any tasks, %s' % user_tasks)
 
 
-    def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
-
     def test_activity_tab(self):
         self.activity_tab.log_in(self.admin.username, 'password')
         self.activity_tab.open_activity_tab(self.ted_team.slug)
