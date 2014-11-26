@@ -352,7 +352,9 @@ class CreateSubtitlesFormBase(forms.Form):
         field.choices = sorted(get_language_choices(), key=sort_key)
 
     def set_primary_audio_language(self):
-        video = self.get_video()
+        # Sometimes we are passed in a cached video, which can't be saved.
+        # Make sure we have one from the DB.
+        video = Video.objects.get(pk=self.get_video().pk)
         lang = self.cleaned_data['primary_audio_language_code']
         video.primary_audio_language_code = lang
         video.save()

@@ -276,6 +276,9 @@ FACEBOOK_SECRET_KEY = ''
 VIMEO_API_KEY = None
 VIMEO_API_SECRET = None
 
+# NOTE: all of these backends store the User.id value in the session data,
+# which we rely on in AmaraAuthenticationMiddleware.  Other backends should
+# use the same system.
 AUTHENTICATION_BACKENDS = (
    'auth.backends.CustomUserBackend',
    'thirdpartyaccounts.auth_backends.TwitterAuthBackend',

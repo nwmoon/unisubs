@@ -19,20 +19,27 @@
 import functools
 
 from django.contrib import auth
+from django.contrib.auth.models import AnonymousUser
 
 from auth.models import CustomUser as User
-
-SESSION_KEY = '_cached_user_id'
 
 class AmaraAuthenticationMiddleware(object):
     def use_cached_user(self, request):
         try:
-            user_id = request.session[SESSION_KEY]
+            user_id = request.session[auth.SESSION_KEY]
         except KeyError:
             request.user = auth.get_user(request)
-            request.session[SESSION_KEY] = request.user.id
+            request.session[auth.SESSION_KEY] = request.user.id
         else:
-            request.user = User.cache.get_instance(user_id)
+            request.user = self._get_cached_user(user_id)
+
+    def _get_cached_user(self, user_id):
+        if user_id is None:
+            return AnonymousUser()
+        try:
+            return User.cache.get_instance(user_id)
+        except User.DoesNotExist:
+            return AnonymousUser()
 
     def process_request(self, request):
         # FIXME: this should probably be the default behavior, but that would
