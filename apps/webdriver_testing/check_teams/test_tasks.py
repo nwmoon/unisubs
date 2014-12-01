@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+import unittest
 
 from django.core import mail
 from django.core import management
 from django.contrib.sites.models import Site
 
+from utils.factories import *
+from webdriver_testing.data_factories import TeamLangPrefFactory, UserLangFactory
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages.teams_dir_page import TeamsDirPage
 from webdriver_testing.pages.site_pages.teams.tasks_tab import TasksTab
 from webdriver_testing.pages.site_pages.teams.videos_tab import VideosTab
-from webdriver_testing.data_factories import *
 from webdriver_testing.pages.editor_pages import subtitle_editor
 from webdriver_testing import data_helpers
 from webdriver_testing.pages.site_pages import video_page
@@ -29,34 +31,27 @@ class TestCaseManualTasks(WebdriverTestCase):
         cls.tasks_tab = TasksTab(cls)
         cls.videos_tab = VideosTab(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
-        #Create a partner user to own the team.
-        cls.user = UserFactory.create(is_partner = True)
 
         #CREATE AN OPEN TEAM WITH WORKFLOWS and AUTOTASKS
-        cls.team = TeamMemberFactory.create(
-            team__workflow_enabled = True,
-            user = cls.user,
-            ).team
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                              )
         WorkflowFactory.create(
             team = cls.team,
             autocreate_subtitle = False,
             autocreate_translate = False,
             review_allowed = 10)
-        #Create a member of the team
-        cls.contributor = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-            team = cls.team,
-            user = UserFactory.create()
-            ).user
-
 
         #Create a test video and add it to the team
-        cls.test_video = cls.data_utils.create_video()
-
-        #cls.test_video = VideoFactory.create()
+        cls.test_video = VideoFactory()
         TeamVideoFactory.create(
             team=cls.team, 
-            video=cls.test_video,
-            added_by=cls.user)
+            video=cls.test_video)
         cls.videos_tab.open_videos_tab(cls.team.slug)
 
 
@@ -71,7 +66,7 @@ class TestCaseManualTasks(WebdriverTestCase):
         
         """
         #Configure workflow with autocreate tasks set to False 
-        self.videos_tab.log_in(self.user.username, 'password')
+        self.videos_tab.log_in(self.admin.username, 'password')
         self.videos_tab.open_videos_tab(self.team.slug)
 
         self.videos_tab.open_video_tasks(self.test_video.title)
@@ -97,15 +92,16 @@ class TestCaseAutoTranscriptionTasks(WebdriverTestCase):
         cls.modal = site_modals.SiteModals(cls)
         cls.video_pg = video_page.VideoPage(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
-        #Create a partner user to own the team.
-        cls.owner = UserFactory.create(is_partner=True)
 
         #CREATE AN OPEN TEAM WITH WORKFLOWS and AUTOTASKS
-        cls.team = TeamMemberFactory.create(
-            team__workflow_enabled = True,
-            user = cls.owner,
-            ).team
-
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                              )
         WorkflowFactory.create(
             team = cls.team,
             autocreate_subtitle = True,
@@ -116,21 +112,10 @@ class TestCaseAutoTranscriptionTasks(WebdriverTestCase):
                 team = cls.team,
                 language_code = language,
                 preferred = True)
-        #Create a member of the team
-        cls.contributor = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
-        cls.manager = TeamMemberFactory(role="ROLE_MANAGER",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
 
         user_langs = ['en', 'ru', 'pt-br']
         for lang in user_langs:
-            UserLangFactory(user=cls.contributor, language=lang)
-        cls.subs_file = os.path.join(os.path.dirname(os.path.abspath(__file__)
-                                     ), 'oneline.txt')
+            UserLangFactory(user=cls.member, language=lang)
         cls.tasks_tab.open_team_page(cls.team.slug)
 
     def tearDown(self):
@@ -141,8 +126,8 @@ class TestCaseAutoTranscriptionTasks(WebdriverTestCase):
     def test_transcription_perform(self):
         """Starting a Transcription task opens the subtitling dialog."""
         tv = self.data_utils.create_video()
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        TeamVideoFactory(team=self.team, added_by=self.admin, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Transcribe Subtitles', tv.title)
         self.modal.add_language('English', 'English')
@@ -154,8 +139,8 @@ class TestCaseAutoTranscriptionTasks(WebdriverTestCase):
 
         """
         tv = self.data_utils.create_video()
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        TeamVideoFactory(team=self.team, added_by=self.admin, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Transcribe Subtitles', tv.title)
 
@@ -173,8 +158,8 @@ class TestCaseAutoTranscriptionTasks(WebdriverTestCase):
     def test_transcription_resume(self):
         """Saved transcription task can be resumed. """
         tv = self.data_utils.create_video()
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        TeamVideoFactory(team=self.team, added_by=self.admin, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Transcribe Subtitles', tv.title)
         self.modal.add_language('English', 'English')
@@ -207,16 +192,18 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
         cls.video_pg = video_page.VideoPage(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
         #Create a partner user to own the team.
-        cls.owner = UserFactory.create(is_partner=True)
-
-        #CREATE AN OPEN TEAM WITH WORKFLOWS and AUTOTASKS
-        cls.team = TeamMemberFactory.create(
-            team__workflow_enabled = True,
-            user = cls.owner,
-            ).team
-
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True
+                              )
         WorkflowFactory.create(
             team = cls.team,
+            review_allowed = 00,
+            approve_allowed = 00,
             autocreate_subtitle = True,
             autocreate_translate = True)
         lang_list = ['en', 'ru', 'pt-br', 'fr', 'de', 'es']
@@ -226,23 +213,13 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
                 language_code = language,
                 preferred = True)
         #Create a member of the team
-        cls.contributor = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
-        cls.manager = TeamMemberFactory(role="ROLE_MANAGER",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
-
         user_langs = ['en', 'ru', 'pt-br']
         for lang in user_langs:
-            UserLangFactory(user=cls.contributor, language=lang)
-        cls.subs_file = os.path.join(os.path.dirname(os.path.abspath(__file__)
-                                     ), 'oneline.txt')
+            UserLangFactory(user=cls.member, language=lang)
         cls.tasks_tab.open_team_page(cls.team.slug)
 
     def tearDown(self):
+        self.browser.get_screenshot_as_file("%s.png" % self.id())
         if self.team.subtitle_policy > 10:
             self.team.subtitle_policy = 10
             self.team.save() 
@@ -261,16 +238,16 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
                                  'location': 'Portugal'}
                    }
 
-        self.data_utils.make_request(self.owner, 'put', 
+        self.data_utils.make_request(self.admin, 'put', 
                                      url_part, **new_data)
 
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
+        TeamVideoFactory(team=self.team, video=tv)
 
         #Update the solr index
         management.call_command('update_index', interactive=False)
 
         #Open team tasks page and search for metadata.
-        self.tasks_tab.log_in(self.contributor, 'password')
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.search('Ronaldo')
         self.assertTrue(self.tasks_tab.task_present('Transcribe Subtitles', tv.title))
@@ -283,16 +260,16 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
                                  'location': 'Portugal'}
                    }
 
-        self.data_utils.make_request(self.owner, 'put', 
+        self.data_utils.make_request(self.admin, 'put', 
                                      url_part, **new_data)
 
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
+        TeamVideoFactory(team=self.team, video=tv)
 
         #Update the solr index
         management.call_command('update_index', interactive=False)
 
         #Open team tasks page and search for metadata.
-        self.tasks_tab.log_in(self.contributor, 'password')
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
 
         self.tasks_tab.search('Portugal')
@@ -306,8 +283,8 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
         self.team.subtitle_policy = 30
         self.team.save()
         tv = self.data_utils.create_video()
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        TeamVideoFactory(team=self.team, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertEqual(self.tasks_tab.disabled_task('Transcribe Subtitles', 
                          tv.title), 
@@ -318,38 +295,32 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
         """Translation tasks are created for preferred languages, on complete.
 
         """
-        tv = self.data_utils.create_video()
-        t = TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        data = {
-                      'language_code': 'en',
-                      'video': tv.pk,
-                      'primary_audio_language_code': 'en',
-                      'draft': open('apps/webdriver_testing/subtitle_data/'
-                              'less_lines.ssa'),
-                      'complete': False
-               }
-
-        self.data_utils.upload_subs(self.contributor, **data)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        video = VideoFactory(primary_audio_language_code='en')
+        TeamVideoFactory(team=self.team, video=video)
+        data = { 'visibility': 'private',
+                 'video': video,
+                 'complete': False,
+                 'committer': self.member }
+        self.data_utils.add_subs(**data)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
 
-        self.tasks_tab.perform_task('Transcribe English Subtitles', tv.title)
+        self.tasks_tab.perform_task('Transcribe English Subtitles', video.title)
         self.editor_pg.endorse_subs()
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
         self.assertTrue(self.tasks_tab.task_present(
-                        'Translate Subtitles into Russian', tv.title))
+                        'Translate Subtitles into Russian', video.title))
 
 
     def test_translation_perform(self):
         """Starting a translation task opens the translation dialog."""
-        data = { 'video__primary_audio_language_code': 'en' }
-        tv = self.data_utils.create_video(**data)
-        self.data_utils.add_subs(video=tv)
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        tv = VideoFactory(primary_audio_language_code='en')
+        self.data_utils.add_subs(video=tv, complete=True)
+        TeamVideoFactory(team=self.team, added_by=self.admin, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone&lang=ru'
                                  % self.team.slug)
         self.tasks_tab.perform_task('Translate Subtitles into ' 
@@ -360,12 +331,10 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
         """Incomplete translation task exists, is assigned to the same user.
 
         """
-        self.tasks_tab.log_out()
-        data = { 'video__primary_audio_language_code': 'en' }
-        tv = self.data_utils.create_video(**data)
-        self.data_utils.add_subs(video=tv)
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        tv = VideoFactory(primary_audio_language_code='en')
+        self.data_utils.add_subs(video=tv, complete=True)
+        TeamVideoFactory(team=self.team, added_by=self.admin, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone&lang=ru' 
                                  % self.team.slug)
         self.tasks_tab.perform_task('Translate Subtitles into ' 
@@ -381,10 +350,10 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
         """
         self.team.translate_policy = 30
         self.team.save()
-        tv = self.data_utils.create_video()
-        self.data_utils.add_subs(video=tv)
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        tv = VideoFactory(primary_audio_language_code='en')
+        self.data_utils.add_subs(video=tv, complete=True)
+        TeamVideoFactory(team=self.team, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertEqual(self.tasks_tab.disabled_task('Translate Subtitles '
                          'into Russian', tv.title), 
@@ -392,9 +361,9 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
 
     def test_available_tasks_filter(self):
         """Available tasks are for any project"""
-        self.tasks_tab.log_in(self.contributor, 'password')
-        tv = self.data_utils.create_video()
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
+        tv = VideoFactory()
+        TeamVideoFactory(team=self.team, added_by=self.admin, video=tv)
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.available_tasks()
         self.assertIn("?project=any", self.tasks_tab.current_url())
@@ -403,15 +372,12 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
 
     def test_your_tasks_filter(self):
         """Your tasks shows all assigned to you. """
-        video = self.data_utils.create_video()
-        video.primary_audio_language_code = 'pt-br'
-        video.save()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, video=video)
+        video = VideoFactory(primary_audio_language_code='pt-br')
+        tv = TeamVideoFactory(team=self.team, video=video)
         task = list(tv.task_set.incomplete_subtitle().filter(language='pt-br'))[0]
-        task.assignee = self.contributor
+        task.assignee = self.member
         task.save()
-        management.call_command('index_team_videos', self.team.slug)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.your_tasks()
         self.assertIn("assignee=me&project=any&lang=all", 
@@ -421,7 +387,7 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
 
     def test_members_assignment_filter(self):
         """Assignment filters by user, lang all and any project. """
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('teams/%s/members' % self.team.slug)
         self.tasks_tab.click_link_partial_text('Assignments')
         self.assertIn("?assignee=", self.tasks_tab.current_url())
@@ -430,11 +396,10 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
  
     def test_video_langs_needed_filter(self):
         """Video XX langs needed filters by lang all and any assignee and tv. """
-        video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, video=video)
-        management.call_command('index_team_videos', self.team.slug)
+        video = VideoFactory()
+        tv = TeamVideoFactory(team=self.team, video=video)
         management.call_command('update_index', interactive=False)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('teams/%s/videos' % self.team.slug)
         self.tasks_tab.click_link_partial_text('language needed')
         self.assertIn("?team_video=", self.tasks_tab.current_url())
@@ -444,11 +409,10 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
 
     def test_video_tasks_filter(self):
         """Video task link filters by lang all and any assignee and tv. """
-        video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, video=video)
-        management.call_command('index_team_videos', self.team.slug)
+        video = VideoFactory()
+        tv = TeamVideoFactory(team=self.team, video=video)
         management.call_command('update_index', interactive=False)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('teams/%s/videos' % self.team.slug)
         self.tasks_tab.click_by_css('a[title="Manage tasks"]')
         self.assertIn("?team_video=", self.tasks_tab.current_url())
@@ -456,11 +420,11 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
 
     def test_video_page_tasks_link(self):
         """Tasks link on video page filters to that video."""
-        video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, video=video)
+        video = VideoFactory()
+        tv = TeamVideoFactory(team=self.team, video=video)
         management.call_command('index_team_videos', self.team.slug)
         management.call_command('update_index', interactive=False)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('videos/%s' % video.video_id)
         self.tasks_tab.click_link_text('tasks for this video')
         self.assertIn("?team_video=", self.tasks_tab.current_url())
@@ -480,16 +444,15 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         cls.editor_pg = editor_page.EditorPage(cls)
         cls.video_lang_pg = video_language_page.VideoLanguagePage(cls)
 
-        #Create a partner user to own the team.
-        cls.owner = UserFactory.create(is_partner=True, 
-                                       email='owner@example.com')
-
         #CREATE AN OPEN TEAM WITH WORKFLOWS and AUTOTASKS
-        cls.team = TeamMemberFactory.create(
-            team__workflow_enabled = True,
-            user = cls.owner,
-            ).team
-
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                              )
         cls.workflow = WorkflowFactory.create(
             team = cls.team,
             autocreate_subtitle = True,
@@ -502,21 +465,11 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 team = cls.team,
                 language_code = language,
                 preferred = True)
-        #Create a member of the team
-        cls.contributor = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                ).user
-        cls.manager = TeamMemberFactory(role="ROLE_MANAGER",
-                team = cls.team,
-                ).user
 
         user_langs = ['en', 'ru', 'de', 'sv', 'pt-br']
         for lang in user_langs:
-            UserLangFactory(user=cls.contributor, language=lang)
+            UserLangFactory(user=cls.member, language=lang)
             UserLangFactory(user=cls.manager, language=lang)
-        cls.subs_file = os.path.join(os.path.dirname(os.path.abspath(__file__)
-                                     ), 'oneline.txt')
-
         cls.rejected_text = ('The subtitles have been returned to you for '
                              'additional work and/or corrections.')
         cls.accepted_review = ('The subtitles passed review and have been '
@@ -529,31 +482,30 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.tasks_tab.handle_js_alert(action='accept')
 
     def tearDown(self):
+        self.browser.get_screenshot_as_file('%s.png' % self.id())
         if self.workflow.approve_allowed != 10:
             self.workflow.approve_allowed = 10
             self.workflow.save()
 
     def test_submit_transcript_creates_review_task(self):
         """Review task is created on transcription submission. """
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
-                         video=self.data_utils.create_video()).video
-        self.data_utils.upload_subs(self.contributor, 
-                                    video=tv.pk, 
-                                    primary_audio_language_code='en')
-        self.tasks_tab.log_in(self.manager, 'password')
+        video = VideoFactory(primary_audio_language_code='en')
+        tv = TeamVideoFactory(team=self.team, video=video)
+        self.data_utils.add_subs(video=video, committer=self.member)
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
 
         self.assertTrue(self.tasks_tab.task_present(
-                'Review Original English Subtitles', tv.title))
+                'Review Original English Subtitles', video.title))
 
     def test_submit_transcript_removes_transcribe_task(self):
         """Transcribe task removed when transcript is submitted.
 
         """
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=self.data_utils.create_video()).video
-        self.data_utils.upload_subs(self.contributor, video=tv.pk)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.data_utils.upload_subs(self.member, video=tv.pk)
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
@@ -562,7 +514,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
     def test_review_accept_creates_approve_task(self):
         """Approve task is created when reviewer accept transcription. """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -573,8 +525,8 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'complete': 1
                }
 
-        self.data_utils.upload_subs(self.contributor, **data)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.data_utils.upload_subs(self.member, **data)
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Review Original English ' 
                                                'Subtitles', video.title)
@@ -587,7 +539,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
     def test_review_accept_removes_review_task(self):
         """Review task removed after reviewer accepts transcription. """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -597,9 +549,9 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
                         'Review Original English Subtitles', video.title))
@@ -607,7 +559,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
     def test_review_accept_email(self):
         """Review task removed after reviewer accepts transcription. """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -617,19 +569,19 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         mail.outbox = []
         self.complete_review_task(tv, 20)
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
         self.logger.info("MESSAGE: %s" % msg)
-        self.assertIn(self.contributor.email, email_to)
+        self.assertIn(self.member.email, email_to)
         self.assertIn(self.accepted_review, msg)
 
     def test_review_reject_transcription_reassigned(self):
         """Transcription task is reassigned when rejected by reviewer """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -640,8 +592,8 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'complete': 1
                }
 
-        self.data_utils.upload_subs(self.contributor, **data)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.data_utils.upload_subs(self.member, **data)
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Review Original English ' 
                                                'Subtitles', video.title)
@@ -650,13 +602,13 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                                  % self.team.slug)
         task = self.tasks_tab.task_present('Transcribe English Subtitles',
                                            video.title)
-        self.assertEqual(task['assignee'], 
-                         'Assigned to %s' %self.contributor.username)
+        self.assertEqual(task['assignee'], 'Assigned to {0} {1}'.format(
+                         self.member.first_name, self.member.last_name))
 
     def test_review_reject_removes_review_task(self):
         """Review task is removed when transcription rejected by reviewer """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -667,9 +619,9 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'complete': 1
                }
 
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 30)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
@@ -680,7 +632,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -690,9 +642,9 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Approve Original English ' 
                                     'Subtitles', video.title)
@@ -706,7 +658,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -716,10 +668,10 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
         self.complete_approve_task(tv, 20)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
                         'Approve Original English Subtitles', video.title))
@@ -727,7 +679,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
     def test_approve_accept_email_translator(self):
         """Email sent to reviewer when approver accepts transcription. """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -737,7 +689,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
         mail.outbox = []
 
@@ -746,14 +698,14 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
         self.logger.info("MESSAGE: %s" % msg)
-        self.assertIn(self.contributor.email, email_to)
+        self.assertIn(self.member.email, email_to)
         self.assertIn(self.accepted_approve, msg)
 
     def test_approve_accept_email_reviewer(self):
         """Email sent to reviewer when approver accepts transcription. """
         self.skipTest("https://github.com/pculture/unisubs/issues/600")
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -763,7 +715,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
         mail.outbox = []
 
@@ -781,7 +733,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -791,11 +743,11 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
         self.complete_approve_task(tv, 30)
 
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
@@ -806,7 +758,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -816,9 +768,9 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Approve Original English ' 
                                                'Subtitles', video.title)
@@ -827,10 +779,10 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.editor_pg.send_back_task()
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
-        t = self.tasks_tab.task_present('Review Original English Subtitles',
+        task = self.tasks_tab.task_present('Review Original English Subtitles',
                                         video.title)
-        self.assertEqual(t['assignee'], 'Assigned to %s' 
-                         % self.manager.username)
+        self.assertEqual(task['assignee'], 'Assigned to {0} {1}'.format(
+                         self.manager.first_name, self.manager.last_name))
 
     def test_approve_send_back_email(self):
         """Email sent to reviewer when approver rejects transcription.
@@ -839,7 +791,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.skipTest('Needs https://github.com/pculture/unisubs/issues/600 '
                       ' fixed')
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -849,9 +801,9 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Approve Original English ' 
                                                'Subtitles', video.title)
@@ -869,7 +821,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
     def test_review_send_back_email(self):
         """Translator emailed when review sends-back transcript. """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -879,9 +831,9 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Approve Original English ' 
                                                'Subtitles', video.title)
@@ -896,13 +848,13 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.assertIn(Site.objects.get_current().domain, msg)
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
-        self.assertIn(self.contributor.email, email_to)
+        self.assertIn(self.member.email, email_to)
         self.assertIn(self.rejected_text, msg)
 
 
     def make_video_with_approved_transcript(self):
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                               video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -912,7 +864,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
            }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
         if self.workflow.approve_enabled:
             self.complete_approve_task(tv, 20)
@@ -927,7 +879,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
            }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
 
     def complete_review_task(self, tv, status_code):
         """Complete the review task, 20 for approve, 30 for reject.
@@ -948,7 +900,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
 
         """
         task = list(tv.task_set.incomplete_approve().all())[0]
-        task.assignee = self.owner
+        task.assignee = self.admin
         task.approved = status_code
         task.save()
         task.complete()
@@ -958,7 +910,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         video, tv = self.make_video_with_approved_transcript()
         self.upload_translation(video)
 
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         sl = video.subtitle_language('sv')
         self.tasks_tab.open_page(sl.get_absolute_url()[4:])
         self.assertTrue(self.video_lang_pg.is_draft())
@@ -969,7 +921,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         video, tv = self.make_video_with_approved_transcript()
         self.upload_translation(video)
 
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertTrue(self.tasks_tab.task_present(
                 'Review Swedish Subtitles', video.title))
@@ -979,7 +931,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         video, tv = self.make_video_with_approved_transcript()
         self.upload_translation(video)
 
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
                 'Translate Subtitles into Swedish', video.title))
@@ -991,7 +943,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         video, tv = self.make_video_with_approved_transcript()
         self.upload_translation(video)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertTrue(self.tasks_tab.task_present(
                 'Approve Swedish Subtitles', video.title))
@@ -1003,7 +955,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         video, tv = self.make_video_with_approved_transcript()
         self.upload_translation(video)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
                 'Review Swedish Subtitles', video.title))
@@ -1013,14 +965,13 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         video, tv = self.make_video_with_approved_transcript()
         self.upload_translation(video)
         self.complete_review_task(tv, 30)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
-        t = self.tasks_tab.task_present('Translate Subtitles into Swedish',
+        task = self.tasks_tab.task_present('Translate Subtitles into Swedish',
                                         video.title)
-        self.assertEqual(t['assignee'], 'Assigned to %s' 
-                         % self.contributor.username)
-
+        self.assertEqual(task['assignee'], 'Assigned to {0} {1}'.format(
+                         self.member.first_name, self.member.last_name))
 
     def test_translation_review_reject_removes_review(self):
         """Review task removed when translation rejected by reviewer.
@@ -1029,7 +980,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         video, tv = self.make_video_with_approved_transcript()
         self.upload_translation(video)
         self.complete_review_task(tv, 30)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
                 'Review Swedish Subtitles', video.title))
@@ -1042,7 +993,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.upload_translation(video)
         self.complete_review_task(tv, 20)
         self.complete_approve_task(tv, 20)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
                 'Approve Swedish Subtitles', video.title))
@@ -1068,13 +1019,13 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.upload_translation(video)
         self.complete_review_task(tv, 20)
         self.complete_approve_task(tv, 30)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
-        t = self.tasks_tab.task_present('Review Swedish Subtitles',
+        task = self.tasks_tab.task_present('Review Swedish Subtitles',
                                         video.title)
-        self.assertEqual(t['assignee'], 'Assigned to %s' 
-                         % self.manager.username)
+        self.assertEqual(task['assignee'], 'Assigned to {0} {1}'.format(
+                         self.manager.first_name, self.manager.last_name))
 
 
     def test_translation_approve_reject_removes_approve(self):
@@ -1085,7 +1036,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.upload_translation(video)
         self.complete_review_task(tv, 20)
         self.complete_approve_task(tv, 30)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.assertFalse(self.tasks_tab.task_present(
                 'Approve Swedish Subtitles', video.title))
@@ -1094,8 +1045,8 @@ class TestCaseModeratedTasks(WebdriverTestCase):
     def test_a_resume_no_reset_original_lang(self):
         """Resuming task does not reset originl language. """
         tv = self.data_utils.create_video()
-        TeamVideoFactory(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        TeamVideoFactory(team=self.team, added_by=self.admin, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Transcribe Subtitles', tv.title)
         self.modal.add_language('English', 'English')
@@ -1112,7 +1063,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         en_tag, _ = self.video_pg.language_status('English')
         self.assertEqual('original | incomplete', en_tag) 
 
-
+@unittest.skip('slow, check manually')
 class TestCaseAutomaticTasksLegacyEditor(WebdriverTestCase): 
     """Automatic task tests the require actions from the Legacy editor."""
    
@@ -1129,16 +1080,15 @@ class TestCaseAutomaticTasksLegacyEditor(WebdriverTestCase):
         cls.video_pg = video_page.VideoPage(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
 
-
-        #Create a partner user to own the team.
-        cls.owner = UserFactory.create(is_partner=True)
-
         #CREATE AN OPEN TEAM WITH WORKFLOWS and AUTOTASKS
-        cls.team = TeamMemberFactory.create(
-            team__workflow_enabled = True,
-            user = cls.owner,
-            ).team
-
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                              )
         WorkflowFactory.create(
             team = cls.team,
             autocreate_subtitle = True,
@@ -1149,21 +1099,10 @@ class TestCaseAutomaticTasksLegacyEditor(WebdriverTestCase):
                 team = cls.team,
                 language_code = language,
                 preferred = True)
-        #Create a member of the team
-        cls.contributor = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
-        cls.manager = TeamMemberFactory(role="ROLE_MANAGER",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
 
         user_langs = ['en', 'ru', 'pt-br']
         for lang in user_langs:
-            UserLangFactory(user=cls.contributor, language=lang)
-        cls.subs_file = os.path.join(os.path.dirname(os.path.abspath(__file__)
-                                     ), 'oneline.txt')
+            UserLangFactory(user=cls.member, language=lang)
         cls.tasks_tab.open_team_page(cls.team.slug)
 
 
@@ -1176,8 +1115,8 @@ class TestCaseAutomaticTasksLegacyEditor(WebdriverTestCase):
 
         """
         tv = self.data_utils.create_video()
-        TeamVideoFactory.create(team=self.team, added_by=self.owner, video=tv)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        TeamVideoFactory.create(team=self.team, added_by=self.admin, video=tv)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Transcribe Subtitles',
                                                tv.title)
@@ -1197,7 +1136,7 @@ class TestCaseAutomaticTasksLegacyEditor(WebdriverTestCase):
     def test_legacy_subtitles_complete(self):
         """Legacy editor, complete subtitle task, preferred translation tasks created. """
         tv = self.data_utils.create_video()
-        TeamVideoFactory.create(team=self.team, added_by=self.owner, video=tv)
+        TeamVideoFactory.create(team=self.team, added_by=self.admin, video=tv)
         data = {'language_code': 'en',
                 'video': tv.pk,
                 'primary_audio_language_code': 'en',
@@ -1206,8 +1145,8 @@ class TestCaseAutomaticTasksLegacyEditor(WebdriverTestCase):
                 'complete': False
                }
 
-        self.data_utils.upload_subs(self.contributor, **data)
-        self.tasks_tab.log_in(self.contributor, 'password')
+        self.data_utils.upload_subs(self.member, **data)
+        self.tasks_tab.log_in(self.member.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.team.slug)
 
@@ -1227,13 +1166,13 @@ class TestCaseAutomaticTasksLegacyEditor(WebdriverTestCase):
         self.assertTrue(self.tasks_tab.task_present(
                         'Translate Subtitles into Russian', tv.title))
 
+@unittest.skip('slow, check manually')
 class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):    
     NEW_BROWSER_PER_TEST_CASE = False
 
     @classmethod
     def setUpClass(cls):
         super(TestCaseModeratedTasksLegacyEditor, cls).setUpClass()
-        management.call_command('flush', interactive=False) 
         cls.data_utils = data_helpers.DataHelpers()
         cls.tasks_tab = TasksTab(cls)
         cls.videos_tab = VideosTab(cls)
@@ -1244,15 +1183,15 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
         cls.video_lang_pg = video_language_page.VideoLanguagePage(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
 
-        #Create a partner user to own the team.
-        cls.owner = UserFactory.create(is_partner=True)
-
         #CREATE AN OPEN TEAM WITH WORKFLOWS and AUTOTASKS
-        cls.team = TeamMemberFactory.create(
-            team__workflow_enabled = True,
-            user = cls.owner,
-            ).team
-
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                              )
         cls.workflow = WorkflowFactory.create(
             team = cls.team,
             autocreate_subtitle = True,
@@ -1265,22 +1204,11 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                 team = cls.team,
                 language_code = language,
                 preferred = True)
-        #Create a member of the team
-        cls.contributor = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
-        cls.manager = TeamMemberFactory(role="ROLE_MANAGER",
-                team = cls.team,
-                user = UserFactory.create()
-                ).user
 
         user_langs = ['en', 'ru', 'de', 'sv', 'pt-br']
         for lang in user_langs:
-            UserLangFactory(user=cls.contributor, language=lang)
+            UserLangFactory(user=cls.member, language=lang)
             UserLangFactory(user=cls.manager, language=lang)
-        cls.subs_file = os.path.join(os.path.dirname(os.path.abspath(__file__)
-                                     ), 'oneline.txt')
         cls.rejected_text = ('The subtitles have been returned to you for '
                              'additional work and/or corrections.')
         cls.accepted_review = 'The subtitles passed review and have been submitted for approval.'
@@ -1291,6 +1219,7 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
         self.tasks_tab.handle_js_alert(action='accept')
 
     def tearDown(self):
+        self.browser.get_screenshot_as_file("%s.png" % self.id())
         if self.workflow.approve_allowed != 10:
             self.workflow.approve_allowed = 10
             self.workflow.save()
@@ -1300,20 +1229,14 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
         """Legacy editor approve task is created when transcription accepted.
 
         """
-        video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
-                         video=video)
-        data = {'language_code': 'en',
-                'video': video.pk,
-                'primary_audio_language_code': 'en',
-                'draft': open('apps/webdriver_testing/subtitle_data/'
-                              'How-to.en.srt'),
-                'is_complete': True,
-                'complete': 1
-               }
-
-        self.data_utils.upload_subs(self.contributor, **data)
-        self.tasks_tab.log_in(self.manager, 'password')
+        video = VideoFactory(primary_audio_language_code='en')
+        tv = TeamVideoFactory(team=self.team, video=video)
+        data = { 'visibility': 'private',
+                 'video': video,
+                 'complete': True,
+                 'committer': self.member }
+        self.data_utils.add_subs(**data)
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Review Original English ' 
                                                'Subtitles', video.title)
@@ -1337,7 +1260,7 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -1348,12 +1271,13 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                 'complete': 1
                }
 
-        self.data_utils.upload_subs(self.contributor, **data)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.data_utils.upload_subs(self.member, **data)
+        self.tasks_tab.log_in(self.manager.username, 'password')
         mail.outbox = []
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Review Original English ' 
                                                'Subtitles', video.title)
+        self.browser.get_screenshot_as_file("webdriver_before_legacy.png")
         self.editor_pg.legacy_editor()
         self.sub_editor.continue_to_next_step() #to subtitle info 
         self.sub_editor.complete_review(result='Accept')
@@ -1362,13 +1286,13 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
         self.logger.info(mail.outbox)
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
-        self.assertIn(self.contributor.email, email_to)
+        self.assertIn(self.member.email, email_to)
         self.assertIn(self.accepted_review, msg)
 
     def test_reject_transcription_reassigned(self):
         """Legacy editor transcription task is reassigned when sent back """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -1379,8 +1303,8 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                 'complete': 1
                }
 
-        self.data_utils.upload_subs(self.contributor, **data)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.data_utils.upload_subs(self.member, **data)
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Review Original English ' 
                                                'Subtitles', video.title)
@@ -1395,13 +1319,13 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                                  % self.team.slug)
         task = self.tasks_tab.task_present('Transcribe English Subtitles',
                                            video.title)
-        self.assertEqual(task['assignee'], 
-                         'Assigned to %s' %self.contributor.username)
+        self.assertEqual(task['assignee'], 'Assigned to {0} {1}'.format(
+                         self.member.first_name, self.member.last_name))
 
         email_to = mail.outbox[-1].to     
         msg = str(mail.outbox[-1].message())
 
-        self.assertIn(self.contributor.email, email_to)
+        self.assertIn(self.member.email, email_to)
         self.assertIn(self.rejected_text, msg)
     
 
@@ -1411,7 +1335,7 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -1421,9 +1345,9 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.manager, 'password')
+        self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Approve Original English ' 
                                                'Subtitles', video.title)
@@ -1442,7 +1366,7 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                          video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -1452,9 +1376,9 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
                }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Approve Original English ' 
                                                'Subtitles', video.title)
@@ -1468,13 +1392,12 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                                  % self.team.slug)
         t = self.tasks_tab.task_present('Review Original English Subtitles',
                                         video.title)
-        self.assertEqual(t['assignee'], 'Assigned to %s' 
-                         % self.manager.username)
-
+        self.assertEqual(task['assignee'], 'Assigned to {0} {1}'.format(
+                         self.manager.first_name, self.manager.last_name))
 
     def make_video_with_approved_transcript(self):
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.team, added_by=self.owner, 
+        tv = TeamVideoFactory(team=self.team, added_by=self.admin, 
                               video=video)
         data = {'language_code': 'en',
                 'video': video.pk,
@@ -1484,7 +1407,7 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
            }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
         self.complete_review_task(tv, 20)
         if self.workflow.approve_enabled:
             self.complete_approve_task(tv, 20)
@@ -1499,7 +1422,7 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
                 'is_complete': True,
                 'complete': 1
            }
-        self.data_utils.upload_subs(self.contributor, **data)
+        self.data_utils.upload_subs(self.member, **data)
 
     def complete_review_task(self, tv, status_code):
         """Complete the review task, 20 for approve, 30 for reject.
@@ -1520,7 +1443,7 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
 
         """
         task = list(tv.task_set.incomplete_approve().all())[0]
-        task.assignee = self.owner
+        task.assignee = self.admin
         task.approved = status_code
         task.save()
         task.complete()

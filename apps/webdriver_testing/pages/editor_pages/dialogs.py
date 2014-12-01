@@ -48,6 +48,7 @@ class EditorDialogs(Page):
     
     def continue_to_next_step(self):
         self.logger.info('clicking done to continue to the next step')
+        self.wait_for_element_present(self._DONE, 30)
         self.click_by_css(self._DONE)
 
     def continue_past_help(self, skip=True):

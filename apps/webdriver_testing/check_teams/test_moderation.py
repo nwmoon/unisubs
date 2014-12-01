@@ -22,25 +22,26 @@ class TestCasePublishedVideos(WebdriverTestCase):
         cls.video_pg = video_page.VideoPage(cls)
         cls.video_lang_pg = video_language_page.VideoLanguagePage(cls)
         cls.create_modal = dialogs.CreateLanguageSelection(cls)
-        cls.user = UserFactory(username = 'user', is_partner=True)
+        cls.user = UserFactory(is_partner=True)
         
         #Add a team with workflows, tasks and preferred languages
         cls.logger.info('setup: Create a team with tasks enabled')
-        cls.team = TeamMemberFactory.create(team__workflow_enabled=True,
-                                            team__translate_policy=20,
-                                            team__subtitle_policy=20,
-                                            user = cls.user,
-                                            ).team
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                               translate_policy=20,
+                               subtitle_policy=20,
+                              )
         cls.team_workflow = WorkflowFactory(team = cls.team,
                                             autocreate_subtitle=True,
                                             autocreate_translate=True,
                                             approve_allowed = 10,
                                             review_allowed = 10,
                                            )
-        cls.member = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                user = UserFactory(username='member')
-                ).user
         cls.nonmember = UserFactory()
 
         #Add video to team with published subtitles
@@ -104,21 +105,22 @@ class TestCaseDraftVideos(WebdriverTestCase):
         cls.user = UserFactory(username = 'user', is_partner=True)
         #Add a team with workflows, tasks and preferred languages
         cls.logger.info('setup: Create a team with tasks enabled')
-        cls.team = TeamMemberFactory.create(team__workflow_enabled=True,
-                                            team__subtitle_policy=20,
-                                            team__translate_policy=20,
-                                            user = cls.user,
-                                            ).team
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                               translate_policy=20,
+                               subtitle_policy=20,
+                              )
         cls.team_workflow = WorkflowFactory(team = cls.team,
                                             autocreate_subtitle=True,
                                             autocreate_translate=True,
                                             approve_allowed = 10,
                                             review_allowed = 10,
                                            )
-        cls.member = TeamMemberFactory.create(role="ROLE_CONTRIBUTOR",
-                team = cls.team,
-                user = UserFactory(username='member')
-                ).user
         cls.nonmember = UserFactory()
 
         #Add video to team with draft subtitles
@@ -174,44 +176,46 @@ class TestCaseViewSubtitles(WebdriverTestCase):
         cls.data_utils = data_helpers.DataHelpers()
         cls.video_pg = video_page.VideoPage(cls)
         cls.user = UserFactory.create()
-        cls.owner = UserFactory.create()
-        cls.basic_team = TeamMemberFactory.create(team__workflow_enabled=False,
-                                            team__translate_policy=20, #any team
-                                            team__subtitle_policy=20, #any team
-                                            user = cls.owner,
-                                            ).team
+        cls.basic_team = TeamFactory.create(workflow_enabled=False,
+                                            translate_policy=20, #any team
+                                            subtitle_policy=20, #any team
+                                            user = cls.user,
+                                            )
 
-        cls.team = TeamMemberFactory.create(team__workflow_enabled=True,
-                                            team__translate_policy=20, #any team
-                                            team__subtitle_policy=20, #any team
-                                            team__task_assign_policy=10, #any team
-                                            user = cls.owner,
-                                            ).team
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                               translate_policy=20,
+                               subtitle_policy=20,
+                              )
         cls.workflow = WorkflowFactory(team = cls.team,
                                        autocreate_subtitle=True,
                                        autocreate_translate=True,
                                        approve_allowed = 10, # manager
                                        review_allowed = 10, # peer
                                        )
-        cls.contributor = TeamMemberFactory(team=cls.team, role="ROLE_CONTRIBUTOR").user
 
         #Create en source language 2 revisions - approved.
         cls.video, cls.tv = cls._add_team_video()
-        cls._upload_subtitles(cls.video, 'en', cls.contributor, 
+        cls._upload_subtitles(cls.video, 'en', cls.member, 
                               complete=False)
-        cls._upload_subtitles(cls.video, 'en', cls.contributor)
-        cls.data_utils.complete_review_task(cls.tv, 20, cls.owner)
-        cls.data_utils.complete_approve_task(cls.tv, 20, cls.owner)
+        cls._upload_subtitles(cls.video, 'en', cls.member)
+        cls.data_utils.complete_review_task(cls.tv, 20, cls.admin)
+        cls.data_utils.complete_approve_task(cls.tv, 20, cls.admin)
        
         #Add sv translation, reviewed
-        cls._upload_translation(cls.video, 'sv', cls.contributor)
-        cls.data_utils.complete_review_task(cls.tv, 20, cls.owner)
+        cls._upload_translation(cls.video, 'sv', cls.member)
+        cls.data_utils.complete_review_task(cls.tv, 20, cls.admin)
 
         #Add de translation complete waiting review
-        cls._upload_translation(cls.video, 'de', cls.contributor)
+        cls._upload_translation(cls.video, 'de', cls.member)
 
         #Add ru translation, incomplete.
-        cls._upload_translation(cls.video, 'ru', cls.contributor, 
+        cls._upload_translation(cls.video, 'ru', cls.member, 
                                 complete=False)
 
 
@@ -306,7 +310,7 @@ class TestCaseViewSubtitles(WebdriverTestCase):
         """Tag display for original language needs review."""
 
         vid, tv = self._add_team_video()
-        self._upload_subtitles(vid, 'en', self.contributor, 
+        self._upload_subtitles(vid, 'en', self.member, 
                               complete=True)
         self.video_pg.open_video_page(vid.video_id)
         en_tag, _ = self.video_pg.language_status('English')
@@ -315,9 +319,9 @@ class TestCaseViewSubtitles(WebdriverTestCase):
     def test_tags_original_approve(self):
         """Tag display for original language needs approval."""
         vid, tv = self._add_team_video()
-        self._upload_subtitles(vid, 'en', self.contributor, 
+        self._upload_subtitles(vid, 'en', self.member, 
                               complete=True)
-        self.data_utils.complete_review_task(tv, 20, self.owner)
+        self.data_utils.complete_review_task(tv, 20, self.admin)
 
         self.video_pg.open_video_page(vid.video_id)
         en_tag, _ = self.video_pg.language_status('English')
@@ -325,7 +329,7 @@ class TestCaseViewSubtitles(WebdriverTestCase):
 
     def test_tags_original_incomplete(self):
         vid, tv = self._add_team_video()
-        self._upload_subtitles(vid, 'en', self.contributor, 
+        self._upload_subtitles(vid, 'en', self.member, 
                               complete=False)
         self.video_pg.open_video_page(vid.video_id)
         en_tag, _ = self.video_pg.language_status('English')
