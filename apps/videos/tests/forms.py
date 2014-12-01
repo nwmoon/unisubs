@@ -233,6 +233,7 @@ class CreateSubtitlesFormTest(CreateSubtitlesFormTestBase):
         # handle_post should set the primary_audio_language_code, then
         # redirect to the editor
         response = form.handle_post()
+        self.video = test_utils.reload_obj(self.video)
         self.assertEquals(self.video.primary_audio_language_code, 'en')
         self.check_redirect(response, 'fr')
 

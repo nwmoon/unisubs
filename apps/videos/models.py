@@ -1607,9 +1607,14 @@ class ActionManager(models.Manager):
             params=[user.id]).exclude(user=user)
 
     def for_video(self, video):
-        return (Action.objects.filter(video=video)
-                .select_related('user', 'video', 'new_language',
-                                'new_language__video'))
+        actions = list(Action.objects.filter(video=video)
+                       .select_related('user', 'new_language',
+                                       'new_language__video'))
+        # we know the video for each action, so let's set it now to avoid
+        # queries for it
+        for action in actions:
+            action.video = video
+        return actions
 
 class Action(models.Model):
     ADD_VIDEO = 1

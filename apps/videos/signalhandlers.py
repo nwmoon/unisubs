@@ -20,11 +20,12 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete, m2m_changed
 
 from subtitles.models import SubtitleLanguage, SubtitleVersion
-from videos.models import Video, VideoUrl
+from videos.models import Video, VideoUrl, Action
 
 @receiver(post_save, sender=VideoUrl)
 @receiver(post_save, sender=SubtitleLanguage)
 @receiver(post_save, sender=SubtitleVersion)
+@receiver(post_save, sender=Action)
 @receiver(post_delete, sender=VideoUrl)
 def on_video_related_change(sender, instance, **kwargs):
     if instance.video_id is not None:

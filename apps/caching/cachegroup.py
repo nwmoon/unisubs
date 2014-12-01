@@ -37,6 +37,41 @@ cache group for each user and each video.  The user cache group stores things
 like the user menu HTML and message HTML.  The video cache group stores the
 language list and other sections of the video/language pages.
 
+Overview
+^^^^^^^^
+
+* A CacheGroup is a group of cache values that can all be invalidated together
+* You can automatically create a CacheGroup for each model instance
+* CacheGroups can be used with a cache pattern.  This makes it so we
+  remember which cache keys are requested and fetch them all using
+  get_many()
+
+Let's take the video page caching as an example.  To implement caching,
+we create cache groups for Team, Video, and User instances.  Here's a few
+examples of how we use those cache groups:
+
+* Language list:  we store the rendered HTML in the video cache
+* User menu: we store the rendered HTML in the user cache (and we
+  actually use that for all pages on the site)
+* Add subtitles form: we store the list of existing languages in the
+  video cache (needed to set up the selectbox)
+* Follow video button: we store a list of user ids that are following
+  the videos in the video cache.  To the user is currently following we
+  search that list for their user ID.
+* Add subtitles permissions: we store a list of member user ids in the
+  team cache.  To check if the user can view the tasks/collaboration
+  page we search that list of the user ID
+
+When we create the cache groups, we use the video-page cache pattern.
+This makes it so we can render the page with 3 cache requests.  One
+get_many fetches the Video instance and all cache values related to the video,
+and similarly for the Team and User.
+
+Cache invalidation is always tricky.  We use a simple system where if a change
+could affect any cache value, we invalidate the entire group of values.
+For example if we add/remove a team member then we invalidate the cache for
+the team.
+
 .. _cache-patterns:
 
 Cache Patterns

@@ -1,5 +1,7 @@
-{% load i18n recent_activity %}
+{% load amara_cache i18n recent_activity %}
+{% cache-by-video activity-tab %}
 <div class="tab" id="activity-tab">
     {% video_activity video %}
     <p class="view-more"><a href="{% url videos:actions_list video.video_id %}">{% trans 'View all activity' %}</a></p>
 </div>
+{% endcache %}
