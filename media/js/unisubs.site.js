@@ -75,7 +75,17 @@ var Site = function(Site) {
          *     that.Utils.chosenify();
          *
          */
-
+	parsedQuery: function() {
+	    var query = window.location.search;
+	    var output = {};
+	    if (query && query[0] === '?')
+		query.slice(1).split('&').forEach(function(x) {
+		    var vals = x.split('=');
+		    if (vals.length == 2)
+			output[vals[0]] = vals[1];
+		});
+	    return output;
+	},
         chosenify: function() {
             $('select', '.v1 .content').not('.raw-select').filter(function() {
                 if ($(this).parents('div').hasClass('ajaxChosen')) {
@@ -422,6 +432,10 @@ var Site = function(Site) {
                     $('.filters').toggle();
                     $(this).children('span').toggleClass('open');
                 });
+		if ($('#sort-filter').hasClass("default-open")) {
+                    $('.filters').show();
+                    $('#sort-filter').children('span').addClass('open');
+		}
                 $('select', '.filters:not(.no-ajax)').change(function(e) {
                     window.location = $(this).children('option:selected').attr('value');
                 });
@@ -658,9 +672,15 @@ var Site = function(Site) {
 	},
         teams_activity: function() {
             function onMoreClicked(e) {
+                var parameters = that.Utils.parsedQuery();
+                var $link = $(this);
+                parameters["page"] = $link.attr("data-page");
                 var loadingIcon = $('img.loading-icon');
                 e.preventDefault();
-                var $link = $(this);
+                var href = "?";
+                for (var key in parameters)
+                    href +=  key + "=" + parameters[key] + "&";
+                $link.attr("href", href);
                 loadingIcon.show();
                 $link.remove();
                 $.get($link.attr('href'), function(data) {
@@ -671,7 +691,7 @@ var Site = function(Site) {
                     loadingIcon.hide();
                 });
             }
-
+            that.Utils.chosenify();
             $('div.pagination a').click(onMoreClicked);
         },
         move_videos: function() {

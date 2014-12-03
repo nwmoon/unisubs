@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import
 
+import functools
+
 from django.test import TestCase
 from nose.tools import *
 from datetime import datetime, timedelta
@@ -33,7 +35,18 @@ class TestAction(workflows.Action):
     def __init__(self, name, complete=None):
         self.name = self.label = name
         self.complete = complete
+        self.call_order = []
         self.perform = mock.Mock()
+        self.update_language = mock.Mock()
+        def on_method_call(method_name, *args, **kwargs):
+            self.call_order.append(method_name)
+            orig_method = getattr(workflows.Action, method_name)
+            return orig_method(self, *args, **kwargs)
+
+        self.perform.side_effect = functools.partial(
+            on_method_call, 'perform')
+        self.update_language.side_effect = functools.partial(
+            on_method_call, 'update_language')
 
 class ActionsTest(TestCase):
     def setUp(self):
@@ -57,8 +70,13 @@ class ActionsTest(TestCase):
         version = pipeline.add_subtitles(self.video, 'en',
                                          SubtitleSetFactory(num_subs=10))
         self.perform_action('action1')
-        self.action1.perform.assert_called_with(
-            self.user, self.video, version.subtitle_language, None)
+        assert_equal(
+            self.action1.update_language.call_args,
+            mock.call(self.user, self.video, version.subtitle_language, None))
+        assert_equal(
+            self.action1.perform.call_args,
+            mock.call(self.user, self.video, version.subtitle_language, None))
+        assert_equal(self.action1.call_order, ['update_language', 'perform'])
 
     def test_add_subtitles_with_action(self):
         action = self.workflow.lookup_action(self.user, 'en', 'action1')

@@ -929,14 +929,45 @@ def activity(request, slug, tab='videos'):
         action_qs = Action.objects.for_team_videos(team)
     end = page * ACTIONS_ON_PAGE
     start = end - ACTIONS_ON_PAGE
+
+    if request.GET.get('action_type') and request.GET.get('action_type') != 'any':
+        action_qs = action_qs.filter(action_type = int(request.GET.get('action_type')))
+
+    action_qs = action_qs.select_related('new_language', 'video')
+    if tab == 'videos':
+        if request.GET.get('video_language') and request.GET.get('video_language') != 'any':
+            action_qs = action_qs.filter(video__primary_audio_language_code = request.GET.get('video_language'))
+        if request.GET.get('subtitles_language') and request.GET.get('subtitles_language') != 'any':
+            action_qs = action_qs.filter(new_language__isnull = False, new_language__language_code = request.GET.get('subtitles_language'))
+
+    sort = request.GET.get('sort', '-created')
+    action_qs = action_qs.order_by(sort)
+
     action_qs = action_qs[start:end].select_related(
-        'video', 'user', 'new_language', 'new_language__video'
+        'user', 'new_language__video'
     )
+
     activity_list = list(action_qs)
+    language_choices = None
+    if tab == 'videos':
+        readable_langs = TeamLanguagePreference.objects.get_readable(team)
+        language_choices = [(code, name) for code, name in get_language_choices()
+                            if code in readable_langs]
+    action_types = Action.TYPES_CATEGORIES[tab]
+
     has_more = len(activity_list) >= ACTIONS_ON_PAGE
+
+    query = request.GET.get('q', '')
+
+    filtered = bool(set(request.GET.keys()).intersection([
+        'action_type', 'language', 'sort']))
 
     context = {
         'activity_list': activity_list,
+        'query': query,
+        'filtered': filtered,
+        'action_types': action_types,
+        'language_choices': language_choices,
         'team': team,
         'member': member,
         'activity_tab': tab,

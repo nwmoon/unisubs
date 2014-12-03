@@ -17,6 +17,71 @@
             {% include 'teams/_subnav_activity.html' with current_sub=activity_tab %}
         </div>
 
+	{% load teams_tags %}
+	<form class="filters group no-ajax{% if filtered or request.GET.sort %} active{% endif %}">
+          <input type="hidden" name="q" value="{{ query }}" />
+          <button class="reduced" id="update">Update</button>
+            {% if filtered %}
+            <a href="{% url teams:activity team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
+            {% endif %}
+	    {% if action_types %}
+	    <div class="filter-chunk">
+	      <span class="inner">{% trans 'Action Type' %}</span>
+	      <select id="id_activity_type" name="action_type" class="type-filter chosen">
+		<option value="any">
+		  {% trans 'Any type' %}
+		</option>
+		{% for type in action_types %}
+		<option value="{{ type.0 }}"
+			{% if request.GET.action_type == type.0|slugify %}selected="selected"{% endif %}>
+		  {{ type.1 }}
+		</option>
+		{% endfor %}
+	      </select>
+	    </div>
+	    {% endif %}
+
+	    {% if language_choices %}
+	    <div class="filter-chunk">
+	      <span class="inner">{% trans 'Subtitles Language' %}</span>
+	      <select id="id_subtitles_language" name="subtitles_language" class="language-filter chosen">
+		<option value="any">
+		  {% trans 'Any Language' %}
+		</option>
+                {% for code, name in language_choices %}
+                <option {% if request.GET.subtitles_language == code %}selected="selected"{% endif %} value="{{ code }}">{{ name }}</option>
+                {% endfor %}
+	      </select>
+	    </div>
+	    <div class="filter-chunk">
+	      <span class="inner">{% trans 'Video Language' %}</span>
+	      <select id="id_video_language" name="video_language" class="language-filter chosen">
+		<option value="any">
+		  {% trans 'Any Language' %}
+		</option>
+                {% for code, name in language_choices %}
+                <option {% if request.GET.video_language == code %}selected="selected"{% endif %} value="{{ code }}">{{ name }}</option>
+                {% endfor %}
+	      </select>
+	    </div>
+	    {% endif %}
+
+
+	    <div class="filter-chunk">
+	      <span class="inner">{% trans 'Sorted by' %}</span>
+	      <select name="sort">
+		<option {% if request.GET.sort == '-created' or not request.GET.sort %}selected="selected"{% endif %}
+			value="-created">
+		  {% trans 'date, newest' %}
+		</option>
+		<option {% if request.GET.sort == 'created' %}selected="selected"{% endif %}
+			value="created">
+		  {% trans 'date, oldest' %}
+		</option>
+	      </select>
+	    </div>
+	</form>
+
         <div id="activity-list">
             {% include "teams/_activity-list.html" %}
         </div>

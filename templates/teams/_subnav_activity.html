@@ -4,9 +4,13 @@
     <li {% if current_sub == "videos" %}class="current"{% endif %}>
         <a href="{% url teams:activity team.slug %}">{% trans "Videos" %}</a>
     </li>
-
     <li {% if current_sub == "team" %}class="current"{% endif %}>
         <a href="{% url teams:team-activity team.slug %}">{% trans "Team" %}</a>
     </li>
-
+    <li>
+      <a href="#filter" id="sort-filter" class="default-open">
+	{% trans 'Filter and Sort' %}
+	<span></span>
+      </a>
+    </li>
 </ul>

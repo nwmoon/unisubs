@@ -194,6 +194,7 @@ class Workflow(object):
         action = self.lookup_action(user, language_code, action_name)
         subtitle_language = self.video.subtitle_language(language_code)
         action.validate(user, self.video, subtitle_language, None)
+        action.update_language(user, self.video, subtitle_language, None)
         action.perform(user, self.video, subtitle_language, None)
 
     def user_can_view_private_subtitles(self, user, language_code):
