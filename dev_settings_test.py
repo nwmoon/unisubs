@@ -56,7 +56,7 @@ del LOGGING
 
 NOSE_ARGS = ['--logging-filter=test_steps, -remote_connection, '
              '-selenium.webdriver.remote.remote_connection',
-             '--with-xunit',
+             '--with-xunit', '--logging-level=ERROR',
              '--xunit-file=nosetests.xml',
             ]
 

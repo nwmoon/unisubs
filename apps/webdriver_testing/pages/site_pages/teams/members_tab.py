@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import time
+
 from webdriver_testing.pages.site_pages.teams import ATeamPage
 
 class MembersTab(ATeamPage):
@@ -73,9 +74,13 @@ class MembersTab(ATeamPage):
         self.wait_for_element_present(self._INVITEE_USERNAME_PULLDOWN)
         self.click_by_css(self._INVITEE_USERNAME_PULLDOWN)
         self.type_by_css('div.chzn-search input', user.username)
-        user = "{0} ({1} {2})".format(user.username, 
-                                      user.first_name, 
-                                      user.last_name)
+        if user.first_name:
+            user = "{0} ({1} {2})".format(user.username,
+                                          user.first_name,
+                                          user.last_name)
+        else:
+            user = "{0} ({0})".format(user.username)
+       
         self.select_from_chosen(self._INVITEE_USERNAME, 
                                 user)
         self.type_by_css(self._INVITEE_MESSAGE, message)

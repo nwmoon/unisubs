@@ -242,21 +242,24 @@ class TestCaseInvitationTeamPage(WebdriverTestCase):
         self.assertEqual('Sorry! This invite is no longer valid',
                          self.team_dir_pg.invite_error())
 
+    def tearDown(self):
+        self.browser.get_screenshot_as_file("%s.png" % self.id())
+
     def test_no_double_invites(self):
         """Can not invite user with pending invitation.
 
         """
-
-        user = UserFactory.create()
+        owner = TeamMemberFactory(team=self.team).user
+        user = UserFactory()
         invitation = TeamInviteFactory.create(
             team=self.team,
             user=user,
             note="Please come join this great team!",
-            author=self.team_owner,
+            author=owner,
             )
-        self.members_tab.log_in(self.team_owner.username, 'password')
+        self.members_tab.log_in(owner.username, 'password')
         self.members_tab.open_members_page(self.team.slug)
-        self.members_tab.invite_user_via_form(username = user.username,
+        self.members_tab.invite_user_via_form(user = user,
                                               message = 'Join my team',
                                               role = 'Contributor')
         self.assertEqual(('User has already been invited and has not replied '
@@ -281,8 +284,6 @@ class TestCaseInvitationTeamPage(WebdriverTestCase):
         self.team_dir_pg.open_my_teams_page()
         self.logger.info(self.team_dir_pg.teams_on_page())
         self.assertNotIn(self.team.name, self.team_dir_pg.teams_on_page())
-
-
 
 
     def test_join_admin_invitation(self):

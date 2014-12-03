@@ -447,7 +447,7 @@ class TestCaseTED(WebdriverTestCase):
         self.video_pg.open_video_activity(self.speaker_video.video_id)
         video_activities = self.video_pg.activity_list()
         for activity in video_activities:
-            if 'Jinsop Lee: TestVideo1' in activity:
+            if 'Jinsop Lee: ' in activity:
                 break
         else:
             self.fail('speaker name not found in any activities, %s' % video_activities)

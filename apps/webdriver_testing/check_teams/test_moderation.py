@@ -175,11 +175,11 @@ class TestCaseViewSubtitles(WebdriverTestCase):
         super(TestCaseViewSubtitles, cls).setUpClass()
         cls.data_utils = data_helpers.DataHelpers()
         cls.video_pg = video_page.VideoPage(cls)
-        cls.user = UserFactory.create()
+        cls.user = UserFactory()
         cls.basic_team = TeamFactory.create(workflow_enabled=False,
                                             translate_policy=20, #any team
                                             subtitle_policy=20, #any team
-                                            user = cls.user,
+                                            admin = cls.user,
                                             )
 
         cls.admin = UserFactory()

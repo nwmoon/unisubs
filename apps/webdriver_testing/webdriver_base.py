@@ -40,7 +40,7 @@ class WebdriverTestCase(LiveServerTestCase, TestCase):
     @classmethod
     def setUpClass(cls):
         super(WebdriverTestCase, cls).setUpClass()
-        #management.call_command('flush', interactive=False)
+        management.call_command('flush', interactive=False)
         site_obj = Site.objects.get_current()
         Site.objects.clear_cache()
         site_obj.domain = ('%s:%s' % (cls.server_thread.host,
@@ -72,7 +72,6 @@ class WebdriverTestCase(LiveServerTestCase, TestCase):
             self.__class__.create_browser(self.shortDescription())
         
     def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
         self.browser.execute_script("window.stop()")
         if self.NEW_BROWSER_PER_TEST_CASE:
             self.__class__.destroy_browser()

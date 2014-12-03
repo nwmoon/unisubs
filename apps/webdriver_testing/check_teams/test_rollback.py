@@ -573,7 +573,7 @@ class TestCaseWorkflowPermissions(WebdriverTestCase):
                         'team draft author rollback check failed')
 
         #site user has no button
-        self.video_lang_pg.log_in(self.site_staff.username, 'password')
+        self.video_lang_pg.log_in(self.nonmember.username, 'password')
         self.video_lang_pg.open_page(self.v1.get_absolute_url())
         self.assertFalse(self.video_lang_pg.rollback_exists(),
                          'site user rollback check failed')

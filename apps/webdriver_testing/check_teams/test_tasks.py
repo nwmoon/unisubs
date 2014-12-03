@@ -491,7 +491,7 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         """Review task is created on transcription submission. """
         video = VideoFactory(primary_audio_language_code='en')
         tv = TeamVideoFactory(team=self.team, video=video)
-        self.data_utils.add_subs(video=video, committer=self.member)
+        self.data_utils.add_subs(video=video, committer=self.member, complete=True)
         self.tasks_tab.log_in(self.manager.username, 'password')
         self.tasks_tab.open_tasks_tab(self.team.slug)
 
