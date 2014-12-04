@@ -20,12 +20,18 @@ class TestCaseTools(WebdriverTestCase):
     def setUpClass(cls):
         super(TestCaseTools, cls).setUpClass()
         cls.modal = site_modals.SiteModals(cls)
+        cls.editor_pg = editor_page.EditorPage(cls)
+        cls.video_pg = video_page.VideoPage(cls)
         cls.user = UserFactory.create()
-        cls.data_utils = data_helpers.DataHelpers()
-        data = {'video_url': 'http://www.youtube.com/watch?v=5CKwCfLUwj4',
-                'title': 'Open Source Philosophy',
-               }
-        cls.video = cls.data_utils.create_video(**data)
+        cls.video_pg.open_page('auth/login/', alert_check=True)
+        cls.video_pg.log_in(cls.user.username, 'password')
+        data = { 'video_url': 'http://www.youtube.com/watch?v=5CKwCfLUwj4',
+                 'title': 'Open Source Philosophy' }
+        url_part = 'videos/'
+        r = cls.data_utils.make_request(cls.user, 'post', url_part, **data)
+        cls.video, _  = Video.get_or_create_for_url(
+                    'http://www.youtube.com/watch?v=5CKwCfLUwj4')        
+
         cls.data_utils.add_subs(video=cls.video)
         langs = ['en', 'da', 'ar', 'tr', 'zh-cn', 'nl']
 
@@ -41,10 +47,6 @@ class TestCaseTools(WebdriverTestCase):
                    }
             cls.data_utils.add_subs(**defaults)
         management.call_command('update_index', interactive=False) 
-        cls.editor_pg = editor_page.EditorPage(cls)
-        cls.video_pg = video_page.VideoPage(cls)
-        cls.video_pg.open_page('auth/login/', alert_check=True)
-        cls.video_pg.log_in(cls.user.username, 'password')
 
     def tearDown(self):
         try:

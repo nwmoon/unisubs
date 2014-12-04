@@ -242,9 +242,6 @@ class TestCaseInvitationTeamPage(WebdriverTestCase):
         self.assertEqual('Sorry! This invite is no longer valid',
                          self.team_dir_pg.invite_error())
 
-    def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
-
     def test_no_double_invites(self):
         """Can not invite user with pending invitation.
 

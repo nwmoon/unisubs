@@ -9,13 +9,11 @@ import time
 from datetime import datetime as dt
 
 from videos.models import Video
-
-
+from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing import data_helpers
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import editor_page
-from webdriver_testing.data_factories import UserFactory
 
 class TestCaseEditing(WebdriverTestCase):
 
@@ -31,15 +29,14 @@ class TestCaseEditing(WebdriverTestCase):
         cls.user = UserFactory.create()
         cls.video_pg.open_page('auth/login/', alert_check=True)
         cls.video_pg.log_in(cls.user.username, 'password')
-
-
-        data = {'video_url': 'http://www.youtube.com/watch?v=5CKwCfLUwj4', 
-                'title': 'Open Source Philosophy',
-               } 
-        cls.video = cls.data_utils.create_video(**data) 
+        data = { 'video_url': 'http://www.youtube.com/watch?v=5CKwCfLUwj4',
+                 'title': 'Open Source Philosophy' }
+        url_part = 'videos/'
+        r = cls.data_utils.make_request(cls.user, 'post', url_part, **data)
+        cls.video, _  = Video.get_or_create_for_url(
+                    'http://www.youtube.com/watch?v=5CKwCfLUwj4')
         cls.data_utils.add_subs(video=cls.video) 
         langs = ['en', 'da', 'ar', 'tr', 'zh-cn', 'nl']
-    
         for lc in langs:
             defaults = {
                         'video': cls.video,
@@ -58,6 +55,7 @@ class TestCaseEditing(WebdriverTestCase):
             self.editor_pg.exit()
         except:
             pass
+
 
     def test_reference_lang_original(self):
         """Default reference lang for transcription is the same lang. """
@@ -93,18 +91,16 @@ class TestCaseEditing(WebdriverTestCase):
 
 
     def test_reference_private_versions(self):
-        """Reference version has no default when all versions are private
+        """Language not displayed if not visible to user
 
         """
         sl_tr = self.video.subtitle_language('tr').get_tip(full=True)
         sl_tr.visibility_override = 'private'
         sl_tr.save()
         self.editor_pg.open_editor_page(self.video.video_id, 'en')
-        self.editor_pg.select_ref_language('Turkish')
-        self.assertEqual(None, self.editor_pg.default_ref_version())
-        self.assertEqual(None, 
-                         self.editor_pg.reference_text(1))
-
+        langs = self.editor_pg.reference_languages()
+        self.logger.info(langs)
+        self.assertNotIn('Turkish', langs)
 
 
     def test_selected_subs_on_video(self):
@@ -213,11 +209,10 @@ class TestCaseEditing(WebdriverTestCase):
         self.editor_pg.page_refresh()
         times = self.editor_pg.start_times()
         times = [x for x in times if x != '--']
-        diffs = [(dt.strptime(x, '%M:%S.%f') - dt.strptime(y, '%M:%S.%f')) 
-                  for (x, y) in zip(times[1:], times[:-1])]
-        self.logger.info(diffs)
-        for x in diffs:
-            self.assertGreater(x.seconds, 3)
+        self.assertGreater(len(times), 2)
+        diff = (dt.strptime(times[3], '%M:%S.%f') - 
+                dt.strptime(times[2], '%M:%S.%f')) 
+        self.assertGreater(diff.seconds, 2)
 
 
     def test_syncing_scroll(self):

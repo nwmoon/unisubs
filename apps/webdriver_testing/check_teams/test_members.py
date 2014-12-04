@@ -32,10 +32,6 @@ class TestCaseMembersTab(WebdriverTestCase):
         cls.project = ProjectFactory(team=cls.team)
         cls.members_tab.open_members_page(cls.team.slug)
 
-
-    def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
-
     def test_invitation_form(self):
         """Send an invitation via the form on the members tab.
 

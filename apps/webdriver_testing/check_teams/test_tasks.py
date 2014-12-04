@@ -219,7 +219,6 @@ class TestCaseAutomaticTasks(WebdriverTestCase):
         cls.tasks_tab.open_team_page(cls.team.slug)
 
     def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
         if self.team.subtitle_policy > 10:
             self.team.subtitle_policy = 10
             self.team.save() 
@@ -482,7 +481,6 @@ class TestCaseModeratedTasks(WebdriverTestCase):
         self.tasks_tab.handle_js_alert(action='accept')
 
     def tearDown(self):
-        self.browser.get_screenshot_as_file('%s.png' % self.id())
         if self.workflow.approve_allowed != 10:
             self.workflow.approve_allowed = 10
             self.workflow.save()
@@ -1219,7 +1217,6 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
         self.tasks_tab.handle_js_alert(action='accept')
 
     def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
         if self.workflow.approve_allowed != 10:
             self.workflow.approve_allowed = 10
             self.workflow.save()
@@ -1277,7 +1274,6 @@ class TestCaseModeratedTasksLegacyEditor(WebdriverTestCase):
         self.tasks_tab.open_tasks_tab(self.team.slug)
         self.tasks_tab.perform_task('Review Original English ' 
                                                'Subtitles', video.title)
-        self.browser.get_screenshot_as_file("webdriver_before_legacy.png")
         self.editor_pg.legacy_editor()
         self.sub_editor.continue_to_next_step() #to subtitle info 
         self.sub_editor.complete_review(result='Accept')

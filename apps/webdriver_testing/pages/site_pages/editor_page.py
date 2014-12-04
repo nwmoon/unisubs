@@ -130,6 +130,10 @@ class EditorPage(UnisubsPage):
         self.select_option_by_text(self._REFERENCE_SELECT, language)
         time.sleep(2)
 
+    def reference_languages(self):
+        els = self.get_elements_list(self._REFERENCE_SELECT)
+        return [el.text for el in els]
+
     def select_ref_version(self, version_no):
         """Choose a reference version from the list. """
 

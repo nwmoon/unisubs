@@ -1,5 +1,5 @@
 import os
-
+import time
 from utils.factories import *
 from teams.models import TeamMember
 
@@ -551,15 +551,9 @@ class TestCaseNoReviewsPostEdit(WebdriverTestCase):
         cls.team = TeamFactory(admin=cls.admin,
                                manager=cls.manager,
                                member=cls.member,
-                               workflow_enabled=True,
-                               translate_policy=20,
-                               subtitle_policy=20,
+                               workflow_enabled=False,
                               )
 
-        cls.workflow = WorkflowFactory(team = cls.team,
-                                       autocreate_subtitle=True,
-                                       autocreate_translate=True,
-                                       )
         lang_list = ['en', 'de', 'fr']
         for language in lang_list:
             TeamLangPrefFactory.create(team=cls.team, language_code=language,
@@ -867,7 +861,7 @@ class TestCaseNoWorkflow(WebdriverTestCase):
         cls.team = TeamFactory(admin=cls.admin,
                                manager=cls.manager,
                                member=cls.member,
-                               workflow_enabled=True,
+                               workflow_enabled=False,
                                translate_policy=20,
                                subtitle_policy=20,
                               )
@@ -877,8 +871,7 @@ class TestCaseNoWorkflow(WebdriverTestCase):
                                   video=cls.video)
         cls._upload_subs(cls.video, 'en', user=cls.member)
         cls._upload_subs(cls.video, 'fr', user=cls.member)
-
-        cls.video_lang_pg.open_video_lang_page(cls.video.video_id, 'en')
+        cls.video_lang_pg.open_page('/')
 
 
     @classmethod
@@ -901,29 +894,27 @@ class TestCaseNoWorkflow(WebdriverTestCase):
         self.team.subtitle_policy = 40
         self.team.translate_policy = 40
         self.team.save()
-        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
-
         #team admin
         self.video_lang_pg.log_in(self.admin.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team admin check failed')
  
         #team manager
         self.video_lang_pg.log_in(self.manager.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'team member check failed')
  
         #team member
         self.video_lang_pg.log_in(self.member.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'team member check failed')
         #non-member has no button
         self.video_lang_pg.log_in(self.nonmember.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'non-member check failed')
 
@@ -941,30 +932,28 @@ class TestCaseNoWorkflow(WebdriverTestCase):
         self.team.translate_policy = 40
         self.team.subtitle_policy = 40
         self.team.save()
-
-        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         #team admin
         self.video_lang_pg.log_in(self.admin.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team admin check failed')
  
         #team manager
         self.video_lang_pg.log_in(self.manager.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'team manager check failed')
 
         #team member
         self.video_lang_pg.log_in(self.member.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'team member check failed')
 
         #non-member has no button
         self.video_lang_pg.log_in(self.nonmember.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
 
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
@@ -983,34 +972,30 @@ class TestCaseNoWorkflow(WebdriverTestCase):
         """
         self.team.subtitle_policy = 30
         self.team.translate_policy = 30
-
         self.team.save()
-
-        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
-
         #team admin
         self.video_lang_pg.log_in(self.admin.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team admin check failed')
  
         #team manager
         self.video_lang_pg.log_in(self.manager.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team manager check failed')
  
         #team member
         self.video_lang_pg.log_in(self.member.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'team member check failed')
       
         #non-member has no button
         self.video_lang_pg.log_in(self.nonmember.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'non-member check failed')
 
@@ -1031,28 +1016,26 @@ class TestCaseNoWorkflow(WebdriverTestCase):
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         #team admin
         self.video_lang_pg.log_in(self.admin.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team admin check failed')
  
         #team manager
         self.video_lang_pg.log_in(self.manager.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team manager check failed')
  
         #team member
         self.video_lang_pg.log_in(self.member.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'team member check failed')
 
         #non-member has no button
         self.video_lang_pg.log_in(self.nonmember.username, 'password')
-        self.video_lang_pg.page_refresh()
-
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'non-member check failed')
@@ -1082,21 +1065,21 @@ class TestCaseNoWorkflow(WebdriverTestCase):
  
         #team manager
         self.video_lang_pg.log_in(self.manager.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team manager check failed')
  
         #team member
         self.video_lang_pg.log_in(self.member.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team member check failed')
       
         #non-member has no button
         self.video_lang_pg.log_in(self.nonmember.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
                          'non-member check failed')
 
@@ -1117,28 +1100,28 @@ class TestCaseNoWorkflow(WebdriverTestCase):
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         #team admin
         self.video_lang_pg.log_in(self.admin.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team admin check failed')
  
         #team manager
         self.video_lang_pg.log_in(self.manager.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team manager check failed')
  
         #team member
         self.video_lang_pg.log_in(self.member.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertEqual('active',  
                          self.video_lang_pg.edit_subtitles_active(),
                          'team member check failed')
 
         #non-member has no button
         self.video_lang_pg.log_in(self.nonmember.username, 'password')
-        self.video_lang_pg.page_refresh()
+        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
 
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'fr')
         self.assertFalse(self.video_lang_pg.edit_subtitles_exists(),
@@ -1188,6 +1171,7 @@ class TestCaseAdminUnpublish(WebdriverTestCase):
         cls.subs_dir = os.path.join(os.getcwd(), 'apps', 'webdriver_testing', 
                                     'subtitle_data') 
         cls.video, cls.tv = cls._create_source_with_multiple_revisions()
+        cls.video_lang_pg.open_video_lang_page(cls.video.video_id, 'en')
 
     def tearDown(self):
         if self.team.task_assign_policy > 10: #reset to default start value
@@ -1244,18 +1228,11 @@ class TestCaseAdminUnpublish(WebdriverTestCase):
         en_v4 = cls.en.get_tip(public=True)
         en_v4.visibility_override = 'private'
         en_v4.save() 
-        cls.video_lang_pg.open_video_lang_page(video.video_id, 'en')
-
         return video, tv
 
-
-    def test_unpublished_member_with_create_tasks(self):
-        """Unpublished version has Edit Subtitles active for member with permission.
-
-        """
-        self.video_lang_pg.log_in(self.member.username, 'password')
-        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
-        self.assertEqual('active', self.video_lang_pg.edit_subtitles_active())
+    def tearDown(self):
+        self.browser.execute_script("window.stop()")
+        time.sleep(1) 
 
     def test_unpublished_admin(self):
         """Admin can always edit unpublished version.
@@ -1270,18 +1247,19 @@ class TestCaseAdminUnpublish(WebdriverTestCase):
         """Owner can always edit unpublished version.
 
         """
-        self.video_lang_pg.log_in(self.admin.username, 'password')
+        owner = TeamMemberFactory(team=self.team).user 
+        self.video_lang_pg.log_in(owner.username, 'password')
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertEqual('active',
                          self.video_lang_pg.edit_subtitles_active())
 
-    def test_unpublished_member_with_no_create_tasks(self):
+    def test_unpublished_member_can_not_edit(self):
         """Member can't edit unpublished version when create tasks is manager level.
 
         """
         self.team.task_assign_policy = 30
         self.team.save()
-        team_member = TeamMemberFactory(role="ROLE_CONTRIBUTOR",team=self.team).user
+        team_member = TeamMemberFactory(role=TeamMember.ROLE_CONTRIBUTOR,team=self.team).user
         self.video_lang_pg.log_in(team_member.username, 'password')
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         
