@@ -53,7 +53,7 @@ import widget
 from widget import rpc as widget_rpc
 from auth.models import CustomUser as User
 from statistic.models import EmailShareStatistic
-from subtitles import models as sub_models
+from subtitles.models import SubtitleLanguage, SubtitleVersion
 from subtitles.permissions import (user_can_view_private_subtitles,
                                    user_can_edit_subtitles)
 from subtitles.forms import SubtitlesUploadForm
@@ -68,7 +68,7 @@ from videos.forms import (
     ChangeVideoOriginalLanguageForm, CreateSubtitlesForm,
 )
 from videos.models import (
-    Video, Action, SubtitleLanguage, VideoUrl, AlreadyEditingException
+    Video, Action, VideoUrl, AlreadyEditingException
 )
 from videos.rpc import VideosApiClass
 from videos.search_indexes import VideoIndex
@@ -502,7 +502,7 @@ def legacy_history(request, video, lang=None):
         language = video.subtitle_language(lang)
         if language is None:
             raise SubtitleLanguage.DoesNotExist("No such language")
-    except sub_models.SubtitleLanguage.DoesNotExist:
+    except SubtitleLanguage.DoesNotExist:
         raise Http404()
 
     return HttpResponseRedirect(reverse("videos:translation_history", kwargs={
@@ -561,7 +561,7 @@ class LanguagePageContext(dict):
             try:
                 return language.get_version_by_id(version_id,
                                                   public=self.public_only)
-            except sub_models.SubtitleVersion.DoesNotExist:
+            except SubtitleVersion.DoesNotExist:
                 raise Http404
         else:
             return language.get_tip(public=self.public_only)
@@ -743,7 +743,7 @@ def rollback(request, version):
 def diffing(request, first_version, second_pk):
     language = first_version.subtitle_language
     second_version = get_object_or_404(
-        sub_models.SubtitleVersion.objects.extant(),
+        SubtitleVersion.objects.extant(),
         pk=second_pk, subtitle_language=language)
 
     if first_version.video != second_version.video:

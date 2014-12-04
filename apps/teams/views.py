@@ -1610,7 +1610,7 @@ def old_dashboard(request, team):
                                                  .values_list("language_code", flat=True))
                 if len(subtitled_languages) != len(user_languages):
                     tv = video.teamvideo
-                    tv.languages = [l for l in user_languages if l.language not in subtitled_languages]
+                    tv.languages = [l for l in user_languages if l not in subtitled_languages]
                     videos.append(tv)
     else:
         videos = []
