@@ -2,7 +2,7 @@
 import os
 import time
 
-
+from caching.tests.utils import assert_invalidates_model_cache
 from ted import tasks
 from videos.models import Video
 from utils.factories import *
@@ -114,9 +114,6 @@ class TestCaseModeratedVideoTitles(WebdriverTestCase):
         self.data_utils.complete_approve_task(video.get_team_video(),
                                             20, self.manager)
 
-
-
-
     def test_post_publish_edit(self):
         """Edit title in approve, video title updated after publish """
         video = TeamVideoFactory(team=self.team,
@@ -133,7 +130,8 @@ class TestCaseModeratedVideoTitles(WebdriverTestCase):
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
         self.video_lang_pg.edit_subtitles() 
         self.editor_pg.edit_title(new_title)
-        self.editor_pg.collab_action('publish')
+        with assert_invalidates_model_cache(video):
+            self.editor_pg.collab_action('publish')
         self.assertEqual(new_title, self.video_pg.video_title())
 
 

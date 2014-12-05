@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
+from caching.tests.utils import assert_invalidates_model_cache
 
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages.teams_dir_page import TeamsDirPage
@@ -58,7 +59,8 @@ class TestCaseMembersTab(WebdriverTestCase):
  
         self.members_tab.log_in(self.admin.username, 'password')
         self.members_tab.member_search(self.promoted_manager.username)
-        self.members_tab.edit_user(role="Manager")
+        with assert_invalidates_model_cache(self.team):
+            self.members_tab.edit_user(role="Manager")
         self.members_tab.member_search(self.promoted_manager.username)
         self.assertEqual(self.members_tab.user_role(), 'Manager')
 

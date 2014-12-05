@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from caching.tests.utils import assert_invalidates_model_cache
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages.teams_dir_page import TeamsDirPage
 from teams.models import TeamMember
@@ -31,7 +32,8 @@ class TestCaseLeaveTeam(WebdriverTestCase):
 
         """
         self.team_dir_pg.log_in(self.member.username, 'password')
-        self.team_dir_pg.leave_team(self.team.slug)
+        with assert_invalidates_model_cache(self.team):
+            self.team_dir_pg.leave_team(self.team.slug)
         self.assertTrue(self.team_dir_pg.leave_team_successful())
 
     def test_leave_second_to_last_owner(self):

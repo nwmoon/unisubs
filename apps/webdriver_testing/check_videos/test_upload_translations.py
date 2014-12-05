@@ -2,6 +2,7 @@ import os
 import codecs
 import time
 
+from caching.tests.utils import assert_invalidates_model_cache
 from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
@@ -56,10 +57,11 @@ class TestCaseUploadTranslation(WebdriverTestCase):
         """Upload a new translation.
 
         """
-        test_file = 'Timed_text.sv.dfxp'
-        sub_file = os.path.join(self.subs_data_dir, test_file)       
-        sc = self._upload_and_verify(self.tv, sub_file, 'Swedish', 'sv')
-        self.assertEqual(sc, 72)    
+        with assert_invalidates_model_cache(self.tv):
+            test_file = 'Timed_text.sv.dfxp'
+            sub_file = os.path.join(self.subs_data_dir, test_file)       
+            sc = self._upload_and_verify(self.tv, sub_file, 'Swedish', 'sv')
+            self.assertEqual(sc, 72)    
 
 
     def test_editable(self):
