@@ -3,12 +3,13 @@
 import time
 import os
 import filecmp
-
+from caching.tests.utils import assert_invalidates_model_cache
 from utils.factories import *
 from videos import metadata_manager
 from videos.models import Video
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages.teams import videos_tab
+from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages.teams.tasks_tab import TasksTab
 from webdriver_testing.pages.site_pages import watch_page
 from webdriver_testing import data_helpers
@@ -33,6 +34,7 @@ class TestCaseEdit(WebdriverTestCase):
                                manager=cls.manager,
                                member=cls.member)
 
+        cls.video_pg = video_page.VideoPage(cls)
         cls.videos_tab = videos_tab.VideosTab(cls)
         cls.test_video = YouTubeVideoFactory(video_url='http://www.youtube.com/watch?v=WqJineyEszo')
         cls.data_utils.add_subs(video=cls.test_video)
@@ -54,7 +56,6 @@ class TestCaseEdit(WebdriverTestCase):
         self.videos_tab.open_videos_tab(self.team.slug)
         video, _ = Video.get_or_create_for_url(test_url)
         self.assertTrue(self.videos_tab.video_present(video.title))
-
 
     def test_add_duplicate(self):
         """Submit a video that is already in amara.
@@ -122,7 +123,6 @@ class TestCaseEdit(WebdriverTestCase):
 
         self.assertTrue(results_pg.search_has_no_results())
 
-
     def test_remove_team_only(self):
         """Remove video from team but NOT site.
 
@@ -138,16 +138,16 @@ class TestCaseEdit(WebdriverTestCase):
             team=self.team, 
             video = tv)
         management.call_command('update_index', interactive=False)
-
+        self.video_pg.open_video_page(tv.video_id)
         #Search for the video in team videos and remove it.
         self.videos_tab.open_videos_tab(self.team.slug)
         self.videos_tab.search(tv.title)
-        self.videos_tab.remove_video(video = tv.title, 
-            removal_action='team-removal')
-        time.sleep(2)
-        #Update the solr index
-        management.call_command('update_index', interactive=False)
-
+        with assert_invalidates_model_cache(tv):
+            self.videos_tab.remove_video(video = tv.title, 
+                removal_action='team-removal')
+            time.sleep(2)
+            #Update the solr index
+            management.call_command('update_index', interactive=False)
         #Verify video no longer in teams
         self.assertEqual(tv.get_team_video(), None)
 

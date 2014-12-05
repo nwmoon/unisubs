@@ -1,6 +1,6 @@
 import os
 import time
-
+from caching.tests.utils import assert_invalidates_model_cache
 from django.core import management
 from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
@@ -71,8 +71,9 @@ class TestCaseUnpublishLast(WebdriverTestCase):
         cls.logger.info('Setting visibility override on v3 to private')
         cls.en = cls.video.subtitle_language('en')
         en_v3 = cls.en.get_tip(full=True)
-        en_v3.visibility_override = 'private'
-        en_v3.save() 
+        with assert_invalidates_model_cache(cls.video): 
+            en_v3.visibility_override = 'private'
+            en_v3.save() 
         cls.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % cls.team.slug)
  

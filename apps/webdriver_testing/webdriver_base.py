@@ -55,7 +55,7 @@ class WebdriverTestCase(LiveServerTestCase, TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.browser.execute_script("window.stop()")
-        time.sleep(1)
+        time.sleep(2)
         if not cls.NEW_BROWSER_PER_TEST_CASE:
             cls.destroy_browser()
         #destroy the selenium browser before teardown to avoid liveserver

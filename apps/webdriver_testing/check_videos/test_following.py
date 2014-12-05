@@ -1,5 +1,6 @@
 import os
 
+from caching.tests.utils import assert_invalidates_model_cache
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import create_page
@@ -89,9 +90,11 @@ class TestCaseFollowing(WebdriverTestCase):
         follower = UserFactory()
         self.video_pg.log_in(follower.username, 'password')
         self.video_pg.open_video_page(self.video.video_id)
-        self.video_pg.toggle_follow()
+        with assert_invalidates_model_cache(self.video): 
+            self.video_pg.toggle_follow()
         self.assertEqual(self.FOLLOWING, self.video_pg.follow_text())
-        self.video_pg.toggle_follow()
+        with assert_invalidates_model_cache(self.video):
+            self.video_pg.toggle_follow()
         self.assertEqual(self.NOT_FOLLOWING, self.video_pg.follow_text())
 
     def test_toggle_following_language(self):

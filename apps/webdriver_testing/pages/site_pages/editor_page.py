@@ -411,7 +411,7 @@ class EditorPage(UnisubsPage):
         return self.is_element_visible(self._COLLAB_PANEL)
 
     def collab_action(self, action):
-        els = self.get_elements_list("div.actions button")
+        els = self.get_elements_list("button[ng-repeat='action in actions']")
         [el.click() for el in els if el.text == action]
 
     def action_buttons(self):

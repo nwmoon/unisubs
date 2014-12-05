@@ -1,14 +1,15 @@
 import os
 
+from caching.tests.utils import assert_invalidates_model_cache
 from utils.factories import *
 from subtitles import pipeline
 from teams.models import TeamMember
+
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import diffing_page
 from webdriver_testing import data_helpers
-
 from webdriver_testing.data_factories import TeamManagerLanguageFactory
 from webdriver_testing.data_factories import TeamLangPrefFactory
 
@@ -1131,7 +1132,8 @@ class TestCaseRollbackRevision(WebdriverTestCase):
         self.video_lang_pg.log_in(self.manager.username, 'password')
 
         self.video_lang_pg.open_page(v1.get_absolute_url())
-        self.assertTrue(self.video_lang_pg.rollback())
+        with assert_invalidates_model_cache(video):
+            self.assertTrue(self.video_lang_pg.rollback())
         
         self.assertTrue(self.video_lang_pg.is_draft())
         self.assertIn('Revision 3', self.video_lang_pg.view_notice())
