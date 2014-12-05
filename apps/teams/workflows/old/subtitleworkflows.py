@@ -215,7 +215,7 @@ class TaskTeamSubtitlesWorkflow(TeamSubtitlesWorkflow):
         return TaskTeamEditorNotes(self.team_video, language_code)
 
     def get_add_language_mode(self, user):
-        if self.team_video.team.is_member(user):
+        if self.team_video.team.user_is_member(user):
             return mark_safe(
                 fmt(_(
                     '<a class="icon" href="%(url)s">'

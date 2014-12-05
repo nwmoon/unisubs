@@ -1,4 +1,4 @@
-{% load i18n announcement_tags messages_tags profiles_tags media_bundle auth_tags %}
+{% load i18n amara_cache announcement_tags messages_tags profiles_tags media_bundle auth_tags %}
 
 {% get_current_language_bidi as LANGUAGE_BIDI %}
 
@@ -77,11 +77,7 @@
                 <img alt="Search" src="{{ STATIC_URL }}images/glyphicons_027_search-light.png">
               </a>
             </li>
-            {% if user.is_authenticated %}
-            <li id="me_menu">{% top_user_panel %}</li>
-            {% else %}
-            <li><a href="{% url auth:login %}?next={{ request.path_info|urlencode }}">{% trans 'Sign in / Sign up' %}</a></li>
-            {% endif %}
+            {% include "profiles/_user_menu.html" %}<
           </ul>
         </div>
       </div>

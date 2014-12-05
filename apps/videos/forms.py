@@ -337,7 +337,7 @@ class CreateSubtitlesFormBase(forms.Form):
 
     def setup_subtitle_language_code(self):
         if self.user.is_authenticated():
-            user_langs = [l.language for l in self.user.get_languages()]
+            user_langs = self.user.get_languages()
         else:
             user_langs = get_user_languages_from_request(self.request)
         if not user_langs:
@@ -352,7 +352,9 @@ class CreateSubtitlesFormBase(forms.Form):
         field.choices = sorted(get_language_choices(), key=sort_key)
 
     def set_primary_audio_language(self):
-        video = self.get_video()
+        # Sometimes we are passed in a cached video, which can't be saved.
+        # Make sure we have one from the DB.
+        video = Video.objects.get(pk=self.get_video().pk)
         lang = self.cleaned_data['primary_audio_language_code']
         video.primary_audio_language_code = lang
         video.save()
@@ -400,9 +402,7 @@ class CreateSubtitlesForm(CreateSubtitlesFormBase):
     def setup_subtitle_language_code(self):
         super(CreateSubtitlesForm, self).setup_subtitle_language_code()
         # remove languages that already have subtitles
-        current_langs = set(
-            l.language_code for l in
-            self.video.newsubtitlelanguage_set.having_versions())
+        current_langs = set(self.video.languages_with_versions())
         field = self.fields['subtitle_language_code']
         field.choices = [choice for choice in field.choices
                          if choice[0] not in current_langs]

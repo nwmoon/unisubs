@@ -16,9 +16,5 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from auth.models import UserCache
-
-UserCache.keys_to_fetch.append('messages')
-
 # import signalhandlers to register the receiver functions
 import messages.signalhandlers

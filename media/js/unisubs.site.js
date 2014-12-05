@@ -24,65 +24,6 @@ var Site = function(Site) {
 
     var that = this;
 
-    /*
-     * use AHAH to load tabs
-     */
-    function AHAHTabLoader(onComplete) {
-        this.tabContainer = $('#tab-container');
-        this.tabCache = {};
-        this.cacheContents(window.location.href);
-        this.onComplete = onComplete;
-    }
-
-    AHAHTabLoader.prototype = {
-        cacheContents: function(url) {
-            this.tabCache[url] = this.tabContainer.contents();
-        },
-        changeCurrentTab: function(url) {
-            var tab = url.match(/tab=([^&]+)/)[1];
-            $('.tabs li').removeClass('current');
-            $('#' + tab + '-tab-header').addClass('current');
-        },
-        updateLocation: function(url) {
-            if(history && history.pushState) {
-                history.pushState(null, null, url);
-            }
-        },
-        addLinks: function(selector) {
-            var self = this;
-            $('a', $(selector)).each(function() {
-                var link = $(this);
-                if(!link.data('AHAHTabLoaderConnected')) {
-                    link.click(function(evt) {
-                        self.handleClick(evt, link);
-                    });
-                    link.data('AHAHTabLoaderConnected', true);
-                }
-            });
-        },
-        handleClick: function(evt, link) {
-            var url = link[0].href;
-            this.changeCurrentTab(url);
-            this.updateLocation(url);
-            this.tabContainer.empty();
-            if(this.tabCache.hasOwnProperty(url)) {
-                this.tabContainer.append(this.tabCache[url]);
-                if(this.onComplete) {
-                    this.onComplete(this.tabContainer);
-                }
-            } else {
-                var self = this;
-                this.tabContainer.load(url, null, function() {
-                    self.cacheContents(url);
-                    if(self.onComplete) {
-                        self.onComplete(this);
-                    }
-                });
-            }
-            evt.stopPropagation();
-            evt.preventDefault();
-        }
-    };
     this.init = function() {
 
         // Global cached jQuery objects
@@ -704,17 +645,6 @@ var Site = function(Site) {
                 });
             }
             setupRevisions();
-            var tabLoader = new AHAHTabLoader(function($container) {
-                that.setupModalDialogs($container);
-                // We may load new pagination links, in that case make sure
-                // they're loaded.
-                tabLoader.addLinks('.pagination');
-                // If we loaded the revisions tab, we need to attach our js to
-                // it
-                setupRevisions();
-            });
-            tabLoader.addLinks('.tabs');
-            tabLoader.addLinks('.pagination');
 
             $('#edit_subtitles_button').click( function(e) {
                 if (!(localStorage && localStorage.getItem)) {
@@ -728,12 +658,6 @@ var Site = function(Site) {
                 }
             });
             that.Utils.truncateTextBlocks($('div.description'), 90);
-        },
-        video_view: function() {
-            var tabLoader = new AHAHTabLoader(function($container) {
-                that.setupModalDialogs($container);
-            });
-            tabLoader.addLinks('.tabs');
         },
         video_set_language: function() {
             that.Utils.chosenify();

@@ -122,7 +122,6 @@ TEMPLATE_LOADERS = (
 
 
 MIDDLEWARE_CLASSES = (
-    'middleware.ResponseTimeMiddleware',
     'middleware.StripGoogleAnalyticsCookieMiddleware',
     'utils.ajaxmiddleware.AjaxErrorMiddleware',
     'localeurl.middleware.LocaleURLMiddleware',
@@ -130,11 +129,11 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'auth.middleware.AmaraAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'openid_consumer.middleware.OpenIDMiddleware',
     'middleware.P3PHeaderMiddleware',
     'middleware.UserUUIDMiddleware',
-    'middleware.SaveUserIp',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
@@ -191,6 +190,7 @@ INSTALLED_APPS = (
     'amaradotorg',
     'amaracelery',
     'api',
+    'caching',
     'comments',
     'externalsites',
     'messages',
@@ -276,6 +276,9 @@ FACEBOOK_SECRET_KEY = ''
 VIMEO_API_KEY = None
 VIMEO_API_SECRET = None
 
+# NOTE: all of these backends store the User.id value in the session data,
+# which we rely on in AmaraAuthenticationMiddleware.  Other backends should
+# use the same system.
 AUTHENTICATION_BACKENDS = (
    'auth.backends.CustomUserBackend',
    'thirdpartyaccounts.auth_backends.TwitterAuthBackend',

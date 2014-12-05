@@ -10,6 +10,7 @@ codebase.
 
    workflow
    testing
+   caching
    teams
    editor
    subtitle-workflows

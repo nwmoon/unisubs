@@ -9,16 +9,24 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Affero General Public License for more details.
 #
 # You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see
+# along with this program. If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from auth.models import UserCache
+import contextlib
 
-UserCache.keys_to_fetch.append('top-panel')
+from nose.tools import *
 
-# import signal handlers to register the receiver functions
-import profiles.signalhandlers
+@contextlib.contextmanager
+def assert_invalidates_model_cache(instance):
+    key = 'assert-invalidates-video-cache'
+    # delete the current CacheGroup to make sure we get a clean one
+    Model = instance.__class__
+    cache_group = Model.cache.get_cache_group(instance.pk)
+    cache_group.set(key, 'value')
+    yield
+    cache_group = Model.cache.get_cache_group(instance.pk)
+    assert_equal(cache_group.get(key), None, 'cache not invalidated')

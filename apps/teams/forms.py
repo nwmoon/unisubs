@@ -33,7 +33,8 @@ from teams.models import (
 )
 from teams.permissions import (
     roles_user_can_invite, can_delete_task, can_add_video, can_perform_task,
-    can_assign_task, can_delete_language, can_remove_video
+    can_assign_task, can_delete_language, can_remove_video,
+    can_add_video_somewhere
 )
 from teams.permissions_const import ROLE_NAMES
 from teams.workflows import TeamWorkflow
@@ -158,6 +159,21 @@ class BaseVideoBoundForm(forms.ModelForm):
         super(BaseVideoBoundForm, self).__init__(*args, **kwargs)
         if hasattr(self, 'user'):
             self.fields['video_url'].user = self.user
+
+class AddVideoToTeamForm(forms.Form):
+    """Used to add a non-team video to one of the user's managed teams."""
+
+    team = forms.ChoiceField()
+
+    def __init__(self, user, data=None, **kwargs):
+        super(AddVideoToTeamForm, self).__init__(data, **kwargs)
+        team_qs = (Team.objects
+                   .filter(users=user)
+                   .prefetch_related('project_set'))
+        self.fields['team'].choices = [
+            (team.id, unicode(team)) for team in team_qs
+            if can_add_video_somewhere(team, user)
+        ]
 
 class AddTeamVideoForm(BaseVideoBoundForm):
     language = forms.ChoiceField(label=_(u'Video language'), choices=(),

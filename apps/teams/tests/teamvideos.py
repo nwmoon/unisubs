@@ -23,9 +23,29 @@ from datetime import datetime
 from django.test import TestCase
 import mock
 
+from caching.tests.utils import assert_invalidates_model_cache
 from teams.models import Project, TeamVideoMigration
 from utils import test_utils
 from utils.factories import *
+
+class TeamVideoCacheTest(TestCase):
+    def setUp(self):
+        self.video = VideoFactory()
+
+    def test_add_to_team(self):
+        with assert_invalidates_model_cache(self.video):
+            TeamVideoFactory(video=self.video)
+
+    def test_move_team(self):
+        team_video = TeamVideoFactory(video=self.video)
+        other_team = TeamFactory()
+        with assert_invalidates_model_cache(self.video):
+            team_video.move_to(other_team)
+
+    def test_remove_from_team(self):
+        team_video = TeamVideoFactory(video=self.video)
+        with assert_invalidates_model_cache(self.video):
+            team_video.delete()
 
 class TeamMoveTest(TestCase):
     def setUp(self):

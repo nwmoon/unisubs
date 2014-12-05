@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.functional import wraps
@@ -13,11 +14,31 @@ def get_video_from_code(func):
     for the user on that request.
     """
     def wrapper(request, video_id, *args, **kwargs):
-        video = get_object_or_404(Video, video_id=video_id)
+        qs = Video.objects.select_related('teamvideo')
+        video = get_object_or_404(qs, video_id=video_id)
         if not video.can_user_see(request.user):
-            raise Http404
+            raise PermissionDenied()
         return func(request, video, *args, **kwargs)
     return wraps(func)(wrapper)
+
+def get_cached_video_from_code(cache_pattern):
+    """
+    Like get_video_from_code(), but uses Video.cache.get_instance() to get a
+    cached version of the video.
+    """
+    def decorator(func):
+        def wrapper(request, video_id, *args, **kwargs):
+            try:
+                video = Video.cache.get_instance_by_video_id(video_id,
+                                                             cache_pattern)
+            except Video.DoesNotExist:
+                raise Http404
+            request.use_cached_user()
+            if not video.can_user_see(request.user):
+                raise PermissionDenied()
+            return func(request, video, *args, **kwargs)
+        return wraps(func)(wrapper)
+    return decorator
 
 def get_video_revision(func):
     """
@@ -33,6 +54,6 @@ def get_video_revision(func):
 
         if not video.can_user_see(request.user):
             raise Http404
-        
+
         return func(request, version, *args, **kwargs)
     return wraps(func)(wrapper)

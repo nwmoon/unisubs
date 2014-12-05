@@ -34,7 +34,7 @@ from auth.models import CustomUser as User
 from subtitles import pipeline
 from teams.models import Task
 from teams.permissions_const import ROLE_ADMIN
-from videos.share_utils import _make_email_url
+from videos.share_utils import make_email_url
 from videos.tasks import video_changed_tasks
 from videos.templatetags.subtitles_tags import format_sub_time
 from videos.tests.videotestutils import (
@@ -255,7 +255,7 @@ class TestViews(WebUseTest):
         self.assertEquals(len(mail.outbox), 1)
 
         msg = u'Hey-- just found a version of this video ("Tú - Jennifer Lopez") with captions: http://unisubs.example.com:8000/en/videos/OcuMvG3LrypJ/'
-        url = _make_email_url(msg)
+        url = make_email_url(msg)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
@@ -400,8 +400,8 @@ class TestViews(WebUseTest):
 
 class VideoTitleTest(TestCase):
     def check_video_page_title(self, video, correct_title):
-        self.assertEquals(views.VideoPageContext.page_title(video),
-                          correct_title)
+        video.cache.invalidate()
+        self.assertEquals(video.page_title(), correct_title)
 
     def check_language_page_title(self, language, correct_title):
         self.assertEquals(views.LanguagePageContext.page_title(language),

@@ -102,13 +102,3 @@ def user_avatar(context, user_obj):
 @register.filter
 def custom_avatar(user, size):
     return user._get_avatar_by_size(size)
-
-@register.simple_tag(takes_context=True)
-def top_user_panel(context):
-    user = context['user']
-    cached = user.cache.get('top-panel')
-    if cached:
-        return cached
-    content = render_to_string('profiles/_top_user_panel.html', context)
-    user.cache.set('top-panel', content, 30*60)
-    return content

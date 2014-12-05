@@ -128,7 +128,9 @@ var angular = angular || null;
         }
 
         $scope.setInitialDisplayLanguage = function(allLanguages) {
-            $scope.languages = allLanguages;
+            $scope.languages = _.filter(allLanguages, function(l) {
+                return l.versions.length > 0;
+            })
             $scope.language = pickInitialLanguage();
             $scope.languageChanged();
         }

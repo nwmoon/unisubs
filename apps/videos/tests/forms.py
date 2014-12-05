@@ -187,10 +187,10 @@ class CreateSubtitlesFormTest(CreateSubtitlesFormTestBase):
                              key=lambda choice: choice[1]))
             return rv
 
-        self.user = UserFactory(languages=['fr', 'es'])
+        self.user = UserFactory(languages=['es', 'fr'])
         self.assertEquals(
             self.make_form()['subtitle_language_code'].field.choices,
-            language_choices_ordered('fr', 'es'))
+            language_choices_ordered('es', 'fr'))
         # for anonymous users, we should call
         # get_user_languages_from_request().  If that fails to return a
         # usable result, then we default to english.
@@ -233,6 +233,7 @@ class CreateSubtitlesFormTest(CreateSubtitlesFormTestBase):
         # handle_post should set the primary_audio_language_code, then
         # redirect to the editor
         response = form.handle_post()
+        self.video = test_utils.reload_obj(self.video)
         self.assertEquals(self.video.primary_audio_language_code, 'en')
         self.check_redirect(response, 'fr')
 

@@ -784,6 +784,7 @@ class SubtitleLanguage(models.Model):
             signals.language_deleted.send(lang)
             from teams.signals import api_language_deleted
             api_language_deleted.send(lang)
+        Video.cache.invalidate_by_pk(self.video_id)
 
     def update_signoff_counts(self):
         """Update the denormalized signoff count fields and save."""
@@ -1036,6 +1037,9 @@ LIMIT 1;""", (self.id, self.id))
         """
         return SubtitleLanguage.objects.having_nonempty_versions().filter(
                 video=self.video).exists()
+
+    def user_is_follower(self, user):
+        return self.followers.filter(id=user.id).exists()
 
     def notification_list(self, exclude=None):
         qs = self.followers.filter(notify_by_email=True, is_active=True)
@@ -1721,10 +1725,6 @@ class SubtitleVersion(models.Model):
     def publish(self):
         """Make this version publicly viewable."""
 
-        team_video = self.video.get_team_video()
-
-        assert team_video, \
-               "Cannot publish for a video not moderated by a team."
         was_public = self.is_public()
         self.visibility = 'public'
         self.save()
@@ -1749,9 +1749,6 @@ class SubtitleVersion(models.Model):
         :param signal: when set we will emit the public_tip_changed() or
         language_deleted signal
         """
-        team_video = self.video.get_team_video()
-        assert team_video, \
-               "Cannot unpublish for a video not moderated by a team."
         if signal:
             was_tip = self.is_tip()
 

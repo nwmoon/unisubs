@@ -546,8 +546,8 @@ def add_subtitles(video, language_code, subtitles,
                                  created, note, origin, metadata, action)
     if action:
         action.perform(author, video, version.subtitle_language, version)
+    video.cache.invalidate()
     return version
-
 
 def _calc_action_for_add_subtitles(video, language_code, author, complete,
                                    action_name):
@@ -601,6 +601,8 @@ def rollback_to(video, language_code, version_number,
 
     """
     with transaction.commit_on_success():
-        return _rollback_to(video, language_code, version_number,
-                            rollback_author)
+        version = _rollback_to(video, language_code, version_number,
+                               rollback_author)
+    video.cache.invalidate()
+    return version
 

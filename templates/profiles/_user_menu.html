@@ -1,5 +1,7 @@
-{% load i18n %}
+{% load i18n amara_cache %}
+{% cache-by-user top-panel %}
 {% if user.is_authenticated %}
+<li id="me_menu">
     <div id="user_menu">
         <div id="menu_name">
             <a href="{% url profiles:edit %}">{{ user.username }} &#9662;</a>
@@ -52,4 +54,8 @@
             </ul>
         </div>
     </div>
+</li>
+{% else %}
+<li><a href="{% url auth:login %}?next={{ request.path_info|urlencode }}">{% trans 'Sign in / Sign up' %}</a></li>
 {% endif %}
+{% endcache %}

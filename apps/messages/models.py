@@ -28,7 +28,6 @@ from django.core.urlresolvers import reverse
 from django.utils.html import escape, urlize
 
 from auth.models import CustomUser as User
-from auth.models import UserCache
 
 MESSAGE_MAX_LENGTH = getattr(settings,'MESSAGE_MAX_LENGTH', 1000)
 
@@ -47,8 +46,7 @@ class MessageManager(models.Manager):
     def bulk_create(self, object_list, **kwargs):
         super(MessageManager, self).bulk_create(object_list, **kwargs)
         for user_id in set(m.user_id for m in object_list):
-            UserCache.delete_by_id(user_id, 'messages')
-            UserCache.delete_by_id(user_id, 'top-panel')
+            User.cache.invalidate_by_pk(user_id)
 
 class Message(models.Model):
     user = models.ForeignKey(User)

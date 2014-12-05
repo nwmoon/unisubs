@@ -12,33 +12,31 @@ import widget
 def domain():
     return Site.objects.get_current().domain
     
-def _make_facebook_url(page_url, msg):
+def make_facebook_url(page_url, msg):
     title = u'%s: %s' % (msg, page_url)
     url = "http://www.facebook.com/sharer.php?%s"
     url_param = urlencode({'u': page_url, 't': title})
     return url % url_param
 
-def _make_twitter_url(page_url, message):
+def make_twitter_url(page_url, message):
     url = "http://twitter.com/share/?%s"
     url_param = urlencode({'text': message, 'url': page_url})
     return url % url_param
 
-def _make_email_url(message):
+def make_email_url(message):
     url = reverse('videos:email_friend')
     return "%s?%s" % (url, urlencode({'text': message}))
 
-def _add_share_panel_context(context, facebook_url, twitter_url, embed_params,
-                             email_url, permalink):
-    
-    context["share_panel_facebook_url"] = facebook_url
-    context["share_panel_twitter_url"] = twitter_url
-    context["share_panel_email_url"] = email_url
-    context["share_panel_permalink"] = permalink
+def share_panel_context(facebook_url, twitter_url, embed_params, email_url,
+                         permalink):
+    return {
+        "share_panel_facebook_url": facebook_url,
+        "share_panel_twitter_url": twitter_url,
+        "share_panel_email_url": email_url,
+        "share_panel_permalink": permalink,
+    }
 
-def _share_video_title(video):
-    return u"\"{0}\" ".format(video.title) if video.title else ''
-
-def _add_share_panel_context_for_video(context, video):
+def share_panel_context_for_video(video):
     page_url = reverse('videos:video', kwargs={'video_id':video.video_id})
     abs_page_url = "http://{0}{1}".format(domain(), page_url)
     
@@ -46,33 +44,32 @@ def _add_share_panel_context_for_video(context, video):
         msg = _(u"Just found a version of this video with subtitles")
     else:
         msg = _("Check out this video and help make subtitles")
-        
+
     email_message = _(u"Hey-- check out this video %(video_title)s and help make subtitles: %(url)s")
     email_message = fmt(email_message,
-                        video_title=_share_video_title(video),
+                        video_title=video.title_display(),
                         url=abs_page_url)
         
-    _add_share_panel_context(
-        context, 
-        _make_facebook_url(abs_page_url, msg),
-        _make_twitter_url(abs_page_url, msg), 
+    return share_panel_context(
+        make_facebook_url(abs_page_url, msg),
+        make_twitter_url(abs_page_url, msg), 
         { 'video_url': video.get_video_url() },
-        _make_email_url(email_message),
+        make_email_url(email_message),
         abs_page_url
     )
 
-def _add_share_panel_context_for_history(context, video, language=None):
+def add_share_panel_context_for_history(context, video, language=None):
     page_url = language.get_absolute_url() if language else video.get_absolute_url()
     abs_page_url = "http://{0}{1}".format(domain(), page_url)
     
     msg = _(u"%(language)s subtitles for %(video)s:") % {
         'language': language,
-        'video':_share_video_title(video)
+        'video':video.title_display(),
     }
     
     email_message = _(u"Hey-- just found %(language)s subtitles for %(video_title)s: %(url)s")
     email_message = fmt(email_message,
-                        video_title=_share_video_title(video),
+                        video_title=video.title_display(),
                         language=language,
                         url=abs_page_url)
 
@@ -81,33 +78,10 @@ def _add_share_panel_context_for_history(context, video, language=None):
     else:
         base_state = {}
     
-    _add_share_panel_context(
-        context,
-        _make_facebook_url(abs_page_url, msg),
-        _make_twitter_url(abs_page_url, msg),
+    context.update(share_panel_context(
+        make_facebook_url(abs_page_url, msg),
+        make_twitter_url(abs_page_url, msg),
         { 'video_url': video.get_video_url(), 'base_state': base_state },
-        _make_email_url(email_message),
-        abs_page_url)
-
-def _add_share_panel_context_for_translation_history(context, video, language_code):
-    page_url = reverse('videos:translation_history', args=[video.video_id, language_code])
-    abs_page_url = "http://{0}{1}".format(domain(), page_url)
-
-    language_name = widget.LANGUAGES_MAP[language_code]
-    
-    msg = _(u"Just found a version of this video with %(language_name)s subtitles")
-    msg = msg % dict(language_name=language_name)
-    
-    email_message = u"Hey-- just found a version of this video %(video_title)swith %(language_name)s subtitles: %(url)s"
-    email_message = fmt(email_message,
-                        video_title=_share_video_title(video),
-                        language_name=language_name,
-                        url=abs_page_url)
-    
-    _add_share_panel_context(
-        context,
-        _make_facebook_url(abs_page_url, msg),
-        _make_twitter_url(abs_page_url, msg),
-        { 'video_url': video.get_video_url(), 'base_state': { 'language': str(language_code) }},
-        _make_email_url(email_message),
-        abs_page_url)
+        make_email_url(email_message),
+        abs_page_url
+    ))

@@ -68,11 +68,6 @@ def video_url_panel(context):
     return context
 
 @register.simple_tag
-def video_url_count(video):
-    return video.videourl_set.count()
-
-
-@register.simple_tag
 def language_url(request, lang):
     """Return the absolute url for that subtitle language.
 

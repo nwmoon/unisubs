@@ -22,6 +22,7 @@ Team workflow startup code
 
 from utils.behaviors import DONT_OVERRIDE
 import subtitles.workflows
+from teams.models import Team
 from teams.workflows import TeamWorkflow
 from teams.workflows.old import OldTeamWorkflow
 
@@ -30,8 +31,15 @@ def get_workflow_override(video):
     team_video = video.get_team_video()
     if team_video is None:
         return DONT_OVERRIDE
-    team_workflow = TeamWorkflow.get_workflow(team_video.team)
+    # if we have have a video from cache also get the team from cache
+    if video.cache.cache_pattern is not None:
+        team = Team.cache.get_instance(team_video.team_id,
+                                       video.cache.cache_pattern)
+        team_video.team = team
+        team_workflow = TeamWorkflow.get_workflow(team)
+    else:
+        team_workflow = TeamWorkflow.get_workflow(team_video.team)
     return team_workflow.get_subtitle_workflow(team_video)
 
-# register defalut team workflows
+# register default team workflows
 OldTeamWorkflow.register()

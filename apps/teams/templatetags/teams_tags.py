@@ -235,21 +235,6 @@ def share_panel_email_url(context):
 
     return share_panel_email_url
 
-
-@register.inclusion_tag('teams/_team_add_video_select.html', takes_context=True)
-def team_add_video_select(context):
-    request = context['request']
-
-    #fix problem with encoding "?" in build_absolute_uri. It is not encoded,
-    #so we get not same URL that page has
-    location = request.get_full_path()
-
-    user = context['user']
-    if user.is_authenticated():
-        qs = Team.objects.filter(users=user)
-        context['teams'] = [team for team in qs if can_add_video_somewhere(team, user)]
-    return context
-
 @register.inclusion_tag('teams/_team_move_video_select.html', takes_context=True)
 def team_move_video_select(context):
     user = context['user']

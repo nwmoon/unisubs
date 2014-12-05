@@ -23,6 +23,7 @@ import math_captcha
 import babelsubs
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from nose.tools import *
 
 from auth.models import CustomUser as User
 from subtitles.pipeline import add_subtitles
@@ -106,5 +107,3 @@ class WebUseTest(TestCase):
             self.client.login(username=user.username, password='password')
         else:
             self._login(get_user(200))
-
-

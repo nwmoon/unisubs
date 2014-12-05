@@ -1,7 +1,7 @@
 <div class="language-selections group toolbar"
     language-selector
     ng-controller="LanguageSelectorController">
-    <div class="select" ng-show="versions">
+    <div class="select" ng-show="languages">
         <select name="language"
             ng-model='language'
             ng-options="(item.name + (item.isPrimaryAudioLanguage? ' (original)' : '')) for item in languages | orderBy:'name'">

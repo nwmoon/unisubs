@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from django.core.urlresolvers import reverse
 from django.utils import translation
 from django.test import TestCase
+from nose.tools import *
 import mock
 
 from utils import test_utils
@@ -234,7 +235,7 @@ class MetadataFieldsTest(TestCase):
         # but convert_for_display() should eliminate the value
         self.assertEquals(self.video.get_metadata().convert_for_display(), [])
 
-class MetadataViewsTest(TestCase):
+class MetadataForLocaleTest(TestCase):
     def setUp(self):
         TestCase.setUp(self)
         self.video = VideoFactory()
@@ -245,20 +246,12 @@ class MetadataViewsTest(TestCase):
             'location': 'Place-fr',
         })
 
-    def check_response_location(self, correct_location):
-        url = reverse('videos:video_with_title', kwargs={
-            'video_id': self.video.video_id,
-            'title': self.video.title_for_url(),
-        })
-        response = self.client.get(url)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['metadata'][0]['content'],
-                          correct_location)
-
     def test_locale_with_metadata(self):
-        translation.activate('fr')
-        self.check_response_location('Place-fr')
+        assert_equal(self.video.get_metadata_for_locale('fr'), {
+            'location': 'Place-fr',
+        })
 
     def test_locale_without_metadata(self):
-        translation.activate('de')
-        self.check_response_location('Place')
+        assert_equal(self.video.get_metadata_for_locale('de'), {
+            'location': 'Place',
+        })

@@ -38,6 +38,7 @@ from haystack import site
 from haystack.query import SQ
 
 import teams.moderation_const as MODERATION
+from caching import ModelCacheManager
 from comments.models import Comment
 from auth.models import CustomUser as User
 from auth.providers import get_authentication_provider
@@ -282,6 +283,8 @@ class Team(models.Model):
     objects = TeamManager()
     all_objects = models.Manager() # For accessing deleted teams, if necessary.
 
+    cache = ModelCacheManager()
+
     class Meta:
         ordering = ['name']
         verbose_name = _(u'Team')
@@ -294,6 +297,7 @@ class Team(models.Model):
     def save(self, *args, **kwargs):
         creating = self.pk is None
         super(Team, self).save(*args, **kwargs)
+        self.cache.invalidate()
         if creating:
             # create a default project
             self.default_project
@@ -418,7 +422,11 @@ class Team(models.Model):
         return member
 
     def user_is_member(self, user):
-        return self.get_member(user) is not None
+        members = self.cache.get('members')
+        if members is None:
+            members = list(self.members.values_list('user_id', flat=True))
+            self.cache.set('members', members)
+        return user.id in members
 
     def uncache_member(self, user):
         try:
@@ -845,6 +853,7 @@ class TeamVideo(models.Model):
         if not self.pk:
             self.created = datetime.datetime.now()
         super(TeamVideo, self).save(*args, **kwargs)
+        self.video.cache.invalidate()
 
     def is_checked_out(self, ignore_user=None):
         '''Return whether this video is checked out in a task.
@@ -1085,6 +1094,8 @@ def team_video_delete(sender, instance, **kwargs):
         video.update_search_index()
     except Video.DoesNotExist:
         pass
+    if instance.video_id is not None:
+        Video.cache.invalidate_by_pk(instance.video_id)
 
 def on_language_deleted(sender, **kwargs):
     """When a language is deleted, delete all tasks associated with it."""
@@ -1171,6 +1182,13 @@ class TeamMember(models.Model):
     def __unicode__(self):
         return u'%s' % self.user
 
+    def save(self, *args, **kwargs):
+        super(TeamMember, self).save(*args, **kwargs)
+        Team.cache.invalidate_by_pk(self.team_id)
+
+    def delete(self):
+        super(TeamMember, self).delete()
+        Team.cache.invalidate_by_pk(self.team_id)
 
     def project_narrowings(self):
         """Return any project narrowings applied to this member."""
@@ -1284,7 +1302,12 @@ class MembershipNarrowing(models.Model):
 
             assert not duplicate_exists, "Duplicate project narrowing detected!"
 
-        return super(MembershipNarrowing, self).save(*args, **kwargs)
+        super(MembershipNarrowing, self).save(*args, **kwargs)
+        Team.cache.invalidate_by_pk(self.member.team_id)
+
+    def delete(self):
+        super(MembershipNarrowing, self).delete()
+        Team.cache.invalidate_by_pk(self.member.team_id)
 
 class TeamSubtitleNote(SubtitleNoteBase):
     team = models.ForeignKey(Team, related_name='+')
@@ -2407,6 +2430,8 @@ class Task(models.Model):
 
         if update_team_video_index:
             tasks.update_one_team_video.delay(self.team_video.pk)
+
+        Video.cache.invalidate_by_pk(self.team_video.video_id)
 
         return result
 
