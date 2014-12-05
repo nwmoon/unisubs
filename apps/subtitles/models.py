@@ -494,10 +494,7 @@ class SubtitleLanguage(models.Model):
         if tip is not None:
             return tip.title_display()
         else:
-            # fall back to the video title, but prevent infinite loops if we
-            # are the primary audio language
-            return self.video.title_display(
-                use_language_title=not self.is_primary_audio_language())
+            return self.video.title
 
     def get_tip(self, public=False, full=False):
         """Return the tipmost version of this language (if any).
@@ -741,14 +738,10 @@ class SubtitleLanguage(models.Model):
         sv = SubtitleVersion(*args, **kwargs)
 
         sv.set_subtitles(kwargs.get('subtitles', None))
-        if metadata is not None:
-            sv.update_metadata(metadata, commit=False)
-            # save the video to commit the changes to it
-            self.video.save()
         self._sanity_check_parents(sv, parents)
 
         sv.full_clean()
-        sv.save()
+        sv.save(metadata=metadata)
 
         for p in parents:
             sv.parents.add(p)
@@ -1289,8 +1282,7 @@ class SubtitleVersion(models.Model):
         else:
             # fall back to the video title, but prevent infinite loops if we
             # are the primary audio language
-            return self.video.title_display(
-                use_language_title=not self.is_for_primary_audio_language())
+            return self.video.title
 
     def is_for_primary_audio_language(self):
         return self.video.primary_audio_language_code == self.language_code
@@ -1416,9 +1408,14 @@ class SubtitleVersion(models.Model):
 
     def save(self, *args, **kwargs):
         creating = not self.pk
+        video_needs_save = False
+        metadata = kwargs.pop('metadata', None)
 
         if creating and not self.created:
             self.created = datetime.now()
+        if metadata is not None:
+            self.update_metadata(metadata, commit=False)
+            video_needs_save = True
 
         # Sanity checking of the denormalized data.
         assert self.language_code == self.subtitle_language.language_code, \
@@ -1432,8 +1429,12 @@ class SubtitleVersion(models.Model):
 
         Action.create_caption_handler(self, self.created)
 
-        return super(SubtitleVersion, self).save(*args, **kwargs)
+        super(SubtitleVersion, self).save(*args, **kwargs)
 
+        if self.is_public() and self.is_for_primary_audio_language():
+            self._set_video_data()
+        elif video_needs_save:
+            self.video.save()
 
     def get_ancestors(self):
         """Return all ancestors of this version.  WARNING: MAY EAT YOUR DB!
@@ -1577,12 +1578,13 @@ class SubtitleVersion(models.Model):
         return self.subtitle_language.subtitleversion_set
 
     def update_metadata(self, new_metadata, commit=True):
-        lang = self.subtitle_language
         metadata.update_child_and_video(self, self.video, new_metadata,
                                         commit)
 
     def get_metadata(self):
-        return metadata.get_child_metadata(self, self.video)
+        return metadata.get_child_metadata(
+            self, self.video,
+            fallback_to_video=self.is_for_primary_audio_language())
 
     def get_metadata_for_display(self):
         return self.get_metadata().convert_for_display()
@@ -1728,6 +1730,16 @@ class SubtitleVersion(models.Model):
         self.save()
         if not was_public and self.is_tip():
             self.subtitle_language.set_tip_cache('public', self)
+        if self.is_for_primary_audio_language():
+            self._set_video_data()
+
+    def _set_video_data(self):
+        if self.title:
+            self.video.title = self.title
+        if self.description:
+            self.video.description = self.description
+        self.video.update_metadata(self.get_metadata(), commit=False)
+        self.video.save()
 
     def unpublish(self, delete=False, signal=True):
         """Unpublish this version.

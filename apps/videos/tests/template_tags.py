@@ -52,10 +52,8 @@ class ShortUrlTest(TestCase):
 
     def test_short_url(self):
         response = self.client.get(self.short_url, follow=True)
-        regular_url = reverse("videos:video", args=(self.video.video_id,))
-
         location = response.redirect_chain[-1][0]
-        self.assertTrue(location.endswith(regular_url))
+        self.assertTrue(location.endswith(self.video.get_absolute_url()))
 
     def test_short_url_no_locale(self):
         self.assertFalse('/en/' in self.short_url)

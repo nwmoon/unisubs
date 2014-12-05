@@ -441,16 +441,6 @@ class VideoTitleTest(TestCase):
         self.check_language_page_title(fr,
                           'French Title with subtitles | Amara')
 
-    def test_video_language_title_fallback(self):
-        # if a language doesn't have a title, then we fall back to the video
-        # title (which is the english title, since that's the primary audoio
-        video = VideoFactory(primary_audio_language_code='en',
-                             title='Video Title')
-        en_version = pipeline.add_subtitles(video, 'en', None)
-        en = en_version.subtitle_language
-        self.check_language_page_title(en,
-                          'Video Title with subtitles | Amara')
-
 class MakeLanguageListTestCase(TestCase):
     def setUp(self):
         self.video = VideoFactory(primary_audio_language_code='en')

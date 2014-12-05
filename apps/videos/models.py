@@ -37,7 +37,6 @@ from django.utils.dateformat import format as date_format
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ugettext
-from django.template.defaultfilters import slugify
 from django.utils import simplejson as json
 from django.core.urlresolvers import reverse
 
@@ -105,6 +104,16 @@ WRITELOCK_EXPIRATION = 30 # 30 seconds
 ALL_LANGUAGES = [(val, _(name))for val, name in settings.ALL_LANGUAGES]
 VALID_LANGUAGE_CODES = [unicode(x[0]) for x in ALL_LANGUAGES]
 
+def make_title_from_url(url):
+    url = url.strip('/')
+    if url.startswith('http://'):
+        url = url[7:]
+
+    parts = url.split('/')
+    if len(parts) > 1:
+        return '%s/.../%s' % (parts[0], parts[-1])
+    else:
+        return url
 
 class AlreadyEditingException(Exception):
     def __init__(self, msg):
@@ -323,43 +332,15 @@ class Video(models.Model):
         :param use_language_title: should we fetch the title from our primary
         audio language?
         """
-        if use_language_title:
-            language_title = self._title_from_latest_version()
-            if language_title and language_title.strip():
-                return language_title
-
-        if self.title and self.title.strip():
+        if self.title:
             title = self.title
         else:
-            title = self._title_from_videourl()
+            video_url = self.get_primary_videourl_obj()
+            if video_url:
+                title = make_title_from_url(video_url.url)
+            else:
+                title = 'No title'
         return behaviors.make_video_title(self, title, self.get_metadata())
-
-    def _title_from_latest_version(self):
-        latest_version = self.latest_version()
-
-        if latest_version:
-            return latest_version.title_display()
-        else:
-            return ''
-
-    def _title_from_videourl(self):
-        try:
-            url = self.videourl_set.all()[:1].get().url
-            if not url:
-                return 'No title'
-        except models.ObjectDoesNotExist:
-            return 'No title'
-
-        url = url.strip('/')
-
-        if url.startswith('http://'):
-            url = url[7:]
-
-        parts = url.split('/')
-        if len(parts) > 1:
-            return '%s/.../%s' % (parts[0], parts[-1])
-        else:
-            return url
 
     def page_title(self):
         """Get the title that should appear at the top of the video page."""
@@ -580,8 +561,8 @@ class Video(models.Model):
             if vt.CAN_IMPORT_SUBTITLES:
                 kwargs['fetch_subs_async'] = fetch_subs_async
             vt.set_values(obj, **kwargs)
-            if obj.title:
-                obj.slug = slugify(obj.title)
+            if not obj.title:
+                obj.title = make_title_from_url(vt.convert_to_video_url())
             obj.user = user
             obj.save()
 

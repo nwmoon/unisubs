@@ -318,19 +318,6 @@ def _update_followers(subtitle_language, author):
     if author:
         subtitle_language.followers.add(author)
 
-def _update_video_data(subtitle_language, version):
-    if version.is_public() and subtitle_language.is_primary_audio_language():
-        video = version.video
-        video_changed = False
-        if version.title and video.title != version.title:
-            video.title = version.title
-            video_changed = True
-        if version.description and video.description != version.description:
-            video.description = version.description
-            video_changed = True
-        if video_changed:
-            video.save()
-
 def _fork_dependents(subtitle_language):
     for dsl in subtitle_language.get_dependent_subtitle_languages(direct=True):
         dsl.fork()
@@ -423,7 +410,6 @@ def _add_subtitles(video, language_code, subtitles, title, description, author,
         action.validate(author, video, sl, version)
         action.update_language(author, video, sl, version)
 
-    _update_video_data(sl, version)
     _update_followers(sl, author)
 
     if origin in (ORIGIN_UPLOAD, ORIGIN_API):

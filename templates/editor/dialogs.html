@@ -387,7 +387,6 @@
                 <input type="file" name="draft" id="subtitles-file-field" />
             </div>
             <footer class="buttons">
-                <button ng-click="dialogManager.onCloseClick($event)">{% trans "Cancel" %}</button>
                 <button ng-click="submitUploadForm($event)" class="upload-subtitles-submit-button-" ng-disabled="uploading">
                     <ng-switch on="uploading">
                     <span ng-switch-when="true">
@@ -398,6 +397,7 @@
                     </span>
                     </ng-switch>
                 </button>
+                <button ng-click="dialogManager.onCloseClick($event)">{% trans "Cancel" %}</button>
             </footer>
         </form>
     </aside>

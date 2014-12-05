@@ -25,6 +25,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 
 from subtitles.templatetags import new_subtitles_tags
+from utils.test_utils import reload_obj
 from videos.models import Video
 from videos.tests.data import (
     get_video, make_subtitle_language, make_subtitle_version
@@ -79,6 +80,7 @@ class DFXPTest(TestCase):
         video.save()
         make_subtitle_version(sl_en, [(100, 200, 'Here we go!')],
                               title='title')
+        sl_en = reload_obj(sl_en)
 
         content = self._download_subs(sl_en, 'dfxp')
         serialized = DFXPParser(content)

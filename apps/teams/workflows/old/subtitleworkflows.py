@@ -67,6 +67,7 @@ class Complete(subtitles.workflows.Action):
     label = ugettext_lazy('Complete')
     in_progress_text = ugettext_lazy('Saving')
     visual_class = 'endorse'
+    subtitle_visibility = 'private'
     complete = True
 
     def perform(self, user, video, subtitle_language, saved_version):
@@ -86,6 +87,7 @@ class Approve(subtitles.workflows.Action):
     label = ugettext_lazy('Approve')
     in_progress_text = ugettext_lazy('Approving')
     visual_class = 'endorse'
+    subtitle_visibility = 'private'
     complete = True
 
     def perform(self, user, video, subtitle_language, saved_version):
@@ -98,12 +100,16 @@ class SendBack(subtitles.workflows.Action):
     label = ugettext_lazy('Send Back')
     in_progress_text = ugettext_lazy('Sending back')
     visual_class = 'send-back'
+    subtitle_visibility = 'private'
     complete = False
 
     def perform(self, user, video, subtitle_language, saved_version):
         _complete_task(user, video, subtitle_language, saved_version,
                        Task.APPROVED_IDS['Rejected'])
         _send_subtitles_published_if_needed(subtitle_language, saved_version)
+
+class TaskSaveDraft(subtitles.workflows.SaveDraft):
+    subtitle_visibility = 'private'
 
 class TaskTeamEditorNotes(TeamEditorNotes):
     def __init__(self, team_video, language_code):
@@ -193,10 +199,17 @@ class TaskTeamSubtitlesWorkflow(TeamSubtitlesWorkflow):
         task = self.team_video.get_task_for_editor(language_code)
         if task is not None:
             # review/approve task
-            return [subtitles.workflows.SaveDraft(), SendBack(), Approve()]
+            return [TaskSaveDraft(), SendBack(), Approve()]
         else:
-            # subtitle/translate task
-            return [subtitles.workflows.SaveDraft(), Complete()]
+            incomplete_task_qs = (self.team_video.task_set.incomplete()
+                                  .filter(language=language_code))
+            if incomplete_task_qs.exists():
+                # subtitle/translate task
+                return [TaskSaveDraft(), Complete()]
+            else:
+                # post publish edit
+                return [subtitles.workflows.SaveDraft(),
+                        subtitles.workflows.Publish()]
 
     def get_editor_notes(self, language_code):
         return TaskTeamEditorNotes(self.team_video, language_code)

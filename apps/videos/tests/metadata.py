@@ -71,15 +71,59 @@ class MetadataFieldsTest(TestCase):
         self.assertEquals(self.video.get_metadata(),
                           {'speaker-name': 'Speaker2'})
 
-    def test_add_metadata_doesnt_change_video(self):
-        # When we set metadata for a a language, it shouldn't update the video
+    def test_add_metadata_for_primary_language_updates_video(self):
+        # When we set metadata for the primary audio language, we should
+        # update the video's metadata
         self.video.update_metadata({'speaker-name': 'Speaker1'})
         self.video.primary_audio_language_code = 'en'
         self.video.save()
         version = pipeline.add_subtitles(
             self.video, 'en', None,
             metadata={'speaker-name': 'Speaker2'})
-        self.video = Video.objects.get(pk=self.video.pk)
+        self.video = test_utils.reload_obj(self.video)
+        self.assertEquals(self.video.get_metadata(),
+                          {'speaker-name': 'Speaker2'})
+
+    def test_add_metadata_for_private_versions_dont_update_video(self):
+        # When we set metadata for the primary audio language, but the version
+        # is private, we shouldn't update the video's metadata
+        TeamVideoFactory(video=self.video)
+        self.video.update_metadata({'speaker-name': 'Speaker1'})
+        self.video.primary_audio_language_code = 'en'
+        self.video.save()
+        version = pipeline.add_subtitles(
+            self.video, 'en', None, visibility='private',
+            metadata={'speaker-name': 'Speaker2'})
+        self.video = test_utils.reload_obj(self.video)
+        self.assertEquals(self.video.get_metadata(),
+                          {'speaker-name': 'Speaker1'})
+
+    def test_publish_primary_audio_language_updates_video(self):
+        # When we publish a version for the primary audio language, we should
+        # update the video's metadata
+        TeamVideoFactory(video=self.video)
+        self.video.update_metadata({'speaker-name': 'Speaker1'})
+        self.video = test_utils.reload_obj(self.video)
+        self.video.primary_audio_language_code = 'en'
+        self.video.save()
+        version = pipeline.add_subtitles(
+            self.video, 'en', None, visibility='private',
+            metadata={'speaker-name': 'Speaker2'})
+        version.publish()
+        self.video = test_utils.reload_obj(self.video)
+        self.assertEquals(self.video.get_metadata(),
+                          {'speaker-name': 'Speaker2'})
+
+    def test_add_metadata_for_other_languages_dont_update_video(self):
+        # When we set metadata for a language other than the primary audio
+        # language, it shouldn't update the video
+        self.video.update_metadata({'speaker-name': 'Speaker1'})
+        self.video.primary_audio_language_code = 'en'
+        self.video.save()
+        version = pipeline.add_subtitles(
+            self.video, 'fr', None,
+            metadata={'speaker-name': 'Speaker2'})
+        self.video = test_utils.reload_obj(self.video)
         self.assertEquals(self.video.get_metadata(),
                           {'speaker-name': 'Speaker1'})
 

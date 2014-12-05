@@ -411,7 +411,7 @@ class TestCaseTED(WebdriverTestCase):
         self.videos_tab.log_in(self.admin.username, 'password')
         self.videos_tab.open_videos_tab(self.ted_team.slug)
         self.assertTrue(self.videos_tab.is_text_present('h4 a', 
-                                                        'Jinsop Lee: TestVideo1'))
+                                                        'Santa: TestVideo1'))
 
     def test_videos_tab_search_speaker(self):
         """Videos tab search on speaker name returns search results . """

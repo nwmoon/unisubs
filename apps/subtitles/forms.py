@@ -321,10 +321,10 @@ class SubtitlesUploadForm(forms.Form):
 
         if subtitle_language:
             previous_version = subtitle_language.get_tip()
-            metadata = subtitle_language.get_metadata(public=False)
             if previous_version:
                 title = previous_version.title
                 description = previous_version.description
+                metadata = previous_version.get_metadata()
 
         return title, description, metadata
 

@@ -89,7 +89,6 @@ class YoutubeVideoTypeTest(TestCase):
         vu = video.videourl_set.all()[:1].get()
 
         self.assertEqual(vu.videoid, '_ShmidkrcY0')
-        self.assertEqual(video.title, '')
         self.assertEqual(video.description, '')
         self.assertEqual(video.duration, None)
         self.assertEqual(video.thumbnail, '')
