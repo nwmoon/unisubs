@@ -10,6 +10,7 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from easy_thumbnails.processors import scale_and_crop
+from south.modelsinspector import add_introspection_rules
 from PIL import Image
 
 THUMB_SIZES = getattr(settings, 'THUMBNAILS_SIZE', ())
@@ -163,3 +164,24 @@ class S3EnabledFileField(models.FileField):
                 self.bucket = self.connection.get_bucket(bucket)
                 storage = S3Storage(self.bucket)
         super(S3EnabledFileField, self).__init__(verbose_name, name, upload_to, storage, **kwargs)
+
+
+add_introspection_rules([
+    (
+        [S3EnabledImageField, S3EnabledFileField],
+        [],
+        {
+            "bucket": ["bucket_name", {"default": settings.AWS_USER_DATA_BUCKET_NAME}]
+        },
+    ),
+], ["^utils\.amazon\.fields"])
+
+add_introspection_rules([
+    (
+        [S3EnabledImageField],
+        [],
+        {
+            "thumb_sizes": ["thumb_sizes", {"default": THUMB_SIZES}],
+        },
+    ),
+], ["^utils\.amazon\.fields"])

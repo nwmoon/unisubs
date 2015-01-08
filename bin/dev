@@ -192,7 +192,8 @@ class DBReset(Command):
 
     def run_inner(self, args, options):
         run_manage(['drop_all_tables'])
-        run_manage(['syncdb', '--noinput'])
+        run_manage(['syncdb', '--all', '--noinput'])
+        run_manage(['migrate', '--fake'])
 
 class Start(Command):
     """Start background docker containers (db, search, worker, etc)."""

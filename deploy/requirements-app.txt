@@ -9,6 +9,7 @@ Django==1.4.13
 Fabric==1.4.0
 PyRSS2Gen==1.0.0
 PyYAML==3.10
+South==0.7.4
 easy-thumbnails==1.4
 Pillow==2.2.1
 six==1.4.1
