@@ -27,16 +27,14 @@
 
 {% block view_content %}
 
- {% if not team|is_team_member:user or not videos %}
     {% block select_language_dialog %}
-      {% if not team|is_team_member:user %}
-        {% url "teams:join_team" slug=team.slug as redirect_url %}
-        {% select_language_dialog hide_link="True" redirect=redirect_url %}
-    {% else %}
-        {% select_language_dialog hide_link="True" %}
-    {% endif %}
+        {% if not team|is_team_member:user %}
+            {% url teams:join_team slug=team.slug as redirect_url %}
+            {% select_language_dialog hide_link="True" redirect=redirect_url %}
+        {% else %}
+            {% select_language_dialog hide_link="True" %}
+        {% endif %}
     {% endblock %}
-  {% endif %}
     <div class="grid_8 view omega{% if team.get_workflow.requires_review_or_approval %} moderated{% endif %}{% if team.workflow_enabled %} task-enabled{% endif %}">
         {% if member or team.is_visible %}
             {% with "dashboard" as current %}

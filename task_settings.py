@@ -77,6 +77,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'videos.tasks.gauge_billing_records',
         'schedule': timedelta(seconds=60),
     },
+    'retry_failed_sync': {
+        'task': 'externalsites.tasks.retry_failed_sync',
+        'schedule': timedelta(seconds=300),
+    },
 }
 
 __all__ = ['CELERYBEAT_SCHEDULE', 'CELERY_QUEUES', ]

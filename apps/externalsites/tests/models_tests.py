@@ -20,11 +20,14 @@ from __future__ import absolute_import
 
 from django.test import TestCase
 from django.core.exceptions import PermissionDenied
+from gdata.youtube.client import RequestError
 from nose.tools import *
 
 from externalsites.exceptions import YouTubeAccountExistsError
 from externalsites.models import (BrightcoveAccount, YouTubeAccount,
-                                  get_sync_accounts, account_models)
+                                  get_sync_accounts, account_models,
+                                  SyncHistory)
+from subtitles import pipeline
 from teams.models import TeamMember
 from videos.models import VideoFeed
 from utils import test_utils
@@ -302,6 +305,60 @@ class YoutubeAccountTest(TestCase):
         assert_equals(YouTubeAccount.objects.all().count(), 1)
         account = YouTubeAccount.objects.all().get()
         assert_equals(account.oauth_refresh_token, 'test-refresh-token2')
+
+class SyncRetryTest(TestCase):
+    @test_utils.patch_for_test('externalsites.syncing.youtube.update_subtitles')
+    def setUp(self, mock_update_subtitles):
+        self.mock_update_subtitles = mock_update_subtitles
+        self.account = YouTubeAccountFactory(user=UserFactory())
+        video = YouTubeVideoFactory()
+        self.vurl = video.get_primary_videourl_obj()
+        self.version = pipeline.add_subtitles(video, 'en', None)
+        self.language = self.version.subtitle_language
+
+    def check_retry_flag(self, error, correct_retry_value):
+        self.mock_update_subtitles.side_effect = error
+        self.account.update_subtitles(self.vurl, self.language)
+        qs = SyncHistory.objects.get_for_language(self.language)
+        last_sync_history = qs[0]
+        assert_equal(last_sync_history.retry, correct_retry_value)
+
+    def make_quota_error(self):
+        error = RequestError('Simulated Quota Error')
+        error.status = 403
+        error.body = "<?xmlversion='1.0'encoding='UTF-8'?><errors><error><domain>yt:quota</domain><code>too_many_recent_calls</code></error></errors>"
+        return error
+
+    def make_non_quota_error(self):
+        error = RequestError('Simulated Auth Error')
+        error.status = 403
+        error.body = "Authentication error"
+        return error
+
+    def test_set_retry_on_quota_error(self):
+        # If update_subtitles() results in a quota error, we should set the
+        # retry flag
+        self.check_retry_flag(self.make_quota_error(), True)
+
+    def test_dont_set_retry_on_other_error(self):
+        # If update_subtitles() results in a non-quota error, we shouldn't set
+        # retry
+        self.check_retry_flag(self.make_non_quota_error(), False)
+
+    def test_success_clears_retry(self):
+        # If update_subtitles() results in a success, we should clear any
+        # retry flags from previous history entries.
+        SyncHistory.objects.create_for_error(
+            self.make_quota_error(), account=self.account,
+            video_url=self.vurl, language=self.language,
+            version=self.version, action=SyncHistory.ACTION_UPDATE_SUBTITLES,
+            retry=True)
+        # simulate update_subtitles() running without error.  We should clear
+        # the retry flag from the prevous sync history entry
+        assert_true(SyncHistory.objects.filter(retry=True).exists())
+        self.mock_update_subtitles.side_effect = None
+        self.account.update_subtitles(self.vurl, self.language)
+        assert_false(SyncHistory.objects.filter(retry=True).exists())
 
 class YoutubeAccountFeedTest(TestCase):
     def setUp(self):

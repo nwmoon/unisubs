@@ -941,8 +941,9 @@ class TeamVideo(models.Model):
 
         if not self.pk:
             self.created = datetime.datetime.now()
-        super(TeamVideo, self).save(*args, **kwargs)
         self.video.cache.invalidate()
+        self.video.clear_team_video_cache()
+        super(TeamVideo, self).save(*args, **kwargs)
 
     def is_checked_out(self, ignore_user=None):
         '''Return whether this video is checked out in a task.

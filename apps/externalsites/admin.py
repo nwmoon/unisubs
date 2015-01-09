@@ -32,6 +32,7 @@ class SyncHistoryAdmin(admin.ModelAdmin):
         'version',
         'result',
         'details',
+        'retry',
     )
     readonly_fields = (
         'video_url',
@@ -41,9 +42,23 @@ class SyncHistoryAdmin(admin.ModelAdmin):
         'datetime',
         'version',
     )
+    list_display = (
+        'account',
+        'video_url',
+        'language',
+        'retry',
+    )
+    list_filter = (
+        'result',
+        'retry',
+    )
+    list_select_related = True
 
     class Meta:
         model = models.SyncHistory
+
+    def account(self, sh):
+        return sh.get_account()
 
     def has_add_permission(self, request):
         return False

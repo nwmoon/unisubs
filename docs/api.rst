@@ -512,6 +512,9 @@ Updating video-urls:
 
 Creating video-urls:
 
+    :form url: Video URL (this must match the current URL)
+    :form primary: If True, this URL will be made the primary URL
+
 .. http:post:: /api2/partners/videos/[video-id]/urls/
 
     :form url: Any URL that works for the regular site (mp4 files, youtube, vimeo,

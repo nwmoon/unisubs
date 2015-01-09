@@ -24,6 +24,11 @@ class SyncingError(StandardError):
     def __str__(self):
         return self.msg
 
+class RetryableSyncingError(SyncingError):
+    def __init__(self, orig_error, msg, *args):
+        super(RetryableSyncingError, self).__init__(msg, *args)
+        self.orig_error = orig_error
+
 class YouTubeAccountExistsError(StandardError):
     def __init__(self, other_account):
         StandardError.__init__(self)

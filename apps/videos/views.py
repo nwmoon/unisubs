@@ -35,6 +35,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from videos.templatetags.paginator import paginate
 from django.core.urlresolvers import reverse
+from django.db import IntegrityError
 from django.db.models import Sum
 from django.http import (HttpResponse, Http404, HttpResponseRedirect,
                          HttpResponseForbidden)
@@ -201,6 +202,7 @@ def latest_videos(request):
     return render_to_response('videos/latest_videos.html', {},
                               context_instance=RequestContext(request))
 
+@login_required
 def create(request):
     video_form = VideoForm(request.user, request.POST or None)
     context = {
@@ -821,18 +823,11 @@ def video_url_remove(request):
                 output['error'] = ugettext('You have not permission delete this URL')
                 status = 403
             else:
-                if obj.primary:
-                    output['error'] = ugettext('You can\'t remove primary URL')
+                try:
+                    obj.remove(request.user)
+                except IntegrityError, e:
+                    output['error'] = str(e)
                     status = 403
-                else:
-                    # create activity record
-                    act = Action(video=obj.video, action_type=Action.DELETE_URL)
-                    act.new_video_title = obj.url
-                    act.created = datetime.datetime.now()
-                    act.user = request.user
-                    act.save()
-                    # delete
-                    obj.delete()
         except VideoUrl.DoesNotExist:
             output['error'] = ugettext('Object does not exist')
             status = 404

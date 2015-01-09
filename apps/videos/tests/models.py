@@ -17,14 +17,16 @@
 # along with this program. If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
+from django.db import IntegrityError
 from django.test import TestCase
+from nose.tools import *
 import babelsubs
 import mock
 
 from auth.models import CustomUser as User
 from subtitles import pipeline
 from subtitles.models import SubtitleLanguage
-from videos.models import Video
+from videos.models import Action, Video
 from videos.tasks import video_changed_tasks
 from videos.tests.data import (
     get_video, make_subtitle_language, make_subtitle_version, make_rollback_to
@@ -36,6 +38,28 @@ from utils.factories import *
 
 def refresh(m):
     return m.__class__._default_manager.get(pk=m.pk)
+
+class TestVideoUrl(TestCase):
+    def setUp(self):
+        self.video = VideoFactory()
+        self.primary_url = self.video.get_primary_videourl_obj()
+        self.url = VideoURLFactory(video=self.video)
+        self.user = UserFactory()
+
+    def test_remove(self):
+        self.url.remove(self.user)
+        assert_equal(self.video.videourl_set.count(), 1)
+
+    def test_remove_creates_action(self):
+        self.url.remove(self.user)
+        action = self.video.action_set.get(action_type=Action.DELETE_URL)
+        assert_equal(action.user, self.user)
+        # we use new_video_title to store the removed uRL
+        assert_equal(action.new_video_title, self.url.url)
+
+    def test_remove_primary(self):
+        with assert_raises(IntegrityError):
+            self.primary_url.remove(self.user)
 
 class TestVideo(TestCase):
     def setUp(self):

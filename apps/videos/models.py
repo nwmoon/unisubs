@@ -28,7 +28,7 @@ import urlparse
 from django.utils.safestring import mark_safe
 from django.core.cache import cache
 from django.dispatch import receiver
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models.signals import post_save, pre_delete
 from django.db.models import Q
 from django.db import IntegrityError
@@ -1889,6 +1889,30 @@ class VideoUrl(models.Model):
         # set this one to primary
         self.primary = True
         self.save(updates_timestamp=False)
+
+    def remove(self, user):
+        """Remove this URL from our video.
+
+        This method deletes the URL object and stores a DELETE_URL action to
+        log the change.
+
+        Args:
+            user: user removing the URL
+
+        Raises:
+            IntegrityError: called when the primary URL is deleted
+        """
+
+        if self.primary:
+            msg = ugettext("Can't remove the primary video URL")
+            raise IntegrityError(msg)
+
+        action = Action(video=self.video, action_type=Action.DELETE_URL)
+        action.new_video_title = self.url
+        action.created = datetime.now()
+        action.user = user
+        action.save()
+        self.delete()
 
     def fix_owner_username(self):
         """Workaround for us changing how owner_usernames work.
