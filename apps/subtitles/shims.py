@@ -18,10 +18,10 @@
 
 """Helper functions to graft the current UI on to the new data model."""
 
+import json
+
 from django.core.urlresolvers import reverse
 from django.utils.http import urlquote_plus
-from django.utils import simplejson as json
-
 
 def is_dependent(subtitle_language):
     """Return whether the language is "dependent" on another one.

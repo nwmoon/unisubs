@@ -30,11 +30,10 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponseForbidden, HttpResponse
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, render_to_response, redirect
 from django.template import RequestContext
 from django.utils.http import urlquote
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic.simple import direct_to_template
 from oauth import oauth
 
 from auth.forms import CustomUserCreationForm, ChooseUserForm
@@ -106,7 +105,7 @@ def delete_user(request):
         logout(request)
         messages.success(request, _(u'Your account was deleted.'))
         return HttpResponseRedirect('/')
-    return direct_to_template(request, 'auth/delete_user.html')
+    return render(request, 'auth/delete_user.html')
 
 def login_post(request):
     redirect_to = make_redirect_to(request)

@@ -1,3 +1,4 @@
+{% load url from future %}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>    
@@ -20,7 +21,7 @@
         
         <h3>Video's title changed on Amara</h3>
         
-        <form method="post" action="{% url emails_example:send_email %}">
+        <form method="post" action="{% url "emails_example:send_email" %}">
             <div>
             {% csrf_token %}
             <input type="hidden" value="1" name="type">
@@ -32,11 +33,11 @@
             </div>
         </form>
         
-        <iframe width="700" height="500" frameborder="no" src="{% url emails_example:email_title_changed %}"></iframe>
+        <iframe width="700" height="500" frameborder="no" src="{% url "emails_example:email_title_changed" %}"></iframe>
         
         <h3>New English translation by Someuser of "Some video"</h3>
         
-        <form method="post" action="{% url emails_example:send_email %}">
+        <form method="post" action="{% url "emails_example:send_email" %}">
             <div>
             {% csrf_token %}
             <input type="hidden" value="2" name="type">
@@ -48,11 +49,11 @@
             </div>
         </form>
                 
-        <iframe width="700" height="500" frameborder="no" src="{% url emails_example:email_start_notification %}"></iframe>
+        <iframe width="700" height="500" frameborder="no" src="{% url "emails_example:email_start_notification" %}"></iframe>
         
         <h3>New video URL added by Someuser to "Some video" on universalsubtitles.org</h3>
         
-        <form method="post" action="{% url emails_example:send_email %}">
+        <form method="post" action="{% url "emails_example:send_email" %}">
             <div>
             {% csrf_token %}
             <input type="hidden" value="3" name="type">
@@ -64,11 +65,11 @@
             </div>
         </form>        
         
-        <iframe width="700" height="500" frameborder="no" src="{% url emails_example:email_video_url_add %}"></iframe>
+        <iframe width="700" height="500" frameborder="no" src="{% url "emails_example:email_video_url_add" %}"></iframe>
 
         <h3>Notification of subtitles being changed.</h3>
         
-        <form method="post" action="{% url emails_example:send_email %}">
+        <form method="post" action="{% url "emails_example:send_email" %}">
             <div>
             {% csrf_token %}
             <input type="hidden" value="3" name="type">
@@ -80,10 +81,10 @@
             </div>
         </form>        
         
-        <iframe width="700" height="500" frameborder="no" src="{% url emails_example:email_notification %}"></iframe>
+        <iframe width="700" height="500" frameborder="no" src="{% url "emails_example:email_notification" %}"></iframe>
         <h3>Notification of subtitles being changed (non-editor).</h3>
         
-        <form method="post" action="{% url emails_example:send_email %}">
+        <form method="post" action="{% url "emails_example:send_email" %}">
             <div>
             {% csrf_token %}
             <input type="hidden" value="3" name="type">
@@ -95,6 +96,6 @@
             </div>
         </form>        
         
-        <iframe width="700" height="500" frameborder="no" src="{% url emails_example:email_notification_non_editor %}"></iframe>
+        <iframe width="700" height="500" frameborder="no" src="{% url "emails_example:email_notification_non_editor" %}"></iframe>
     </body>
 </html>

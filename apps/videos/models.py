@@ -17,8 +17,7 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
 import logging
-logger = logging.getLogger("videos-models")
-
+import json
 import string
 import random
 from datetime import datetime, date
@@ -29,7 +28,7 @@ import urlparse
 from django.utils.safestring import mark_safe
 from django.core.cache import cache
 from django.dispatch import receiver
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models.signals import post_save, pre_delete
 from django.db.models import Q
 from django.db import IntegrityError
@@ -37,7 +36,6 @@ from django.utils.dateformat import format as date_format
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ugettext
-from django.utils import simplejson as json
 from django.core.urlresolvers import reverse
 
 from auth.models import CustomUser as User, Awards
@@ -56,6 +54,8 @@ from utils.subtitles import create_new_subtitles, dfxp_merge
 from utils.text import fmt
 from teams.moderation_const import MODERATION_STATUSES, UNMODERATED
 from raven.contrib.django.models import client
+
+logger = logging.getLogger("videos-models")
 
 NO_SUBTITLES, SUBTITLES_FINISHED = range(2)
 VIDEO_TYPE_HTML5 = 'H'
@@ -225,7 +225,7 @@ class Video(models.Model):
     title = models.CharField(max_length=2048, blank=True)
     description = models.TextField(blank=True)
     duration = models.PositiveIntegerField(null=True, blank=True, help_text=_(u'in seconds'))
-    allow_community_edits = models.BooleanField()
+    allow_community_edits = models.BooleanField(default=False)
     allow_video_urls_edit = models.BooleanField(default=True)
     writelock_time = models.DateTimeField(null=True, editable=False)
     writelock_session_key = models.CharField(max_length=255, editable=False)
@@ -1068,7 +1068,7 @@ class VideoMetadata(models.Model):
 # SubtitleLanguage
 class SubtitleLanguage(models.Model):
     video = models.ForeignKey(Video)
-    is_original = models.BooleanField()
+    is_original = models.BooleanField(default=False)
     language = models.CharField(max_length=16, choices=ALL_LANGUAGES, blank=True)
     writelock_time = models.DateTimeField(null=True, editable=False)
     writelock_session_key = models.CharField(max_length=255, blank=True, editable=False)
@@ -1889,6 +1889,30 @@ class VideoUrl(models.Model):
         # set this one to primary
         self.primary = True
         self.save(updates_timestamp=False)
+
+    def remove(self, user):
+        """Remove this URL from our video.
+
+        This method deletes the URL object and stores a DELETE_URL action to
+        log the change.
+
+        Args:
+            user: user removing the URL
+
+        Raises:
+            IntegrityError: called when the primary URL is deleted
+        """
+
+        if self.primary:
+            msg = ugettext("Can't remove the primary video URL")
+            raise IntegrityError(msg)
+
+        action = Action(video=self.video, action_type=Action.DELETE_URL)
+        action.new_video_title = self.url
+        action.created = datetime.now()
+        action.user = user
+        action.save()
+        self.delete()
 
     def fix_owner_username(self):
         """Workaround for us changing how owner_usernames work.

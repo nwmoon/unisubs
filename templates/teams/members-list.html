@@ -1,6 +1,7 @@
 {% extends "teams/base.html" %}
 
 {% load i18n query_string utils_tags teams_tags paginator widget media_bundle verbatim_templatetag %}
+{% load url from future %}
 
 {% block title %}
     {% trans 'Members' %} - {{ team }} | Amara
@@ -14,9 +15,9 @@
     {% if assignable_roles %}
         {% media_bundle "teams.js" %}
     {% endif %}
-    <script src="{% url teams:rpc_api %}" type="text/javascript"></script>
+    <script src="{% url "teams:rpc_api" %}" type="text/javascript"></script>
     <script type="text/javascript">
-        window.roleSavedURL = '{% url teams:role_saved team.slug %}';
+        window.roleSavedURL = '{% url "teams:role_saved" team.slug %}';
         window.REQUEST_GET_LANG = '{{ request.GET.lang }}';
     </script>
 {% endblock %}
@@ -36,7 +37,7 @@
         <div class="tools group">
             {% include 'teams/_search.html' %}
             {% if team|can_invite_to_team:user %}
-                <a href="{% url teams:invite_members slug=team.slug %}" class="button reduced">{% trans 'Invite Members' %}</a>
+                <a href="{% url "teams:invite_members" slug=team.slug %}" class="button reduced">{% trans 'Invite Members' %}</a>
             {% endif %} 
             <a href="#filter" id="sort-filter">{% trans 'Filter and Sort' %}<span></span></a>
         </div>
@@ -46,10 +47,10 @@
                 <div class="filter-chunk">
                     <span class="inner">{% trans 'Showing' %}</span>
                     <select name="role-filter" id="role-filter">
-                        <option value="{% url teams:detail_members team.slug %}{% query_string request.GET %}">{% trans 'all members' %}</option>
-                        <option value="{% url teams:detail_members_role slug=team.slug,role='admin' %}{% query_string request.GET %}"{% if role == 'admin' %} selected="selected"{% endif %}>{% trans 'admins' %}</option>
-                        <option value="{% url teams:detail_members_role slug=team.slug,role='manager' %}{% query_string request.GET %}"{% if role == 'manager' %} selected="selected"{% endif %}>{% trans 'managers' %}</option>
-                        <option value="{% url teams:detail_members_role slug=team.slug,role='contributor' %}{% query_string request.GET %}"{% if role == 'contributors' %} selected="selected"{% endif %}>{% trans 'contributor' %}</option>
+                        <option value="{% url "teams:detail_members" team.slug %}{% query_string request.GET %}">{% trans 'all members' %}</option>
+                        <option value="{% url "teams:detail_members_role" slug=team.slug role='admin' %}{% query_string request.GET %}"{% if role == 'admin' %} selected="selected"{% endif %}>{% trans 'admins' %}</option>
+                        <option value="{% url "teams:detail_members_role" slug=team.slug role='manager' %}{% query_string request.GET %}"{% if role == 'manager' %} selected="selected"{% endif %}>{% trans 'managers' %}</option>
+                        <option value="{% url "teams:detail_members_role" slug=team.slug role='contributor' %}{% query_string request.GET %}"{% if role == 'contributors' %} selected="selected"{% endif %}>{% trans 'contributor' %}</option>
                     </select>
                 </div>
                 <div class="filter-chunk">
@@ -74,12 +75,12 @@
                 </div>
             </p>
             {% if filtered %}
-                <a href="{% url teams:detail_members team.slug %}" class="clear-filters">{% trans 'Clear' %}</a>
+                <a href="{% url "teams:detail_members" team.slug %}" class="clear-filters">{% trans 'Clear' %}</a>
             {% endif %}
         </div>
 
         {% if team|can_approve_application:user and team.applications.open.count > 0 %}
-            <p class="view-notice">{% trans 'This team has' %} <a href="{% url teams:applications slug=team.slug %}{% query_string request.GET %}">{{ team.applications.open.count }} {% trans 'open applications' %}</a></p>
+            <p class="view-notice">{% trans 'This team has' %} <a href="{% url "teams:applications" slug=team.slug %}{% query_string request.GET %}">{{ team.applications.open.count }} {% trans 'open applications' %}</a></p>
         {% endif %}
 
 
@@ -111,11 +112,11 @@
                         <ul class="actions">
                             {% if member.user != user %}
                                 <li>
-                                    <a href="{% url messages:new %}?user={{ member.user.username|urlencode }}">Send a message</a>
+                                    <a href="{% url "messages:new" %}?user={{ member.user.username|urlencode }}">Send a message</a>
                                 </li>
                             {% endif %}
                             <li>
-                                <a href="{% url teams:team_tasks team.slug %}?assignee={{ member.user.username|urlencode }}&project=any&lang=all">{% trans 'Assignments' %}</a>
+                                <a href="{% url "teams:team_tasks" team.slug %}?assignee={{ member.user.username|urlencode }}&project=any&lang=all">{% trans 'Assignments' %}</a>
                             </li>
                         </ul>
                         {% if member in assignable_roles %}
@@ -124,7 +125,7 @@
                                     <a class="edit-role" data-team-slug="{{team.slug}}" data-member-pk="{{member.pk}}" data-member-username="{{member.user.username}}" data-member-fullname="{{ member.user }}">{% trans 'Edit' %}</a>
                                 </li>
                                 <li>
-                                    <a onclick="return confirm('{% trans 'Are you sure you want to remove this member from the team?' %}');" href="{% url teams:remove_member slug=team.slug user_pk=member.user.pk %}" class="delete">{% trans 'Remove' %}</a>
+                                    <a onclick="return confirm('{% trans 'Are you sure you want to remove this member from the team?' %}');" href="{% url "teams:remove_member" slug=team.slug user_pk=member.user.pk %}" class="delete">{% trans 'Remove' %}</a>
                                 </li>
                             </ul>
                         {% endif %}

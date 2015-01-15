@@ -29,7 +29,6 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_unicode, DjangoUnicodeDecodeError
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
-from math_captcha.forms import MathCaptchaForm
 
 from videos.feed_parser import FeedParser
 from videos.models import Video, VideoFeed, UserTestResult, VideoUrl
@@ -121,7 +120,7 @@ class UserTestResultForm(forms.ModelForm):
 
 class VideoForm(forms.Form):
     # url validation is within the clean method
-    video_url = forms.URLField(verify_exists=False)
+    video_url = forms.URLField()
 
     def __init__(self, user=None, *args, **kwargs):
         if user and not user.is_authenticated():
@@ -300,7 +299,7 @@ class FeedbackForm(forms.Form):
             output[key] = '/n'.join([force_unicode(i) for i in value])
         return output
 
-class EmailFriendForm(MathCaptchaForm):
+class EmailFriendForm(forms.Form):
     from_email = forms.EmailField(label='From')
     to_emails = EmailListField(label='To')
     subject = forms.CharField()

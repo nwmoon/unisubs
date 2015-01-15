@@ -1,3 +1,4 @@
+{% load url from future %}
 {% comment %}
 This gets sent to the rest of the team, notifying about the new member
 {% endcomment %}
@@ -11,7 +12,7 @@ Congratulations! You are now a member of the {{ team.name }} team.
 {{ custom_message|safe }}
 {% endif %}
 
-Start browsing team videos at {{url_base}}{% url teams:detail slug=team.slug %} 
-or look for tasks at {{url_base}}{% url teams:team_tasks slug=team.slug %} you can take on to help out.
+Start browsing team videos at {{url_base}}{% url "teams:detail" slug=team.slug %} 
+or look for tasks at {{url_base}}{% url "teams:team_tasks" slug=team.slug %} you can take on to help out.
 
 Happy subtitling!

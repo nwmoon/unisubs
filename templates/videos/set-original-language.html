@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load i18n i18n_tags %}
+{% load url from future %}
 
 {% block html_attrs %}id="video_set_language"{% endblock %}
 {% block body_attrs %}class="v1"{% endblock %}
@@ -12,11 +13,11 @@
         <div class="grid_4 alpha">
             <h5>{% trans "Video" %}</h5>
             <div class="video-item">
-                <a href="{% url videos:video video_id=video.video_id %}" title="{{ video.title }}">
+                <a href="{% url "videos:video" video_id=video.video_id %}" title="{{ video.title }}">
                     <img src="{{ video.get_thumbnail }}" alt="{{ video.title }} thumbnail">
                 </a>
                 <h4>
-                    <a href="{% url videos:video video_id=video.video_id %}">{{ video.title|truncatewords:9 }}</a>
+                    <a href="{% url "videos:video" video_id=video.video_id %}">{{ video.title|truncatewords:9 }}</a>
                 </h4>
             </div>
         </div>

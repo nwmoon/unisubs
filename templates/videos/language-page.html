@@ -4,12 +4,13 @@
 {% block html_attrs %}id="subtitle_view"{% endblock %}
 
 {% load widget comments i18n videos_tags %}
+{% load url from future %}
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% url videos:rpc_api %}" type="text/javascript"></script>
+    <script src="{% url "videos:rpc_api" %}" type="text/javascript"></script>
     <script type="text/javascript">
-        window.DIFFING_URL = '{% block diffing_link %}{% url videos:diffing 11111 22222 %}{% endblock %}';
+        window.DIFFING_URL = '{% block diffing_link %}{% url "videos:diffing" 11111 22222 %}{% endblock %}';
         window.SELECT_REVISIONS_TRANS = '{% trans "Select two revisions to compare, please" %}';
     </script>
 {% endblock %}
@@ -102,7 +103,7 @@
     {% if user.is_staff and perms.videos.edit_video %}
         <ul id="page_controls">
             <li>
-                <a href="{% url admin:subtitles_subtitlelanguage_change language.pk %}" target="blank">{% trans 'Edit SubtitleLanguage in Django Admin' %}</a>
+                <a href="{% url "admin:subtitles_subtitlelanguage_change" language.pk %}" target="blank">{% trans 'Edit SubtitleLanguage in Django Admin' %}</a>
             </li>
         </ul>
     {% endif %}

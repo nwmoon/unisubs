@@ -1,4 +1,5 @@
 {% load i18n amara_cache announcement_tags messages_tags profiles_tags media_bundle auth_tags %}
+{% load url from future %}
 
 {% get_current_language_bidi as LANGUAGE_BIDI %}
 
@@ -36,9 +37,9 @@
     <![endif]-->
     <link href='//fonts.googleapis.com/css?family=Raleway:500,300,200,100' rel='stylesheet' type='text/css'>
     {% media_bundle "site.js" %}
-    <script type="text/javascript" src="{% url js_i18n_catalog %}"></script>
-    <script src="{% url profiles:rpc_api %}" type="text/javascript"></script>
-    <script type="text/javascript" src='{% url embedder_iframe %}'>
+    <script type="text/javascript" src="{% url "js_i18n_catalog" %}"></script>
+    <script src="{% url "profiles:rpc_api" %}" type="text/javascript"></script>
+    <script type="text/javascript" src='{% url "embedder_iframe" %}'>
     </script>
     {% block scripts %}{% endblock %}
     <script type="text/javascript">
@@ -69,7 +70,7 @@
         <a href="/"><img class="navbar-brand" src="{{ STATIC_URL }}images/amara-o.png" /></a>
         <div id="bar_right">
           <ul id="bar_menu" class="clearfix">
-            <li id="nav_submit"><a href="{% url videos:create %}">{% trans 'Subtitle Video' %}</a></li>
+            <li id="nav_submit"><a href="{% url "videos:create" %}">{% trans 'Subtitle Video' %}</a></li>
             <li><a href="/community">{% trans "Community" %}</a></li>
             <li><a href="//pro.amara.org">{% trans "Professional Solutions" %}</a></li>
             <li>
@@ -98,7 +99,7 @@
                 <h2>{% trans "Got a YouTube account?" %}</h2>
                 <p>{% trans "New: enable viewer-created translations and captions on your YouTube channel!" %}</p>
                 <ul>
-                    <li><a href="{% url profiles:account %}?prompt=true" class="proceed">{% trans "Connect to YouTube" %}</a></li>
+                    <li><a href="{% url "profiles:account" %}?prompt=true" class="proceed">{% trans "Connect to YouTube" %}</a></li>
                     <li><a href="#" class="hide">{% trans "No thanks" %}</a></li>
                 </ul>
             </div>
@@ -155,23 +156,20 @@
       </div>
     </div>
 
-    {% if user.is_staff or user|can_translate %}
+    {% if user.is_staff %}
         <div id="admin_controls">
             <ul id="site_controls">
                 {% if user.is_staff %}
-                    <li><a target="_blank" href="{% url admin:index %}">{% trans 'Admin' %}</a></li>
+                    <li><a target="_blank" href="{% url "admin:index" %}">{% trans 'Admin' %}</a></li>
                 {% endif %}
                 {% if user.is_superuser %}
                     <li><a target="_blank" href="//sentry.pculture.org:9000">{% trans 'Sentry' %}</a></li>
                 {% endif %}
-                {% if user|can_translate %}
-                    <li><a target="_blank" href="{% url rosetta-pick-file %}"><span>{% trans 'Rosetta' %}</span></a></li>
+                {% if user.is_superuser %}
+                    <li><a target="_blank" href="{% url "auth:login_trap" %}">{% trans 'Impersonate' %}</a></li>
                 {% endif %}
                 {% if user.is_superuser %}
-                    <li><a target="_blank" href="{% url auth:login_trap %}">{% trans 'Impersonate' %}</a></li>
-                {% endif %}
-                {% if user.is_superuser %}
-                    <li><a target="_blank" href="{% url billing %}">{% trans 'Billing' %}</a></li>
+                    <li><a target="_blank" href="{% url "billing" %}">{% trans 'Billing' %}</a></li>
                 {% endif %}
                 <li><a href="https://github.com/pculture/unisubs/commit/{{ LAST_COMMIT_GUID }}" title="{{ LAST_COMMIT_GUID }}">Github</a></li>
             </ul>

@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load url from future %}
 
 {% if notification_content %}
 <ul id="announce-banner" class="email-confirmation">
@@ -8,7 +9,7 @@
         <div class="col-xs-12">
           <div class="note">
               {{ notification_content }}
-              <a href="{% url auth:resend_confirmation_email %}">{% trans "Resend confirmation email" %}</a>
+              <a href="{% url "auth:resend_confirmation_email" %}">{% trans "Resend confirmation email" %}</a>
           </div>
         </div> <!--/col-xs-12-->
       </div> <!--/row-->

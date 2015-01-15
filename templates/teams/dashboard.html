@@ -1,6 +1,7 @@
 {% extends "teams/base.html" %}
 
-{% load i18n i18n_tags to_json utils_tags teams_tags paginator markup media_bundle profiles_tags videos_tags %}
+{% load i18n i18n_tags to_json utils_tags teams_tags paginator media_bundle profiles_tags videos_tags %}
+{% load url from future %}
 
 {% block title %}
     {% trans 'Dashboard' %} - {{ team }} | Amara
@@ -16,9 +17,9 @@
 {% block scripts %}
     {{ block.super }}
     {% media_bundle "teams.js" %}
-    <script src="{% url teams:rpc_api %}" type="text/javascript"></script>
+    <script src="{% url "teams:rpc_api" %}" type="text/javascript"></script>
     <script type="text/javascript">
-        window.ASSIGN_TASK_AJAX_URL = '{% url teams:assign_task_ajax slug=team.slug %}';
+        window.ASSIGN_TASK_AJAX_URL = '{% url "teams:assign_task_ajax" slug=team.slug %}';
         window.CURRENT_USER_ID = {% firstof request.user.id -1 %};
         window.TEAM_SLUG = '{{ team.slug }}';
     </script>
@@ -26,16 +27,14 @@
 
 {% block view_content %}
 
- {% if not team|is_team_member:user or not videos %}
     {% block select_language_dialog %}
-      {% if not team|is_team_member:user %}
-        {% url teams:join_team slug=team.slug as redirect_url %}
-        {% select_language_dialog hide_link="True" redirect=redirect_url %}
-    {% else %}
-        {% select_language_dialog hide_link="True" %}
-    {% endif %}
+        {% if not team|is_team_member:user %}
+            {% url "teams:join_team" slug=team.slug as redirect_url %}
+            {% select_language_dialog hide_link="True" redirect=redirect_url %}
+        {% else %}
+            {% select_language_dialog hide_link="True" %}
+        {% endif %}
     {% endblock %}
-  {% endif %}
     <div class="grid_8 view omega{% if team.get_workflow.requires_review_or_approval %} moderated{% endif %}{% if team.workflow_enabled %} task-enabled{% endif %}">
         {% if member or team.is_visible %}
             {% with "dashboard" as current %}
@@ -51,7 +50,7 @@
             {% if user_tasks %}
                 <h3>
                     {% trans "Videos you're working on" %}
-                    <a href="{% url teams:team_tasks team.slug %}?assignee=me&lang=all">Manage your tasks</a>
+                    <a href="{% url "teams:team_tasks" team.slug %}?assignee=me&lang=all">Manage your tasks</a>
                 </h3>
 
                 <ul class="listing tasks yours">
@@ -93,7 +92,7 @@
             <div class="get-started">
                 <h3>{% trans "Welcome!" %}</h3>
                 {% if not team.is_open and not team.is_by_application %} {# team is by invite only #}
-                    <p>This team is invitation only. If you're interested in helping out, <a href="{% url teams:detail_members slug=team.slug %}admin/">contact a team admin</a>.</p>
+                    <p>This team is invitation only. If you're interested in helping out, <a href="{% url "teams:detail_members" slug=team.slug %}admin/">contact a team admin</a>.</p>
                 {% else %}
                     <p>
                         {% blocktrans %}
@@ -175,14 +174,14 @@
                                                 <ul>
                                                     {% for lang in team_video.languages %}
                                                         <li>
-                                                            <a href="{% url subtitles:subtitle-editor video_id=team_video.video.video_id language_code=lang %}" title="Get started now">{% blocktrans with language=lang|to_localized_display %}Create {{ language }} Subtitles{% endblocktrans %}</a>
+                                                            <a href="{% url "subtitles:subtitle-editor" video_id=team_video.video.video_id language_code=lang %}" title="Get started now">{% blocktrans with language=lang|to_localized_display %}Create {{ language }} Subtitles{% endblocktrans %}</a>
                                                         </li>
                                                     {% endfor %}
                                                 </ul>
                                             </div>
                                         {% else %} {# there is only one language user can work on #}
                                             {% with lang=team_video.languages.0 %}
-                                                <a href="{% url subtitles:subtitle-editor video_id=team_video.video.video_id language_code=lang %}" title="Get started now">{% blocktrans with language=lang|to_localized_display %}Create {{ language }} Subtitles{% endblocktrans %}</a>
+                                                <a href="{% url "subtitles:subtitle-editor" video_id=team_video.video.video_id language_code=lang %}" title="Get started now">{% blocktrans with language=lang|to_localized_display %}Create {{ language }} Subtitles{% endblocktrans %}</a>
                                             {% endwith %}
                                         {% endif %}
                                     {% endif %}
@@ -197,7 +196,7 @@
                 </p>
                 <ul class="suggestions">
                     <li>
-                        <a href="{% url teams:team_tasks team.slug %}?assignee=me&lang=all">Manage your tasks</a>
+                        <a href="{% url "teams:team_tasks" team.slug %}?assignee=me&lang=all">Manage your tasks</a>
                     </li>
                 </ul>
             {% endif %}
@@ -212,10 +211,10 @@
                         <a href="#" data-modal="language_modal" id="lang_select_btn">{% trans "Select the languages you can caption or translate" %}</a>
                     </li>
                     <li>
-                        <a href="{% url teams:detail team.slug %}">Browse all videos</a>
+                        <a href="{% url "teams:detail" team.slug %}">Browse all videos</a>
                     </li>
                     {% if can_add_video %}
-                        <li><a href="{% url teams:add_video team.slug %}">{% trans "Add videos to the team" %}</a></li>
+                        <li><a href="{% url "teams:add_video" team.slug %}">{% trans "Add videos to the team" %}</a></li>
                     {% endif %}
                 </ul>
             {% endif %}

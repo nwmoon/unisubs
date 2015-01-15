@@ -1,5 +1,6 @@
 {% extends 'openid_consumer/base.html' %}
 {% load i18n %}
+{% load url from future %}
 
 {% block title %}
 
@@ -11,7 +12,7 @@
 
 {% block main_content %}
 <div class="grid_8 push_2">
-	<p><a href="{% url auth:login %}">{% trans 'Back to Sign In' %}</a></p>
+	<p><a href="{% url "auth:login" %}">{% trans 'Back to Sign In' %}</a></p>
 
 	<form action="{{ action }}" method="post">
 		<h2>{% trans "Sign in with your OpenID" %}</h2>

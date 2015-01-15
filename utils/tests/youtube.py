@@ -16,13 +16,13 @@
 # along with this program. If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-import mock
+import json
 import urllib
-import simplejson as json
 
 from django.conf import settings
 from django.test import TestCase
 from nose.tools import *
+import mock
 
 from utils import test_utils
 from utils.subtitles import load_subtitles

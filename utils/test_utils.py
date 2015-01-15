@@ -1,7 +1,7 @@
 import collections
 import functools
+import json
 import os
-import simplejson as json
 import urlparse
 
 from celery.task import Task

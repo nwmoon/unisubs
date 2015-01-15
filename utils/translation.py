@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+import json
 import time
 
 from django.conf import settings
 from django.core.cache import cache
-from django.utils import simplejson as json
 from django.utils.http import cookie_date
 from django.utils.translation import (
     get_language, get_language_info, ugettext as _

@@ -1,3 +1,4 @@
+{% load url from future %}
 <ul class="listing comments">
     {% for item in qs %}
         {% include 'comments/_item.html' %}
@@ -5,7 +6,7 @@
 </ul>
 <script type="text/javascript">
     function update_comments(){
-        jQuery.post('{% url comments:update_comments %}', {
+        jQuery.post('{% url "comments:update_comments" %}', {
             ct: '{{ content_type.pk }}',
             last_comment_id: jQuery('.comment:first').attr('comment_id') || '',
             obj_id: '{{ obj.pk }}'

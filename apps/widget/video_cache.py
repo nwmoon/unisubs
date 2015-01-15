@@ -16,10 +16,10 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 import datetime
+import hashlib
 
 from django.conf import settings
 from django.core.cache import cache
-from django.utils.hashcompat import sha_constructor
 from django.utils.translation import (
     ugettext_lazy as _
 )
@@ -125,7 +125,7 @@ def on_video_url_delete(sender, instance, **kwargs):
         invalidate_cache(instance.video.video_id)
 
 def _video_id_key(video_url):
-    return 'video_id_{0}'.format(sha_constructor(video_url).hexdigest())
+    return 'video_id_{0}'.format(hashlib.sha1(video_url).hexdigest())
 
 def _video_urls_key(video_id):
     return 'widget_video_urls_{0}'.format(video_id)

@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load url from future %}
 {% if msg_count %}
 <ul id="announce-banner">
   <li>
@@ -9,7 +10,7 @@
               {% blocktrans %}
                   You have {{ msg_count }} new messages.
               {% endblocktrans %}
-              <a href="{% url messages:inbox %}">{% trans 'View all' %}</a>
+              <a href="{% url "messages:inbox" %}">{% trans 'View all' %}</a>
               <a href="#" class="hide-messages">{% trans "Hide" %}</a>
               <script type="text/javascript">
                   $('.note .hide-messages').click(function(){

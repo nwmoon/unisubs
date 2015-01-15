@@ -1,4 +1,5 @@
 {% load i18n videos_tags %}
+{% load url from future %}
 
 {% if video|can_user_edit_video_urls:user %}
     <div class="tools">
@@ -63,7 +64,7 @@
         </div>
         
         {% if user.is_authenticated %}
-            <form method="post" action="{% url videos:video_url_create %}">
+            <form method="post" action="{% url "videos:video_url_create" %}">
                 <div class="modal-body">
                     <div class="global-errors"></div>
                     {% include "_form_field.html" with field=form.url %}
@@ -84,7 +85,7 @@
                 <p>{% trans "You must be logged in to add a URL" %}</p>
             </div>
             <div class="modal-footer">
-                <a href="{% url auth:login %}?next={{ request.path_info }}">
+                <a href="{% url "auth:login" %}?next={{ request.path_info }}">
                     {% trans 'Login' %}
                 </a>        
             </div>
@@ -95,7 +96,7 @@
 <script type="text/javascript">
 jQuery(function($){
     var IS_AUTHENTICATED = '{{ user.is_authenticated }}' === 'True';
-    var make_primary_url = '{% url videos:video_url_make_primary %}';
+    var make_primary_url = '{% url "videos:video_url_make_primary" %}';
     $('.make-primary-url-link').click(function(){
         if (IS_AUTHENTICATED){
             var $this = $(this);
@@ -123,7 +124,7 @@ jQuery(function($){
          return false;
     });
     
-    var remove_url = '{% url videos:video_url_remove %}';
+    var remove_url = '{% url "videos:video_url_remove" %}';
     $('.delete-url-link').click(function(){
         var $url = $(this);
         if (IS_AUTHENTICATED){

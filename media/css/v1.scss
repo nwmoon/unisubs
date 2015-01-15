@@ -904,6 +904,22 @@ div.fix-chosen div.chzn-container {
     margin-bottom: 1em;
 }
 
+table.statistics {
+    width: 80%;
+    margin: 15px;
+    th, td {
+      padding: 8px;
+      margin: 0;
+      border: 1px solid #DCE2E5;
+      border-collapse: collapse;
+      text-align: center;
+    }
+    th {
+      @include linear-gradient(bottom, hsla(0, 0%, 94%, 1), hsla(0, 0%, 98%, 1) 15%, hsla(0, 0%, 98%, 1));
+      font-weight: bold;
+    }
+}
+
 table.new-style {
     width: 100%;
     margin-bottom: 1.5em;
@@ -2377,6 +2393,15 @@ a.truncated-expand {
 }
 
 /* Crazytown */
+
+
+#teams .view {
+    p.summary {
+        font-size: 1.25em;
+        font-weight: bold;
+        text-align: center;
+    }
+}
 #teams .backnav, #teams .backnav a {
     color: $light; 
 }
@@ -3177,4 +3202,8 @@ a.truncated-expand {
 
 .v1 h3.tab-heading {
     padding-top: 55px;
+}
+.v1 p.time-tag {
+  text-align: right;
+  margin-bottom: 1.5em;
 }

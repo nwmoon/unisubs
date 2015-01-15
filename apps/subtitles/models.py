@@ -19,13 +19,13 @@
 """Django models represention subtitles."""
 
 import itertools
+import json
 from datetime import datetime, date, timedelta
 
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import query, Q
-from django.utils import simplejson as json
 from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
 
@@ -40,7 +40,6 @@ from babelsubs.generators.html import HTMLGenerator
 from babelsubs import load_from
 from subtitles import signals
 from utils.compress import compress, decompress
-from utils.redis_utils import RedisSimpleField
 from utils.subtitles import create_new_subtitles
 from utils import translation
 from videos.behaviors import make_video_title

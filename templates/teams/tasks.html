@@ -1,17 +1,18 @@
 {% extends "teams/base.html" %}
 {% load to_json i18n teams_tags paginator media_bundle verbatim_templatetag query_string utils_tags videos_tags %}
+{% load url from future %}
 
 {% block html_attrs %}id="team_tasks"{% endblock %}
 
 {% block scripts %}
     {{ block.super }}
     {% media_bundle "teams.js" %}
-    <script src="{% url teams:rpc_api %}" type="text/javascript"></script>
+    <script src="{% url "teams:rpc_api" %}" type="text/javascript"></script>
     <script type="text/javascript">
         window.WIDGET_SETTINGS = {{ widget_settings|to_json|safe }};
         window.REQUEST_GET_LANG = '{{ request.GET.lang }}';
         window.REQUEST_GET_PROJECT = '{{ request.GET.project }}';
-        window.ASSIGN_TASK_AJAX_URL = '{% url teams:assign_task_ajax slug=team.slug %}';
+        window.ASSIGN_TASK_AJAX_URL = '{% url "teams:assign_task_ajax" slug=team.slug %}';
         {% if request.GET.assignee %}
             window.ASSIGNEE = '{{ request.GET.assignee }}';
         {% else %}
@@ -37,7 +38,7 @@
 
 
       {% if team|can_view_approve_tab:user %}
-        <a class="button reduced" href="{% url teams:approvals team.slug %}">
+        <a class="button reduced" href="{% url "teams:approvals" team.slug %}">
           {% trans "Bulk approve tasks" %}
         </a>
       </li>
@@ -48,7 +49,7 @@
             {% can_create_any_task_for_teamvideo filters.team_video request.user %}
             {% if user_can_create_any_task %}
                 <a class="button"
-                   href="{% url teams:create_task slug=team.slug team_video_pk=request.GET.team_video %}">{% trans 'Add Task' %}</a>
+                   href="{% url "teams:create_task" slug=team.slug team_video_pk=request.GET.team_video %}">{% trans 'Add Task' %}</a>
             {% endif %}
         {% endif %}
         <a href="#filter" id="sort-filter">
@@ -82,9 +83,9 @@
         <div class="filter-chunk">
             <select id="id_project" name="project"
                     class="project-filter chosen">
-                    <option value=" {% url teams:team_tasks team.slug %}{% if team.slug == 'ted' %}{% query_string request.GET project='any' %}{% else %}{% query_string request.GET project='' %}{% endif %}" id="project-opt-any" {% if not project %}selected="selected"{% endif%}>{% trans 'any project' %}</option>
+                    <option value=" {% url "teams:team_tasks" team.slug %}{% if team.slug == 'ted' %}{% query_string request.GET project='any' %}{% else %}{% query_string request.GET project='' %}{% endif %}" id="project-opt-any" {% if not project %}selected="selected"{% endif%}>{% trans 'any project' %}</option>
                 {% for proj in project_choices %}
-                    <option id="project-opt-{{ proj.slug }}" {% if project == proj %}selected="selected"{% endif %} value="{% url teams:team_tasks team.slug %}{% query_string request.GET project=proj.slug %}">{{ proj.name }}</option>
+                    <option id="project-opt-{{ proj.slug }}" {% if project == proj %}selected="selected"{% endif %} value="{% url "teams:team_tasks" team.slug %}{% query_string request.GET project=proj.slug %}">{{ proj.name }}</option>
                 {% endfor %}
             </select>
             </select>
@@ -182,7 +183,7 @@
                     {% trans 'Showing unassigned tasks in languages you speak. ' %}
                     {% if team|user_tasks_count:user > 0 %}
                         {% trans "Want to view " %}
-                        <a href="{% url teams:team_tasks team.slug %}?assignee=me&lang=all">{% trans "your tasks" %}</a>
+                        <a href="{% url "teams:team_tasks" team.slug %}?assignee=me&lang=all">{% trans "your tasks" %}</a>
                         {% trans ' instead?' %}
                     {% endif %}
                 </strong>
@@ -358,7 +359,7 @@
                         <div class="bootstrap">
                             <div class="modal upload-draft-modal"
                                 id="upload-draft-{{ task.id }}">
-                                <form action="{% url teams:upload_draft slug=team.slug,video_id=task.team_video.video.video_id %}"
+                                <form action="{% url "teams:upload_draft" slug=team.slug video_id=task.team_video.video.video_id %}"
                                       method="post"
                                       enctype="multipart/form-data">
                                     {% with task|get_upload_form:request.user as form %}
@@ -442,19 +443,19 @@
                                                 <option value="">Select a
                                                     format
                                                 </option>
-                                                <option value="{% url teams:download_draft slug=team.slug task_pk=task.id type='srt' %}">
+                                                <option value="{% url "teams:download_draft" slug=team.slug task_pk=task.id type='srt' %}">
                                                     SRT
                                                 </option>
-                                                <option value="{% url teams:download_draft slug=team.slug task_pk=task.id type='ssa' %}">
+                                                <option value="{% url "teams:download_draft" slug=team.slug task_pk=task.id type='ssa' %}">
                                                     SSA
                                                 </option>
-                                                <option value="{% url teams:download_draft slug=team.slug task_pk=task.id type='txt' %}">
+                                                <option value="{% url "teams:download_draft" slug=team.slug task_pk=task.id type='txt' %}">
                                                     TXT
                                                 </option>
-                                                <option value="{% url teams:download_draft slug=team.slug task_pk=task.id type='sbv' %}">
+                                                <option value="{% url "teams:download_draft" slug=team.slug task_pk=task.id type='sbv' %}">
                                                     SBV
                                                 </option>
-                                                <option value="{% url teams:download_draft slug=team.slug task_pk=task.id type='dfxp' %}">
+                                                <option value="{% url "teams:download_draft" slug=team.slug task_pk=task.id type='dfxp' %}">
                                                     DFXP
                                                 </option>
                                             </select>
@@ -477,7 +478,7 @@
                                             {% trans 'Decline' %}
 
                                             <form class="hidden"
-                                                  action="{% url teams:assign_task slug=team.slug %}"
+                                                  action="{% url "teams:assign_task" slug=team.slug %}"
                                                   method="post">
                                                 {% csrf_token %}
 
@@ -525,7 +526,7 @@
                                             <h3>{% trans 'Delete task' %}</h3>
                                         </div>
                                         <div class="modal-body">
-                                            <form action="{% url teams:delete_task slug=team.slug %}"
+                                            <form action="{% url "teams:delete_task" slug=team.slug %}"
                                                   method="post">
                                                 <fieldset>
                                                     {% if task.get_type_display == "Review" or task.get_type_display == "Approve" %}
@@ -579,7 +580,7 @@
 
                     {% if task|can_assign_task:user %}
                         <form class="assign-form"
-                              action="{% url teams:assign_task slug=team.slug %}"
+                              action="{% url "teams:assign_task" slug=team.slug %}"
                               method="post">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{{ request.path }}{% query_string request.GET %}"/>
@@ -599,7 +600,7 @@
                                     </select>
                                 </div>
                                 <a class="button action-assign-submit"
-                                   href="{% url teams:assign_task slug=team.slug %}">{% trans 'Assign to User' %}</a>
+                                   href="{% url "teams:assign_task" slug=team.slug %}">{% trans 'Assign to User' %}</a>
                             </div>
                         </form>
                     {% endif %}

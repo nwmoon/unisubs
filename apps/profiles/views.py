@@ -16,6 +16,7 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
+import json
 import logging
 from datetime import datetime, timedelta
 
@@ -25,12 +26,9 @@ from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import  reverse
 from django.db.models import Q
 from django.http import Http404, HttpResponse
-from django.shortcuts import redirect, get_object_or_404
-from django.utils import simplejson as json
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import force_unicode
-from django.views.generic.list_detail import object_list
-from django.views.generic.simple import direct_to_template
 from tastypie.models import ApiKey
 
 from auth.models import CustomUser as User
@@ -38,6 +36,7 @@ from profiles.forms import (EditUserForm, EditAccountForm, SendMessageForm,
                             EditAvatarForm, AdminProfileForm)
 from profiles.rpc import ProfileApiClass
 import externalsites.models
+from utils.objectlist import object_list
 from utils.orm import LoadRelatedQuerySet
 from utils.rpc import RpcRouter
 from utils.text import fmt
@@ -137,7 +136,7 @@ def dashboard(request):
         'tasks': tasks,
     }
 
-    return direct_to_template(request, 'profiles/dashboard.html', context)
+    return render(request, 'profiles/dashboard.html', context)
 
 def videos(request, user_id=None):
     if user_id:
@@ -193,7 +192,7 @@ def edit(request):
         'user_info': request.user,
         'edit_profile_page': True
     }
-    return direct_to_template(request, 'profiles/edit.html', context)
+    return render(request, 'profiles/edit.html', context)
 
 
 @login_required
@@ -224,7 +223,7 @@ def account(request):
         'hide_prompt': True
     }
 
-    return direct_to_template(request, 'profiles/account.html', context)
+    return render(request, 'profiles/account.html', context)
 
 
 @login_required
@@ -336,5 +335,4 @@ def remove_third_party(request, account_type, account_id):
         'account_type_name': account_type_name,
         'account_owner': account_owner,
     }
-    return direct_to_template(request, 'profiles/remove-third-party.html',
-            context)
+    return render(request, 'profiles/remove-third-party.html', context)

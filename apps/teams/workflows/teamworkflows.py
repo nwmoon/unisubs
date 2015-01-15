@@ -32,7 +32,8 @@ Team workflows are responsible for:
 
 ..  autoclass:: TeamWorkflow
     :members: type_code, label, dashboard_view, workflow_settings_view,
-              setup_team, get_subtitle_workflow, extra_pages
+              setup_team, get_subtitle_workflow, extra_pages,
+              extra_settings_pages
 
 .. autoclass:: TeamPage
 
@@ -80,6 +81,17 @@ class TeamWorkflow(object):
 
         These pages will be listed as tabs in the team section.  Workflows
         will typically use this for things like dashboard pages.
+
+        Returns:
+            list of :class:`TeamPage` objects
+        """
+        return []
+
+    def extra_settings_pages(self):
+        """Get extra team settings pages to handle this workflow.
+
+        This works just like extra_pages(), but the pages will show up as
+        tabs under the settings section.
 
         Returns:
             list of :class:`TeamPage` objects

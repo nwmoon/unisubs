@@ -17,8 +17,9 @@
 # along with this program. If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
+import json
+
 from django.core.urlresolvers import reverse
-import simplejson as json
 
 def dxfp_sample(language_code):
     return ("""\

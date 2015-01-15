@@ -1,6 +1,7 @@
 {% extends "teams/base.html" %}
 
 {% load i18n teams_tags paginator %}
+{% load url from future %}
 
 {% block title %}
     {{ team }} {% trans 'Team Approvals' %} | Amara
@@ -45,7 +46,7 @@
             <input type="hidden" name="q" value="{{ query }}" />
             <button class="reduced" id="update">Update</button>
             {% if filtered %}
-            <a href="{% url teams:detail team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
+            <a href="{% url "teams:detail" team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
             {% endif %}
             <div class="group">
                 <div class="filter-chunk">

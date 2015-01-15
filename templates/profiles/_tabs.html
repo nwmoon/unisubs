@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load url from future %}
 
 <ul class="tabs">
     <li{% if current == "activity" %} class="current" {% endif %}>
@@ -7,18 +8,18 @@
         </a>
     </li>
     <li{% if current == "videos" %} class="current" {% endif %}>
-        <a href="{% url profiles:videos user_info.username %}">
+        <a href="{% url "profiles:videos" user_info.username %}">
             {% trans "Videos" %}
         </a>
     </li>
     {% if user.is_authenticated and user == user_info %}
         <li{% if current == "profile" %} class="current" {% endif %}>
-            <a href="{% url profiles:edit %}">
+            <a href="{% url "profiles:edit" %}">
                 {% trans "Personal Info" %}
             </a>
         </li>
         <li{% if current == "account" %} class="current" {% endif %}>
-            <a href="{% url profiles:account %}">
+            <a href="{% url "profiles:account" %}">
                 {% trans "Account" %}
             </a>
         </li>

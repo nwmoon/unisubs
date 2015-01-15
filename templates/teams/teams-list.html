@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load paginator i18n teams_tags %}
+{% load url from future %}
 
 {% block title %}
     {% if my_teams %}{% trans 'Your Teams' %}{% else %}{% trans 'Teams' %}{% endif %}| Amara
@@ -10,7 +11,7 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% url teams:rpc_api %}" type="text/javascript"></script>  
+    <script src="{% url "teams:rpc_api" %}" type="text/javascript"></script>  
 {% endblock %}
 
 {% block main_content %}
@@ -19,13 +20,13 @@
 
     <ul class="tabs">
         <li{% if not my_teams %} class="current"{% endif %}>
-            <a href="{% url teams:index %}">
+            <a href="{% url "teams:index" %}">
                 {% trans "All Teams" %}
             </a>
         </li>
         {% if user.teams.exists %}
             <li{% if my_teams %} class="current"{% endif %}>
-                <a href="{% url teams:user_teams %}">
+                <a href="{% url "teams:user_teams" %}">
                     {% trans "Your Teams" %}
                 </a>
             </li>
@@ -41,13 +42,13 @@
                     <span class="sort_label">{% trans 'Sort by' %} <strong>{{ order_name }}</strong></span>
                     <ul>
                         <li>
-                            <a href="{% url teams:index %}?o=members{% if query %}&q={{ query|urlencode }}{% endif %}" data-remote="true" class="first">{% trans 'Most Members' %}</a>
+                            <a href="{% url "teams:index" %}?o=members{% if query %}&q={{ query|urlencode }}{% endif %}" data-remote="true" class="first">{% trans 'Most Members' %}</a>
                         </li>
                         <li>
-                            <a href="{% url teams:index %}?o=date{% if query %}&q={{ query|urlencode }}{% endif %}" data-remote="true">{% trans 'Newest' %}</a>
+                            <a href="{% url "teams:index" %}?o=date{% if query %}&q={{ query|urlencode }}{% endif %}" data-remote="true">{% trans 'Newest' %}</a>
                         </li>
                         <li>
-                            <a href="{% url teams:index %}?o=name{% if query %}&q={{ query|urlencode }}{% endif %}" data-remote="true">{% trans 'Name' %}</a>
+                            <a href="{% url "teams:index" %}?o=name{% if query %}&q={{ query|urlencode }}{% endif %}" data-remote="true">{% trans 'Name' %}</a>
                         </li>
                     </ul>
                 </div>
@@ -79,7 +80,7 @@
                             </strong>
                             {{ team|user_role:user }}
                             {% if team|can_leave_team:user %}
-                                (<a id="leave" onclick="return confirm('{% trans "Do you really wish to leave this team?" %}')" href="{% url teams:leave_team team.slug %}">{% trans "leave team" %}</a>)
+                                (<a id="leave" onclick="return confirm('{% trans "Do you really wish to leave this team?" %}')" href="{% url "teams:leave_team" team.slug %}">{% trans "leave team" %}</a>)
                             {% endif %}
                         </p>
                     {% endif %}
@@ -125,7 +126,7 @@
         </div>
         
         {% if user.is_superuser and user.is_active %}
-            <a href="{% url teams:create %}" class="button primary start_team">{% trans 'Start a Team' %}</a>
+            <a href="{% url "teams:create" %}" class="button primary start_team">{% trans 'Start a Team' %}</a>
         {% endif %}
         
         <p class="notation">

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import datetime
-import simplejson as json
+import json
 
 from django.test import TestCase
 from django.test.client import Client

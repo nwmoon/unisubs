@@ -16,14 +16,15 @@
 # along with this program.  If not, see 
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from forms import CommentForm
+import json
+
 from django.http import HttpResponse
-from django.utils import simplejson as json
 from django.contrib.auth.decorators import login_required
-from models import Comment
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
+from forms import CommentForm
+from models import Comment
 
 @login_required
 def post(request):

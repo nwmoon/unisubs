@@ -3,7 +3,6 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
-from django.utils.simplejson import dumps as json
 from django.utils.translation import ugettext_lazy as _
 
 from utils.text import fmt

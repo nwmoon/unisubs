@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load url from future %}
 <div class="tab" id="sync-history-tab">
     {% if current_version %}
     <h2>External subtitle syncing and history</h2>
@@ -22,7 +23,7 @@
             <td>{% trans "None" %}</td>
             {% endif %}
             <td class="last">
-                <form action="{% url externalsites:resync video_url_id=sync_info.video_url.id language_code=language.language_code %}" method="POST">
+                <form action="{% url "externalsites:resync" video_url_id=sync_info.video_url.id language_code=language.language_code %}" method="POST">
                     {% csrf_token %}
                     {% if current_version %}
                     <input type="submit" value="{% blocktrans with version=current_version.version_number%}resync version #{{ version }}{% endblocktrans %}">

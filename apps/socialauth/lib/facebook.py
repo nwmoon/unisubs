@@ -1,7 +1,7 @@
+import hashlib
+import json
 import urllib
 import time
-import simplejson
-from django.utils.hashcompat import md5_constructor
 
 REST_SERVER = 'http://api.facebook.com/restserver.php'
 
@@ -20,7 +20,7 @@ def get_user_info(api_key, api_secret, cookies):
     user_info_hash = get_facebook_signature(api_key, api_secret, user_info_params)
     user_info_params['sig'] = user_info_hash            
     user_info_params = urllib.urlencode(user_info_params)
-    user_info_response  = simplejson.load(urllib.urlopen(REST_SERVER, user_info_params))
+    user_info_response  = json.load(urllib.urlopen(REST_SERVER, user_info_params))
     return user_info_response
 
 def get_friends(api_key, api_secret, cookies):
@@ -52,7 +52,7 @@ def talk_to_fb(api_key, api_secret, params):
     sig = get_facebook_signature(api_key, api_secret, params)
     params['sig'] = sig
     data = urllib.urlencode(params)
-    response = simplejson.load(urllib.urlopen(REST_SERVER, data))
+    response = json.load(urllib.urlopen(REST_SERVER, data))
     return response
 
     
@@ -72,7 +72,7 @@ def get_facebook_signature(api_key, api_secret, values_dict, is_cookie_check=Fal
             signature_string = ''.join(['%s=%s' % (x, values_dict[x]) for x in signature_keys])
         signature_string = signature_string + API_SECRET
 
-        return md5_constructor(signature_string).hexdigest()
+        return hashlib.md5(signature_string).hexdigest()
     
     
     

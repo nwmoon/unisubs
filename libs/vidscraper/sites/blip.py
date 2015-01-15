@@ -26,7 +26,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import re
-import simplejson
+import json
 import urllib
 
 import feedparser
@@ -143,7 +143,7 @@ def get_embed(url, shortmem={}, width=EMBED_WIDTH, height=EMBED_HEIGHT):
     if not oembed_response:
         return None
 
-    # simplejson doesn't like the \' escape
+    # json doesn't like the \' escape
     oembed_response = oembed_response.replace(r"\'", "'")
 
     # clean up the response, and check for a trailing ,
@@ -152,7 +152,7 @@ def get_embed(url, shortmem={}, width=EMBED_WIDTH, height=EMBED_HEIGHT):
         oembed_response = oembed_response[:-2] + '}'
 
     try:
-        embed_code = simplejson.loads(oembed_response.decode('utf8'))['html']
+        embed_code = json.loads(oembed_response.decode('utf8'))['html']
     except (ValueError, KeyError):
         embed_code = None
 

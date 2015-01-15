@@ -21,7 +21,7 @@ import string
 import urllib, urllib2
 from collections import namedtuple
 
-import simplejson as json
+import json
 from babelsubs.storage import diff as diff_subs
 from babelsubs.generators.html import HTMLGenerator
 from django.conf import settings
@@ -35,6 +35,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from videos.templatetags.paginator import paginate
 from django.core.urlresolvers import reverse
+from django.db import IntegrityError
 from django.db.models import Sum
 from django.http import (HttpResponse, Http404, HttpResponseRedirect,
                          HttpResponseForbidden)
@@ -45,14 +46,12 @@ from django.utils.encoding import force_unicode
 from django.utils.http import urlquote_plus
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.views.decorators.http import require_POST
-from django.views.generic.list_detail import object_list
 from gdata.service import RequestError
 from vidscraper.errors import Error as VidscraperError
 
 import widget
 from widget import rpc as widget_rpc
 from auth.models import CustomUser as User
-from statistic.models import EmailShareStatistic
 from subtitles.models import SubtitleLanguage, SubtitleVersion
 from subtitles.permissions import (user_can_view_private_subtitles,
                                    user_can_edit_subtitles)
@@ -80,6 +79,7 @@ from utils import send_templated_email
 from utils.basexconverter import base62
 from utils.decorators import never_in_prod
 from utils.metrics import Meter
+from utils.objectlist import object_list
 from utils.rpc import RpcRouter
 from utils.text import fmt
 from utils.translation import get_user_languages_from_request
@@ -202,6 +202,7 @@ def latest_videos(request):
     return render_to_response('videos/latest_videos.html', {},
                               context_instance=RequestContext(request))
 
+@login_required
 def create(request):
     video_form = VideoForm(request.user, request.POST or None)
     context = {
@@ -458,11 +459,6 @@ def email_friend(request):
     if request.method == 'POST':
         form = EmailFriendForm(request.POST, auto_id="email_friend_id_%s", label_suffix="")
         if form.is_valid():
-            email_st = EmailShareStatistic()
-            if request.user.is_authenticated():
-                email_st.user = request.user
-            email_st.save()
-
             form.send()
             messages.info(request, 'Email Sent!')
 
@@ -827,18 +823,11 @@ def video_url_remove(request):
                 output['error'] = ugettext('You have not permission delete this URL')
                 status = 403
             else:
-                if obj.primary:
-                    output['error'] = ugettext('You can\'t remove primary URL')
+                try:
+                    obj.remove(request.user)
+                except IntegrityError, e:
+                    output['error'] = str(e)
                     status = 403
-                else:
-                    # create activity record
-                    act = Action(video=obj.video, action_type=Action.DELETE_URL)
-                    act.new_video_title = obj.url
-                    act.created = datetime.datetime.now()
-                    act.user = request.user
-                    act.save()
-                    # delete
-                    obj.delete()
         except VideoUrl.DoesNotExist:
             output['error'] = ugettext('Object does not exist')
             status = 404

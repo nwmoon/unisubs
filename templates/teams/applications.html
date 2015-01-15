@@ -1,6 +1,7 @@
 {% extends "teams/base.html" %}
 
 {% load i18n teams_tags paginator %}
+{% load url from future %}
 
 {% block title %}
     {{ team }} {% trans 'Team Applications' %} | Amara
@@ -39,7 +40,7 @@
                 <li>
                   <h3>
                     <a href="{{ item.user.get_absolute_url }}">{{ item.user }}</a>
-		    <a class="action" href="{% url messages:new %}?user={{ item.user.username }}">{% trans 'Send a message' %}</a>
+		    <a class="action" href="{% url "messages:new" %}?user={{ item.user.username }}">{% trans 'Send a message' %}</a>
                     {% for language in item.user.get_language_names %}
                     <span class="descriptor">{{ language }}</span>
                     {% endfor %}
@@ -58,10 +59,10 @@
                         {% if team|can_approve_application:user %}
                             <ul class="actions">
                                 <li>
-                                    <a href="{% url teams:approve_application team.slug item.pk %}">{% trans 'Approve' %}</a>
+                                    <a href="{% url "teams:approve_application" team.slug item.pk %}">{% trans 'Approve' %}</a>
                                 </li>
                                 <li>
-                                    <a href="{% url teams:deny_application team.slug item.pk %}">{% trans 'Deny' %}</a>
+                                    <a href="{% url "teams:deny_application" team.slug item.pk %}">{% trans 'Deny' %}</a>
                                 </li>
                             </ul>
                         {% endif %}

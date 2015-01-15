@@ -15,12 +15,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
+from datetime import datetime, timedelta
 import functools
+import json
 import logging
 import random
+import pickle
 
 import babelsubs
-from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -36,10 +39,9 @@ from django.http import (
 from django.shortcuts import (get_object_or_404, redirect, render_to_response,
                               render)
 from django.template import RequestContext
-from django.utils import simplejson as json
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import iri_to_uri, force_unicode
-from django.views.generic.list_detail import object_list
+from django.core.cache import cache
 
 import widget
 from auth.models import UserLanguage, CustomUser as User
@@ -65,7 +67,7 @@ from teams.permissions import (
     roles_user_can_assign, can_join_team, can_edit_video, can_delete_tasks,
     can_perform_task, can_rename_team, can_change_team_settings,
     can_perform_task_for, can_delete_team, can_delete_video, can_remove_video,
-    can_delete_language, can_move_videos, can_sort_by_primary_language
+    can_delete_language, can_move_videos, can_sort_by_primary_language, can_view_stats_tab
 )
 from teams.signals import api_teamvideo_new
 from teams.tasks import (
@@ -77,6 +79,7 @@ from videos.tasks import video_changed_tasks
 from utils import render_to, render_to_json, DEFAULT_PROTOCOL
 from utils.forms import flatten_errorlists
 from utils.metrics import time as timefn
+from utils.objectlist import object_list
 from utils.panslugify import pan_slugify
 from utils.searching import get_terms
 from utils.text import fmt
@@ -91,11 +94,11 @@ from subtitles.models import SubtitleLanguage, SubtitleVersion
 from widget.rpc import add_general_settings
 from widget.views import base_widget_params
 from teams import workflows
+from statistics import compute_statistics
 
 from teams.bulk_actions import complete_approve_tasks
 
 logger = logging.getLogger("teams.views")
-
 
 TASKS_ON_PAGE = getattr(settings, 'TASKS_ON_PAGE', 20)
 TEAMS_ON_PAGE = getattr(settings, 'TEAMS_ON_PAGE', 10)
@@ -110,7 +113,7 @@ UNASSIGNED_TASKS_ON_PAGE = getattr(settings, 'UNASSIGNED_TASKS_ON_PAGE', 15)
 ACTIONS_ON_PAGE = getattr(settings, 'ACTIONS_ON_PAGE', 20)
 DEV = getattr(settings, 'DEV', False)
 DEV_OR_STAGING = DEV or getattr(settings, 'STAGING', False)
-
+ALL_LANGUAGES_DICT = dict(settings.ALL_LANGUAGES)
 BILLING_CUTOFF = getattr(settings, 'BILLING_CUTOFF', None)
 
 def get_team_for_view(slug, user, exclude_private=True):
@@ -906,8 +909,40 @@ def remove_video(request, team_video_pk):
         messages.success(request, msg)
         return HttpResponseRedirect(next)
 
+
+class TableCell():
+    """Convenience class to pass
+    table data to template, namely
+    cell contents and whether they are
+    headers.
+    """
+    def __init__(self, content, header=False):
+        self.content = content
+        self.header = header
+    def __repr__(self):
+        return str(self.content)
+
+@login_required
+def statistics(request, slug, tab='teamstats'):
+    """For the team activity, statistics tabs
+    """
+    team = get_team_for_view(slug, request.user)
+    if tab == 'teamstats' and not can_view_stats_tab(team, request.user):
+        return HttpResponseForbidden("Not allowed")
+    cache_key = 'stats-' + slug + '-' + tab
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        context = pickle.loads(cached_context)
+    else:
+        context = compute_statistics(team, stats_type=tab)
+        cache.set(cache_key, pickle.dumps(context), 60*60*24)
+    context['activity_tab'] = tab
+    context['team'] = team
+    return render(request, 'teams/statistics.html', context)
+
 def activity(request, slug, tab='videos'):
     team = get_team_for_view(slug, request.user)
+
     try:
         page = int(request.GET['page'])
     except (ValueError, KeyError):
@@ -974,7 +1009,7 @@ def activity(request, slug, tab='videos'):
         'member': member,
         'activity_tab': tab,
         'next_page': page + 1,
-        'has_more': has_more,
+        'has_more': has_more
     }
     if not request.is_ajax():
         return render(request, 'teams/activity.html', context)
@@ -985,6 +1020,10 @@ def activity(request, slug, tab='videos'):
 
 def team_activity(request, slug):
     return activity(request, slug, tab='team')
+def teamstatistics_activity(request, slug):
+    return statistics(request, slug, tab='teamstats')
+def videosstatistics_activity(request, slug):
+    return statistics(request, slug, tab='videosstats')
 
 # Members
 @timefn

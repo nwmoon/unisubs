@@ -1,27 +1,30 @@
 {% load i18n %}
+{% load url from future %}
 
 <ul>
     <li {% if current_sub == "settings" %}class="current"{% endif %}>
-        <a href="{% url teams:settings_basic slug=team.slug %}">{% trans "Team Details" %}</a>
+        <a href="{% url "teams:settings_basic" slug=team.slug %}">{% trans "Team Details" %}</a>
     </li>
 
     <li {% if current_sub == "guidelines" %}class="current"{% endif %}>
-        <a href="{% url teams:settings_guidelines slug=team.slug %}">{% trans "Messages" %}</a>
+        <a href="{% url "teams:settings_guidelines" slug=team.slug %}">{% trans "Messages" %}</a>
     </li>
 
     <li {% if current_sub == "permissions" %}class="current"{% endif %}>
-        <a href="{% url teams:settings_permissions slug=team.slug %}">{% trans "Workflows" %}</a>
+        <a href="{% url "teams:settings_permissions" slug=team.slug %}">{% trans "Workflows" %}</a>
     </li>
 
-    <li {% if current_sub == "languages" %}class="current"{% endif %}>
-        <a href="{% url teams:settings_languages slug=team.slug %}">{% trans "Languages" %}</a>
+    {% for page in team.new_workflow.extra_settings_pages %}
+    <li{% if current_sub == page.name %} class="current" {% endif %}>
+        <a href="{{ page.url }}">{{ page.title }}</a>
     </li>
+    {% endfor %}
 
     <li {% if current_sub == "projects" %}class="current"{% endif %}>
-        <a href="{% url teams:settings_projects slug=team.slug %}">{% trans "Projects" %}</a>
+        <a href="{% url "teams:settings_projects" slug=team.slug %}">{% trans "Projects" %}</a>
     </li>
 
     <li {% if current_sub == "external-sites" %}class="current"{% endif %}>
-        <a href="{% url teams:settings_externalsites slug=team.slug %}">{% trans "Integrations" %}</a>
+        <a href="{% url "teams:settings_externalsites" slug=team.slug %}">{% trans "Integrations" %}</a>
     </li>
 </ul>

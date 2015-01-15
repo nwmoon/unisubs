@@ -46,7 +46,7 @@ automatically pull them in if they are present.  Here's how we do it:
 
 import os
 
-from django.conf.urls.defaults import patterns, include, url
+from django.conf.urls import patterns, include, url
 
 project_root = os.path.abspath(os.path.dirname(__file__))
 

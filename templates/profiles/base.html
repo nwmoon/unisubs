@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load i18n profiles_tags %}
+{% load url from future %}
 
 {% block body_attrs %}class="{% block body-class %}profile v1{% endblock %}"{% endblock %}
 
@@ -9,7 +10,7 @@
     <div class="grid_4 context alpha">
         <img src="{{ user_info|custom_avatar:240 }}" alt="{{ user_info|title }}'s avatar" class="avatar"/>
         {% if user != user_info %}
-            <a class="button reduced" href="{% url messages:new %}?user={{ user_info.username }}">{% trans "Send " %}{{ user_info }}{% trans " a Message" %}</a>
+            <a class="button reduced" href="{% url "messages:new" %}?user={{ user_info.username }}">{% trans "Send " %}{{ user_info }}{% trans " a Message" %}</a>
         {% endif %}
         <h3>
             {% trans "About" %}
@@ -60,7 +61,7 @@
                 <ul>
                     {% for t in user_teams %}
                     <li>
-                        <a href="{% url teams:dashboard slug=t.slug %}">{{ t }}</a>
+                        <a href="{% url "teams:dashboard" slug=t.slug %}">{{ t }}</a>
                     </li>
                     {% endfor %}
                 </ul>

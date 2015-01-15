@@ -4,11 +4,11 @@ from south.db import db
 from south.v2 import DataMigration
 from django.db import models
 from django.conf import settings
-from redis.exceptions import ConnectionError
 
 class Migration(DataMigration):
     
     def forwards(self, orm):
+        from redis.exceptions import ConnectionError
         try:
             from videos.models import Video
         except ImportError:

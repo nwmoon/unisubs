@@ -15,8 +15,8 @@ from openid.store.interface import OpenIDStore
 from openid.association import Association as OIDAssociation
 from yadis import xri
 
+import hashlib
 import time, base64
-from django.utils.hashcompat import md5_constructor
 
 from django.conf import settings
 from models import Association, Nonce
@@ -106,7 +106,7 @@ class DjangoOpenIDStore(OpenIDStore):
     
     def getAuthKey(self):
         # Use first AUTH_KEY_LEN characters of md5 hash of SECRET_KEY
-        return md5_constructor(settings.SECRET_KEY).hexdigest()[:self.AUTH_KEY_LEN]
+        return hashlib.md5(settings.SECRET_KEY).hexdigest()[:self.AUTH_KEY_LEN]
 
 def from_openid_response(openid_response):
     issued = int(time.time())

@@ -1,5 +1,6 @@
 {% extends "teams/base.html" %}
 {% load i18n teams_tags paginator %}
+{% load url from future %}
 
 {% block title %}
     {{ team }} {% trans 'Settings' %} | Amara
@@ -17,7 +18,7 @@
             {% endwith %}
         </div>
         <div>
-            <a class="button reduced project-add" href="{% url teams:add_project slug=team.slug %}">{% trans 'Add Project' %}</a>
+            <a class="button reduced project-add" href="{% url "teams:add_project" slug=team.slug %}">{% trans 'Add Project' %}</a>
         </div>
         {% if projects %}
             <ul class="projects listing">
@@ -26,7 +27,7 @@
                         <p>{{ project.name }}</p>
                         <ul class="actions">
                             <li>
-                                <a class="action-edit" href="{% url teams:edit_project slug=team.slug project_slug=project.slug %}">{% trans 'Edit' %}</a>
+                                <a class="action-edit" href="{% url "teams:edit_project" slug=team.slug project_slug=project.slug %}">{% trans 'Edit' %}</a>
                             </li>
                         </ul>
                     </li>

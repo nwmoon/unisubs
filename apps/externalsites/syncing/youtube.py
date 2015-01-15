@@ -37,8 +37,8 @@ from utils.metrics import Meter, Occurrence
 # code copied from the old videos.types.youtube module and it uses the version
 # 2 client library.
 
-AMARA_CREDIT = translation.ugettext("Subtitles by the Amara.org community")
-AMARA_DESCRIPTON_CREDIT = translation.ugettext(
+AMARA_CREDIT = translation.ugettext_lazy("Subtitles by the Amara.org community")
+AMARA_DESCRIPTON_CREDIT = translation.ugettext_lazy(
     "Help us caption & translate this video!")
 
 logger = logging.getLogger("externalsites.syncing.youtube")

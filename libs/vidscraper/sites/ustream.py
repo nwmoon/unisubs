@@ -1,8 +1,7 @@
 import datetime
+import json
 import re
 import urllib2
-
-import simplejson
 
 from vidscraper.decorators import provide_shortmem, returns_unicode
 from vidscraper.errors import BaseUrlLoadFailure
@@ -20,7 +19,7 @@ def provide_api(func):
             api_file = urllib2.urlopen(
                 'http://api.ustream.tv/json/video/%s/getInfo/?key=%s' % (
                     id, USTREAM_API_KEY))
-            shortmem['results'] = simplejson.load(api_file)['results']
+            shortmem['results'] = json.load(api_file)['results']
             if shortmem['results'] is None:
                 raise BaseUrlLoadFailure('No results from uStream API')
         return func(url, shortmem)

@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load url from future %}
 
 <ul class="listing">
     {% for item in events %}
@@ -8,4 +9,4 @@
     {% endfor %}
 </ul>
 
-<a class="view_all" href="{% url profiles:actions_list %}">{% trans 'View all' %}</a>
+<a class="view_all" href="{% url "profiles:actions_list" %}">{% trans 'View all' %}</a>

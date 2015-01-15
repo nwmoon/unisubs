@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load i18n media_bundle %}
+{% load url from future %}
 
 {% block title %}
     {% trans 'Create team' %} | Amara
@@ -23,12 +24,12 @@
 
     <ul class="tabs">
         <li{% if not user.teams.exists %} class="current"{% endif %}>
-            <a href="{% url teams:index %}">
+            <a href="{% url "teams:index" %}">
                 {% trans 'All Teams' %}
             </a>
         </li>
         <li{% if user.teams.exists %} class="current"{% endif %}>
-            <a href="{% url teams:user_teams %}">
+            <a href="{% url "teams:user_teams" %}">
                 {% trans 'My Teams' %}
             </a>
         </li>
@@ -69,9 +70,9 @@
             </li>
             <li>
             {% if not user.teams.exists %}
-                <a href="{% url teams:index %}">← {% trans 'Back to teams' %}</a>
+                <a href="{% url "teams:index" %}">← {% trans 'Back to teams' %}</a>
             {% else %}
-                <a href="{% url teams:user_teams %}">← {% trans 'Back to my teams' %}</a>
+                <a href="{% url "teams:user_teams" %}">← {% trans 'Back to my teams' %}</a>
             {% endif %}
             </li>
         </ul>

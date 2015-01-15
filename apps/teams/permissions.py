@@ -18,12 +18,10 @@
 
 from django.utils.translation import ugettext as _
 from teams.models import Team, MembershipNarrowing, Workflow, TeamMember, Task
-
 from teams.permissions_const import (
     ROLES_ORDER, ROLE_OWNER, ROLE_CONTRIBUTOR, ROLE_ADMIN, ROLE_MANAGER,
     ROLE_OUTSIDER
 )
-
 class TeamsPermissionsCheck(object):
     """The result of some functions below.
 
@@ -438,6 +436,10 @@ def can_view_settings_tab(team, user):
     role = get_role_for_target(user, team)
 
     return role in [ROLE_ADMIN, ROLE_OWNER]
+
+def can_view_stats_tab(team, user):
+    role = get_role_for_target(user, team)
+    return not role == ROLE_OUTSIDER
 
 def can_view_approve_tab(team, user):
     """Return whether the given user can view (and therefore edit) the team's task bulk approval.

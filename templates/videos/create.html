@@ -1,6 +1,7 @@
 {% extends "hands_base.html" %}
 
 {% load i18n %}
+{% load url from future %}
 
 {% block body_attrs %}id="create"{% endblock %}
 
@@ -16,7 +17,7 @@
             {% endblocktrans %}
           {% endif %}
 
-          <form action="{% url videos:create %}" method="POST" class="main_video_form">
+          <form action="{% url "videos:create" %}" method="POST" class="main_video_form">
 
             <h1 class="main_heading">{% trans 'Subtitle a Video' %}</h1>
             <p class="subtext create-instructions">

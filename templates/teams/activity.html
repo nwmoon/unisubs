@@ -1,11 +1,11 @@
 {% extends "teams/base.html" %}
 
 {% load i18n %}
+{% load url from future %}
 
 {% block html_attrs %}id="teams_activity"{% endblock %}
 {% block body_attrs %}id="teams" class="v1"{% endblock %}
 {% block title %}{{ team }} | Amara{% endblock %}
-
 {% block view_content %}
     {% if team.is_old_style %}<div class="grid_8 view omega">{% else %}<div class="view">{% endif %}
 
@@ -22,7 +22,7 @@
           <input type="hidden" name="q" value="{{ query }}" />
           <button class="reduced" id="update">Update</button>
             {% if filtered %}
-            <a href="{% url teams:activity team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
+            <a href="{% url "teams:activity" team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
             {% endif %}
 	    {% if action_types %}
 	    <div class="filter-chunk">

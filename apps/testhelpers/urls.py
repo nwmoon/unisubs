@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import  patterns, url
+from django.conf.urls import  patterns, url
 
 urlpatterns = patterns('testhelpers.views',
     url(r'echo-json/$', "echo_json", name="echo-json"),

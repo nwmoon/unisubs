@@ -16,7 +16,8 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from django.conf.urls.defaults import url, patterns
+from django.views.generic.base import TemplateView
+from django.conf.urls import url, patterns
 from teams.rpc import rpc_router
 
 urlpatterns = patterns('teams.views',
@@ -54,6 +55,10 @@ urlpatterns = patterns('teams.views',
     url(r'^(?P<slug>[-\w]+)/activity/$', 'activity', name='activity'),
     url(r'^(?P<slug>[-\w]+)/activity/team/$', 'team_activity',
         name='team-activity'),
+    url(r'^(?P<slug>[-\w]+)/activity/videosstatistics/$', 'videosstatistics_activity',
+        name='videosstatistics-activity'),
+    url(r'^(?P<slug>[-\w]+)/activity/teamstatistics/$', 'teamstatistics_activity',
+        name='teamstatistics-activity'),
     url(r'^(?P<slug>[-\w]+)/projects/$', 'project_list', name='project_list'),
     url(r'^(?P<slug>[-\w]+)/tasks/$', 'team_tasks', name='team_tasks'),
     url(r'^(?P<slug>[-\w]+)/create-task/(?P<team_video_pk>\d+)/$', 'create_task', name='create_task'),
@@ -82,9 +87,8 @@ urlpatterns = patterns('teams.views',
 )
 
 urlpatterns += patterns('',
-    (r'^t1$', 'django.views.generic.simple.direct_to_template', {
-        'template': 'jsdemo/teams_profile.html'
-    }),
+    (r'^t1$',
+     TemplateView.as_view(template_name='jsdemo/teams_profile.html')),
 )
 
 # settings views that are handled by other apps

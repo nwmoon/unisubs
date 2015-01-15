@@ -1,8 +1,9 @@
 {% load i18n %}
+{% load url from future %}
 
 {% if user.is_authenticated and teams %}
 
-    <form class="move-video settings" action="{% url teams:move_video %}" method="POST">
+    <form class="move-video settings" action="{% url "teams:move_video" %}" method="POST">
         <h3>{% trans "Move video to one of your other teams?" %}</h3>
         <fieldset>
             <select name="team" id="id_team">

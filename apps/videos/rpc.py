@@ -24,6 +24,7 @@ from django.template import RequestContext
 from django.template.defaultfilters import slugify
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy
 
 from subtitles.models import SubtitleLanguage
 from videos.models import Video, Action
@@ -37,7 +38,7 @@ from utils.translation import get_user_languages_from_request
 VIDEOS_ON_PAGE = VideoIndex.IN_ROW*5
 
 class VideosApiClass(object):
-    authentication_error_msg = _(u'You should be authenticated.')
+    authentication_error_msg = ugettext_lazy(u'You should be authenticated.')
 
     popular_videos_sorts = {
         'week': 'week_views',

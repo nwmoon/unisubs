@@ -1,6 +1,7 @@
 {% load i18n %}
+{% load url from future %}
 
-<form method="get" action="{% url search:index %}" class="search-form">
+<form method="get" action="{% url "search:index" %}" class="search-form">
     <div id="watch_search">
         <span class="icon"></span>
         {{ form.q }}

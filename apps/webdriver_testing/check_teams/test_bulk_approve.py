@@ -81,8 +81,10 @@ class TestCaseBulkApprove(WebdriverTestCase):
                 self.complete_review_tasks(tv)
 
         self.tasks_tab.open_page('teams/%s/approvals/' %self.team.slug)
+        last_page = int(self.tasks_tab.get_text_by_css("a[href='?page=last']"))
         start = time.clock()
         self.tasks_tab.bulk_approve_tasks()
+        self.assertEqual(last_page-1, int(self.tasks_tab.get_text_by_css("a[href='?page=last']")))
         elapsed = (time.clock() - start)
         self.logger.info(elapsed)
         self.assertLess(elapsed, 5)

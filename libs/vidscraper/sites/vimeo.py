@@ -33,7 +33,7 @@ from lxml import etree
 from lxml.html import builder as E
 from lxml.html import tostring
 import oauth2
-import simplejson
+import json
 
 from vidscraper.decorators import provide_shortmem, parse_url, returns_unicode
 from vidscraper import util
@@ -66,7 +66,7 @@ def get_shortmem(url):
     for i in range(3):
         try:
             api_raw_data = client.request(url)[1]
-            api_data = simplejson.loads(api_raw_data)
+            api_data = json.loads(api_raw_data)
         except Exception, e:
             continue
         else:

@@ -167,17 +167,14 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.markup',
     'django.contrib.sessions',
     'django.contrib.sitemaps',
     'django.contrib.sites',
     'django.contrib.webdesign',
     # third party apps
-    'django_extensions',
     'djcelery',
     'haystack',
-    'rosetta',
-    'raven.contrib.django',
+    'raven.contrib.django.raven_compat',
     'south',
     'rest_framework',
     'tastypie',
@@ -197,12 +194,10 @@ INSTALLED_APPS = (
     'profiles',
     'search',
     'staticmedia',
-    'statistic',
     'teams',
     'testhelpers',
     'thirdpartyaccounts',
     'unisubs_compressor',
-    'uslogging',
     'utils',
     'videos',
     'widget',
@@ -225,12 +220,6 @@ STARTUP_MODULES = [
 CELERY_IGNORE_RESULT = True
 CELERY_SEND_EVENTS = False
 CELERY_SEND_TASK_ERROR_EMAILS = True
-CELERY_RESULT_BACKEND = 'redis'
-
-BROKER_BACKEND = 'kombu_backends.amazonsqs.Transport'
-BROKER_USER = AWS_ACCESS_KEY_ID = ""
-BROKER_PASSWORD = AWS_SECRET_ACCESS_KEY = ""
-BROKER_HOST = "localhost"
 BROKER_POOL_LIMIT = 10
 
 REST_FRAMEWORK = {
@@ -432,6 +421,12 @@ MEDIA_BUNDLES = {
             "js/unisubs.site.js",
         ),
     },
+    "graphs.js": {
+        "files": (
+            "js/libs/pygal-tooltips.js",
+            "js/libs/svg.jquery.js",
+        ),
+    },
     "teams.js": {
         "files": (
             "js/libs/ICanHaz.js",
@@ -585,7 +580,7 @@ LOGGING = {
             'formatter': 'verbose'
         },
         'sentry': {
-            'level': 'INFO',
+            'level': 'WARN',
             'class': 'raven.contrib.django.handlers.SentryHandler',
         },
     },
@@ -615,7 +610,7 @@ LOGGING = {
             'handlers': ['sentry', 'console'],
             'propagate': False
         },
-        'youtube': {
+        'utils.youtube': {
             'level': 'INFO',
             'handlers': ['sentry', 'console'],
             'propagate': False

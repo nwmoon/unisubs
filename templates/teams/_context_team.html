@@ -1,4 +1,5 @@
 {% load i18n teams_tags utils_tags query_string %}
+{% load url from future %}
 
 <h2 class="main-title">
     <a href="" title="permalink">{{ team }}</a>
@@ -23,9 +24,9 @@
                     {% for project in projects %}
                         <li {% if forloop.counter > 6 %} class="hidden"{% endif %}>
                             {% if '/tasks/' in request.path %}
-                                <a href="{% url teams:team_tasks team.slug %}{% query_string request.GET project=project.slug %}">
+                                <a href="{% url "teams:team_tasks" team.slug %}{% query_string request.GET project=project.slug %}">
                             {% else %}
-                                <a href="{% url teams:detail team.slug %}{% query_string request.GET project=project.slug %}">
+                                <a href="{% url "teams:detail" team.slug %}{% query_string request.GET project=project.slug %}">
                             {% endif %}
                                 {{ project }}
                                 <span class="count">
@@ -71,15 +72,15 @@
         </li>
         {% if team.workflow_enabled %}
             <li>
-                <a href="{% url teams:team_tasks team.slug %}?assignee=me&project=any&lang=all">{% trans 'Your tasks' %}</a>
+                <a href="{% url "teams:team_tasks" team.slug %}?assignee=me&project=any&lang=all">{% trans 'Your tasks' %}</a>
                 ({{ team|user_tasks_count:user }})
             </li>
             <li>
-                <a href="{% url teams:team_tasks team.slug %}?project=any">{% trans 'All available tasks' %}</a>
+                <a href="{% url "teams:team_tasks" team.slug %}?project=any">{% trans 'All available tasks' %}</a>
             </li>
         {% endif %}
         {% if team|can_leave_team:user %}
-            <li><a id="leave" onclick="return confirm('{% trans "Do you really wish to leave this team?" %}')" href="{% url teams:leave_team team.slug %}">{% trans "Leave team" %}</a></li>
+            <li><a id="leave" onclick="return confirm('{% trans "Do you really wish to leave this team?" %}')" href="{% url "teams:leave_team" team.slug %}">{% trans "Leave team" %}</a></li>
         {% endif %}
     </ul>
 {% endif %}
@@ -95,11 +96,7 @@
 {% endif %}
 
 <script type="text/javascript">
-    jQuery('.unisubs-share .unisubs-twitter-share').click(function(){
-        jQuery.get('{% url statistic:tw_update_share_statistic %}');
-    });
     function share_on_facebook(event) {
-        jQuery.get('{% url statistic:fb_update_share_statistic %}');
         window.open('http://www.facebook.com/sharer.php?u={{ request.build_absolute_uri|urlencode }}&t={{ team.name|urlencode }} on Amara', 'post_to_fb', 'status=0,width=560,height=320');
         return false;
     }

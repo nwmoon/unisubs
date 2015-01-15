@@ -38,6 +38,7 @@ from utils.text import fmt
 from teams.forms import TaskUploadForm
 from teams.permissions import (
     can_view_settings_tab as _can_view_settings_tab,
+    can_view_stats_tab as _can_view_stats_tab,
     can_view_approve_tab as _can_view_approve_tab,
     can_edit_video as _can_edit_video,
     can_rename_team as _can_rename_team,
@@ -78,8 +79,8 @@ def _get_team_video_from_search_record(search_record):
         try:
             return TeamVideo.objects.get(pk=search_record.team_video_pk)
         except TeamVideo.DoesNotExist:
-            from raven.contrib.django.models import client
-            client.create_from_exception()
+            logger.warn('DoesNotExist error when looking up search record',
+                        exc_info=True)
 
         # ok, for some reason, this search record got stale.
         # no idea why.
@@ -357,6 +358,10 @@ def member_projects(context, member, varname):
 @register.filter
 def can_view_settings_tab(team, user):
    return _can_view_settings_tab(team, user)
+
+@register.filter
+def can_view_stats_tab(team, user):
+   return _can_view_stats_tab(team, user)
 
 @register.filter
 def can_view_approve_tab(team, user):

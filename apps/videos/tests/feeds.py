@@ -25,6 +25,7 @@ from django.test import TestCase
 import mock
 
 from utils import test_utils
+from utils.factories import *
 from videos.feed_parser import FeedParser
 from videos.models import Video, VideoFeed
 from videos.types.vimeo import VimeoVideoType
@@ -54,6 +55,7 @@ class FeedImportTest(TestCase):
 class TestFeedsSubmit(FeedImportTest):
     def setUp(self):
         FeedImportTest.setUp(self)
+        UserFactory(username='admin', password='admin', is_staff=True)
         self.client.login(username='admin', password='admin')
 
     def submit_feed_url(self, feed_url):

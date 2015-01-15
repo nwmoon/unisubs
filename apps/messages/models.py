@@ -16,13 +16,14 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
+import json
+
 from django.db import models
 from django.core.cache import cache
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.conf import settings
-from django.utils import simplejson as json
 from django.db.models.signals import post_save
 from django.core.urlresolvers import reverse
 from django.utils.html import escape, urlize

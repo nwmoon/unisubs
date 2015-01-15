@@ -21,7 +21,6 @@ vendor/django-storages.tar.gz
 vendor/python-openid-2.2.5.tar.gz
 vendor/python-yadis-1.1.0.tar.gz
 vendor/gdata-2.0.16.tar.gz
-vendor/django-math-captcha-0.1.tar.gz
 vendor/BeautifulSoup-3.2.0.tar.gz
 celery==3.0.11
 billiard==2.7.3.30
@@ -30,11 +29,9 @@ vendor/pycrypto-2.1.0.tar.gz
 oauth==1.0.1
 oauth2==1.5.211
 pyOpenSSL==0.9
-vendor/redis-2.4.5.tar.gz
 django-haystack==1.2.7
 djangorestframework==2.4.2
 -e git+git://github.com/teddziuba/django-sslserver.git#egg=django-sslserver
-simplejson==2.3.0
 pysolr==2.0.14
 elasticsearch
 chardet==1.0.1
@@ -42,9 +39,8 @@ vendor/boto-2.1.0-0.tar.gz
 -e git+https://github.com/linsomniac/python-memcached.git@bacb8058152873e46e6a2367452a353e4d98a065#egg=python-memcached
 feedparser
 lxml==2.3
-raven==1.8.2
+raven==5.1.1
 transifex-client==0.8
-django-extensions==0.4.1
 # do we really need this in prod?
 django-debug-toolbar==1.2
 # This can be commented out if you're using sqlite
@@ -69,3 +65,4 @@ pytz==2012f
 # Testing requirements
 nose-exclude==0.2.0
 unittest2==0.5.1
+pygal

@@ -36,7 +36,8 @@ class TestCaseCreateVideos(WebdriverTestCase):
         cls.create_pg = create_page.CreatePage(cls)
         cls.video_pg = video_page.VideoPage(cls)
         cls.create_pg.open_create_page()
-    
+        user = UserFactory()
+        cls.create_pg.log_in(user.username, 'password')    
 
     def tearDown(self):
         self.create_pg.open_create_page()

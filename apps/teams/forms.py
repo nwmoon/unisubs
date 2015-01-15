@@ -152,7 +152,7 @@ class MoveTeamVideoForm(forms.Form):
         return self.cleaned_data
 
 class BaseVideoBoundForm(forms.ModelForm):
-    video_url = UniSubBoundVideoField(label=_('Video URL'), verify_exists=True,
+    video_url = UniSubBoundVideoField(label=_('Video URL'),
         help_text=_("Enter the URL of any compatible video or any video on our site. You can also browse the site and use the 'Add Video to Team' menu."))
 
     def __init__(self, *args, **kwargs):

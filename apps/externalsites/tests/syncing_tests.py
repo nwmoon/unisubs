@@ -19,11 +19,13 @@
 from __future__ import absolute_import
 import datetime
 import itertools
+import json
 import string
 
 from django.test import TestCase
 from django.db.models.signals import post_save
 from django.utils import simplejson as json
+from nose.tools import *
 import babelsubs
 import mock
 
@@ -31,13 +33,14 @@ from externalsites import signalhandlers
 from externalsites.exceptions import SyncingError
 from externalsites.models import (KalturaAccount, SyncedSubtitleVersion,
                                   SyncHistory, get_sync_account)
-from externalsites.syncing import kaltura, brightcove
+from externalsites.syncing import kaltura, brightcove, youtube
 from subtitles import pipeline
 from subtitles.models import ORIGIN_IMPORTED
 from teams.permissions_const import ROLE_ADMIN
 from utils import test_utils
 from utils.factories import *
 from utils.test_utils import patch_for_test
+import babelsubs
 import utils.youtube
 import subtitles.signals
 
@@ -853,6 +856,117 @@ class BrightcoveAPITest(TestCase):
             }
         }
 
+class MockYoutubeAPIBridge(object):
+    def __init__(self):
+        self._caption_info = {}
+        self.get_youtube_language_code = mock.Mock(
+            side_effect=self._get_youtube_language_code)
+        self.get_caption_info = mock.Mock(return_value=self._caption_info)
+        self.create_track = mock.Mock()
+        self.delete_track = mock.Mock()
+
+    def _get_youtube_language_code(self, language_code):
+        # this method is supposed to translate amara language codes into
+        # youtube language codes.  For testing purposes, we just prepend 'yt-'
+        return 'yt-{0}'.format(language_code)
+
+    def add_caption_info(self, language_code, track_id):
+        """Add a caption info entry
+        This will be returned when get_caption_info() is called
+        """
+        self._caption_info[language_code] = {
+            'track': track_id,
+        }
+
+class YouTubeSyncingTest(TestCase):
+    @test_utils.patch_for_test('externalsites.syncing.youtube.YoutubeAPIBridge')
+    def setUp(self, mock_api_bridge_class):
+        self.setup_mock_api_bridge(mock_api_bridge_class)
+        self.setup_video()
+
+    def setup_mock_api_bridge(self, mock_api_bridge_class):
+        self.mock_api_bridge_class = mock_api_bridge_class
+        self.mock_api_bridge = MockYoutubeAPIBridge()
+        self.mock_api_bridge_class.return_value = self.mock_api_bridge
+
+    def setup_video(self):
+        self.video = YouTubeVideoFactory()
+        self.access_token = 'test-access-token'
+        self.video_id = 'test-video-id'
+        self.subtitles = SubtitleSetFactory()
+        self.version = pipeline.add_subtitles(self.video, 'en',
+                                              self.subtitles)
+
+    def test_add_subtitles(self):
+        # call update_subtitles()
+        youtube.update_subtitles(self.video_id, self.access_token,
+                                 self.version)
+        # check that update_subtitles() called the right API methods.  The
+        # first one is creating the API bridge using the access token passed
+        # in
+        assert_equal(self.mock_api_bridge_class.call_args,
+                     mock.call(self.access_token))
+        # next we should convert the amara language code to a youtube language
+        # code
+        assert_equal(self.mock_api_bridge.get_youtube_language_code.call_args,
+                     mock.call('en'))
+        # then we check if there are existing captions, for this test there
+        # aren't
+        assert_equal(self.mock_api_bridge.get_caption_info.call_args,
+                     mock.call(self.video_id))
+        # so we shouldn't call delete_track
+        assert_equal(self.mock_api_bridge.delete_track.call_count, 0)
+        # lastly, we create the caption track
+        title = ''
+        subtitle_content = babelsubs.to(self.subtitles, 'sbv').encode('utf-8')
+        assert_equal(self.mock_api_bridge.create_track.call_args,
+                     mock.call(self.video_id, title, 'yt-en',
+                               subtitle_content))
+
+    def test_replace_subtitles(self):
+        # test update_subtitles when there already is a subtitle track.  In
+        # that case, we should delete the track then re-upload it
+        self.mock_api_bridge.add_caption_info('yt-en', 'track-id')
+        youtube.update_subtitles(self.video_id, self.access_token,
+                                 self.version)
+        assert_equal(self.mock_api_bridge_class.call_args,
+                     mock.call(self.access_token))
+        assert_equal(self.mock_api_bridge.get_youtube_language_code.call_args,
+                     mock.call('en'))
+        assert_equal(self.mock_api_bridge.get_caption_info.call_args,
+                     mock.call(self.video_id))
+        # before we send the subtitle track, we need to delete the old one
+        assert_equal(self.mock_api_bridge.delete_track.call_args,
+                     mock.call(self.video_id, 'track-id'))
+        # lastly, we create the caption track
+        title = ''
+        subtitle_content = babelsubs.to(self.subtitles, 'sbv').encode('utf-8')
+        assert_equal(self.mock_api_bridge.create_track.call_args,
+                     mock.call(self.video_id, title, 'yt-en',
+                               subtitle_content))
+
+    def test_delete_subtiles(self):
+        # setup mock caption info for the subtitle track we are about to
+        # delete
+        self.mock_api_bridge.add_caption_info('yt-en', 'track-id')
+        # call delete_subtitles()
+        youtube.delete_subtitles(self.video_id, self.access_token, 'en')
+        # check that delete_subtitles() called the right API methods.  The
+        # first one is creating the API bridge using the access token passed
+        # in
+        assert_equal(self.mock_api_bridge_class.call_args,
+                     mock.call(self.access_token))
+        # next we should convert the amara language code to a youtube language
+        # code
+        assert_equal(self.mock_api_bridge.get_youtube_language_code.call_args,
+                     mock.call('en'))
+        # then we get the caption info to get the track id for the language
+        assert_equal(self.mock_api_bridge.get_caption_info.call_args,
+                     mock.call(self.video_id))
+        # finally, we call delete_track with the language
+        assert_equal(self.mock_api_bridge.delete_track.call_args,
+                     mock.call(self.video_id, 'track-id'))
+
 class RefetchYoutubeChannelIDTest(TestCase):
     # test re-fetching youtube channel for VideoUrl where username is
     # NULL.
@@ -900,3 +1014,50 @@ class RefetchYoutubeChannelIDTest(TestCase):
         self.assertEquals(
             self.video.get_primary_videourl_obj().owner_username,
             'test-channel-id')
+
+class ResyncTest(TestCase):
+    def setUp(self):
+        self.account = YouTubeAccountFactory(user=UserFactory(),
+                                             channel_id='test-channel-id')
+        self.video = YouTubeVideoFactory()
+        version = pipeline.add_subtitles(self.video, 'en', None)
+        self.language = version.subtitle_language
+        self.video_url = self.video.get_primary_videourl_obj()
+
+        SyncHistory.objects.create_for_error(
+            ValueError("Fake Error"), account=self.account,
+            video_url=self.video_url, language=self.language,
+            version=version, action=SyncHistory.ACTION_UPDATE_SUBTITLES,
+            retry=True)
+
+    def test_resync(self):
+        # test resyncing a failed attempt from the SyncHistory
+        sh = SyncHistory.objects.get_attempt_to_resync()
+        assert_equal(sh.get_account(), self.account)
+        assert_equal(sh.video_url, self.video_url)
+        assert_equal(sh.language, self.language)
+
+    def test_multiple_rows_with_retry(self):
+        # test that we don't throw an exception with multiple rows with retry
+        # set.  We should pick one of the rows to return arbitrarily
+
+        version = pipeline.add_subtitles(self.video, 'en', None)
+        SyncHistory.objects.create_for_error(
+            ValueError("Fake Error"), account=self.account,
+            video_url=self.video_url, language=self.language,
+            version=version, action=SyncHistory.ACTION_UPDATE_SUBTITLES,
+            retry=True)
+        sh = SyncHistory.objects.get_attempt_to_resync()
+        # Both SyncHistory objects are for the same account and language, so
+        # the following tests will match for either one
+        assert_equal(sh.get_account(), self.account)
+        assert_equal(sh.video_url, self.video_url)
+        assert_equal(sh.language, self.language)
+
+    def test_clear_retry_flag(self):
+        # test that we clear the retry flag when get_attempt_to_resync()
+        # returns it.  This ensures that we don't keep retry values in the
+        # system for a bunch of corner cases, for example when the language is
+        # deleted so there won't be a retry attempt.
+        SyncHistory.objects.get_attempt_to_resync()
+        assert_false(SyncHistory.objects.filter(retry=True).exists())

@@ -1,6 +1,6 @@
+import json
 import logging
 import time
-import simplejson
 import requests
 from django.core import management
 from django.http import HttpResponse
@@ -40,7 +40,7 @@ class DataHelpers(object):
                     'X-apikey': api_user.get_api_key(),
                     'X-api-username': api_user.username,
                   }
-        r = getattr(s, request_type)(url, headers=headers, data=simplejson.dumps(kwargs))
+        r = getattr(s, request_type)(url, headers=headers, data=json.dumps(kwargs))
         return r
 
     def create_video(self, **kwargs):
@@ -82,7 +82,7 @@ class DataHelpers(object):
         sub_items = subs.to_internal()
         defaults['subtitles'] = sub_items
         v = pipeline.add_subtitles(**defaults)
-        time.sleep(2)
+        time.sleep(.2)
         return v
 
     def create_video_with_subs(self, user, **kwargs ):

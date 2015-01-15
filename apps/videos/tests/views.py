@@ -109,8 +109,6 @@ class TestViews(WebUseTest):
         data = {
             'email': 'test@test.com',
             'message': 'Test',
-            'math_captcha_field': 100500,
-            'math_captcha_question': 'test'
         }
         response = self.client.post(reverse('videos:feedback'), data)
         self.assertEqual(response.status_code, 200)
@@ -240,8 +238,6 @@ class TestViews(WebUseTest):
             'to_emails': 'test1@test.com,test@test.com',
             'subject': 'test',
             'message': 'test',
-            'math_captcha_field': 100500,
-            'math_captcha_question': 'test'
         }
         response = self.client.post(reverse('videos:email_friend'), data)
         self.assertEqual(response.status_code, 302)

@@ -1,6 +1,7 @@
 {% extends "profiles/base.html" %}
 
 {% load i18n messages_tags %}
+{% load url from future %}
 
 {% block html_attrs %}id="user_account"{% endblock %}
 {% block body-class %}account {{ block.super }}{% endblock %}
@@ -29,7 +30,7 @@
                     <div class="callout">
                         {% if youtube_accounts %}
                             {% for account in youtube_accounts  %}
-                            <a class="button reduced" href="{% url profiles:remove-third-party "youtube" account.pk %}">{% trans 'Disconnect' %}</a>
+                            <a class="button reduced" href="{% url "profiles:remove-third-party" "youtube" account.pk %}">{% trans 'Disconnect' %}</a>
                                 <p>
                                     <img src="{{ STATIC_URL }}images/partners/youtube.png" alt="YouTube"/>
                                     {% blocktrans with account.username as username %}
@@ -59,7 +60,7 @@
                                 <li>
                                     <h3>Twitter - {{ twitter.username }}</h3>
                                     <ul class="actions">
-                                        <li><a href="{% url profiles:remove-third-party "twitter" twitter.pk %}" title="Unlink this account">{% trans "Remove" %}</a></li>
+                                        <li><a href="{% url "profiles:remove-third-party" "twitter" twitter.pk %}" title="Unlink this account">{% trans "Remove" %}</a></li>
                                     </ul>
                                 </li>
                             {% endfor %}
@@ -70,7 +71,7 @@
                                 <li>
                                     <h3>Facebook - {{ fb.uid }}</h3>
                                     <ul class="actions">
-                                        <li><a href="{% url profiles:remove-third-party "facebook" fb.pk %}" title="Unlink this account">{% trans "Remove" %}</a></li>
+                                        <li><a href="{% url "profiles:remove-third-party" "facebook" fb.pk %}" title="Unlink this account">{% trans "Remove" %}</a></li>
                                     </ul>
                                 </li>
                             {% endfor %}
@@ -103,7 +104,7 @@
                         <textarea class="api-key-holder" readonly="readonly">{{form.instance.api_key.key}}</textarea>
                         <p class="api-key-status"></p>
                     </div>
-                    <a href="{% url profiles:generate-api-key %}" class="get-new-api-bt button reduced">
+                    <a href="{% url "profiles:generate-api-key" %}" class="get-new-api-bt button reduced">
                         {% if form.instance.api_key.key %}
                             {% trans "Reset your API key" %}
                         {% else %}
@@ -116,7 +117,7 @@
                 <button class="button save" type="submit" value="Save">
                     {% trans 'Save Changes' %}
                 </button>
-                <a class="button delete" onclick="return confirm('Are you sure you want to permanently delete your account? This action is irreversible.');" href="{% url auth:delete_user %}">{% trans 'Delete Your Account' %}</a>
+                <a class="button delete" onclick="return confirm('Are you sure you want to permanently delete your account? This action is irreversible.');" href="{% url "auth:delete_user" %}">{% trans 'Delete Your Account' %}</a>
             </div>
         </form>
     </div>
@@ -128,7 +129,7 @@
                 <h3>{% trans 'Add a linked account' %}</h3>
             </div>
 
-                <form method="get" action="{% url profiles:add-third-party %}">
+                <form method="get" action="{% url "profiles:add-third-party" %}">
 
                     <div class="modal-body">
                         <fieldset>
@@ -157,7 +158,7 @@
                 <h3>{% trans 'Enable Crowd Subtitles on your Personal YouTube Channel (beta)' %}</h3>
             </div>
 
-                <form method="get" action="{% url externalsites:youtube-add-account %}">
+                <form method="get" action="{% url "externalsites:youtube-add-account" %}">
 
                     <div class="modal-body">
                         <fieldset>

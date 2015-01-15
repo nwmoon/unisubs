@@ -1,5 +1,6 @@
 {% extends "videos/email_base.html" %}
 {% load i18n localeurl_tags %}
+{% load url from future %}
 
 {% block content %}
     <div style="font-size: 12px;">
@@ -25,7 +26,7 @@
                         <a href="http://{{ domain }}{{ video.get_absolute_url }}?tab=comments">
                   {% endif %}
             {% endif %}comments page</a>. Thanks for your participation!</p>
-     <a href="http://{{ domain }}{% filter rmlocale %}{% url videos:stop_notification video.video_id %}{% endfilter %}?u={{ user.id }}&h={{ hash }}">{% trans "Stop watching for changes on this video" %}</a>
+     <a href="http://{{ domain }}{% filter rmlocale %}{% url "videos:stop_notification" video.video_id %}{% endfilter %}?u={{ user.id }}&h={{ hash }}">{% trans "Stop watching for changes on this video" %}</a>
     </div>
 
 {% endblock %}

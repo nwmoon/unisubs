@@ -1,18 +1,19 @@
 {% extends "videos/email_base.html" %}
 
 {% load i18n localeurl_tags %}
+{% load url from future %}
 
 {% block content %}
 
 
 Hi {{ user }},<br/>
 
-<p>{{ inviter }} has invited you to become a {{ role }} for the <a href="{{url_base}}{% url teams:detail slug=team.slug %}">{{ team.name }} team</a> on Amara. Lucky you!</p>
+<p>{{ inviter }} has invited you to become a {{ role }} for the <a href="{{url_base}}{% url "teams:detail" slug=team.slug %}">{{ team.name }} team</a> on Amara. Lucky you!</p>
 {% if custom_message %}<p>{{ custom_message }}</p>{% endif %}
 {% if note %}<p>{{ note }}</p>{% endif %}
 To accept this invitation and join the team:<br/>
-<a href="{{url_base}}{% url teams:accept_invite invite_pk=invite_pk %}">{% trans 'Join' %}</a>
+<a href="{{url_base}}{% url "teams:accept_invite" invite_pk=invite_pk %}">{% trans 'Join' %}</a>
 <br/>To decline this invitation :<br/>
-<a href="{{url_base}}{% url teams:deny_invite invite_pk=invite_pk %}">{% trans 'Reject' %}</a>
+<a href="{{url_base}}{% url "teams:deny_invite" invite_pk=invite_pk %}">{% trans 'Reject' %}</a>
 {% endblock %}
 {% block dont_send %}{% endblock %}

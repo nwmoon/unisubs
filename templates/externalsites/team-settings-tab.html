@@ -1,5 +1,6 @@
 {% extends "teams/base.html" %}
 {% load i18n teams_tags paginator %}
+{% load url from future %}
 
 {% block html_attrs %}id="team_settings_externalsites"{% endblock %}
 
@@ -58,7 +59,7 @@
                     {% include "_form_field.html" with field=forms.brightcove.publisher_id %}
                     {% include "_form_field.html" with field=forms.brightcove.write_token %}
                     {% if forms.brightcove.import_feed %}
-                    <a class="import-feed" href="{% url teams:video_feed slug=team.slug feed_id=forms.brightcove.import_feed.id %}">View feed</a>
+                    <a class="import-feed" href="{% url "teams:video_feed" slug=team.slug feed_id=forms.brightcove.import_feed.id %}">View feed</a>
                     {% endif %}
                     {% include "_form_field.html" with field=forms.brightcove.feed_enabled widget_type="checkbox" %}
                     <fieldset class="feed-fields">

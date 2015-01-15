@@ -1,3 +1,4 @@
+import hashlib
 import re
 import random
 import time
@@ -10,7 +11,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv4_address
 from django.db.backends.mysql.base import CursorWrapper as _CursorWrapper
 from django.utils.cache import patch_vary_headers
-from django.utils.hashcompat import sha_constructor
 from django.utils.http import cookie_date
 
 from utils.metrics import ManualTimer, Meter, Timer
@@ -42,7 +42,7 @@ UUID_COOKIE_NAME = getattr(settings, 'UUID_COOKIE_NAME', 'unisub-user-uuid')
 UUID_COOKIE_DOMAIN = getattr(settings, 'UUID_COOKIE_DOMAIN', None)
 
 def _get_new_csrf_key():
-    return sha_constructor("%s%s"
+    return hashlib.sha1("%s%s"
                 % (randrange(0, _MAX_CSRF_KEY), settings.SECRET_KEY)).hexdigest()
 
 class UserUUIDMiddleware(object):
