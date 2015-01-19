@@ -47,6 +47,45 @@
             window.OLD_MODAL = true;
         {% endblock %}
     </script>
+
+    <!-- GOOGLE ANALYTICS SPLIT TESTING -->
+
+      <!-- Load Jquery -->
+      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+
+      <!-- Load the Content Experiment JavaScript API client for the experiment -->
+      <script src="//www.google-analytics.com/cx/api.js?experiment=QL2-1BUpSyeABVHp9b6G8w"></script>
+
+      <script>
+      // Ask Google Analytics which variation to show the user.
+      var chosenVariation = cxApi.chooseVariation();
+      </script>
+
+      <script>
+      // Define JavaScript for each page variation of this experiment.
+      var pageVariations = [
+      function() {},  // Original: Do nothing. This will render the default, Professional Services.
+      function() {    // Variation 1
+        document.getElementById('proamara-link').innerHTML = 'Buy Subtitles';
+      },
+      function() {    // Variation 2
+        document.getElementById('proamara-link').innerHTML = 'Buy Captions';
+      },
+      function() {    // Variation 3
+        document.getElementById('proamara-link').innerHTML = 'Purchase Subtitles';
+      }
+      ];
+
+      // Wait for the DOM to load, then execute the view for the chosen variation.
+      $(document).ready(
+        // Execute the chosen view
+        pageVariations[chosenVariation]
+      );
+      </script>
+
+    <!-- END - GOOGLE ANALYTICS SPLIT TESTING -->
+
 </head>
 
 <body {% block body_attrs %}{% endblock %}>
@@ -71,7 +110,7 @@
           <ul id="bar_menu" class="clearfix">
             <li id="nav_submit"><a href="{% url videos:create %}">{% trans 'Subtitle Video' %}</a></li>
             <li><a href="/community">{% trans "Community" %}</a></li>
-            <li><a href="//pro.amara.org">{% trans "Professional Solutions" %}</a></li>
+            <li><a id="proamara-link" onclick="ga('send', 'event', 'outbound', 'click', 'pro.amara.conversion', { 'hitCallback': function() { document.location = '//pro.amara.org'; }}); return false;" href="//pro.amara.org">{% trans "Professional Solutions" %}</a></li>
             <li>
               <a class="navbar-search" href="/videos/watch/">
                 <img alt="Search" src="{{ STATIC_URL }}images/glyphicons_027_search-light.png">

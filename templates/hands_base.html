@@ -65,6 +65,41 @@
       window.OLD_MODAL = true;
     {% endblock %}
   </script>
+
+  <!-- GOOGLE ANALYTICS SPLIT TESTING -->
+
+    <!-- Load the Content Experiment JavaScript API client for the experiment -->
+    <script src="//www.google-analytics.com/cx/api.js?experiment=QL2-1BUpSyeABVHp9b6G8w"></script>
+
+    <script>
+    // Ask Google Analytics which variation to show the user.
+      var chosenVariation = cxApi.chooseVariation();
+    </script>
+
+    <script>
+    // Define JavaScript for each page variation of this experiment.
+      var pageVariations = [
+      function() {},  // Original: Do nothing. This will render the default, Professional Services.
+      function() {    // Variation 1
+        document.getElementById('proamara-link').innerHTML = 'Buy Subtitles';
+      },
+      function() {    // Variation 2
+        document.getElementById('proamara-link').innerHTML = 'Buy Captions';
+      },
+      function() {    // Variation 3
+        document.getElementById('proamara-link').innerHTML = 'Purchase Subtitles';
+      }
+      ];
+
+      // Wait for the DOM to load, then execute the view for the chosen variation.
+      $(document).ready(
+        // Execute the chosen view
+        pageVariations[chosenVariation]
+      );
+    </script>
+
+  <!-- END - GOOGLE ANALYTICS SPLIT TESTING -->
+
 </head>
 
 <body {% block body_attrs %}{% endblock %}>

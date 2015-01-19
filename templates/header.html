@@ -20,7 +20,7 @@
             <a href="/community">{% trans "Community" %}</a>
           </li>
           <li>
-            <a href="//pro.amara.org">{% trans "Professional Solutions" %}</a>
+            <a id="proamara-link" onclick="ga('send', 'event', 'outbound', 'click', 'pro.amara.conversion', { 'hitCallback': function() { document.location = '//pro.amara.org'; }}); return false;" href="//pro.amara.org">{% trans "Professional Solutions" %}</a>
           </li>
           <li>
             <a class="search-icon" href="/videos/watch/">
