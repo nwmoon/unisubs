@@ -1,4 +1,0 @@
-# requirements-doc.txt -- Requirements for documentation building
-sphinxcontrib-httpdomain==1.2.1
-sphinxcontrib-napoleon
-sphinx_rtd_theme
