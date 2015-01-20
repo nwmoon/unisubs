@@ -109,6 +109,9 @@ class SubtitleEditorBase(View):
     def get_title(self):
         return _('Amara')
 
+    def get_analytics_additions(self):
+        return None
+
     def calc_base_language(self):
         if (self.video.primary_audio_language_code and 
             SubtitleVersion.objects.extant().filter(
@@ -316,6 +319,7 @@ class SubtitleEditorBase(View):
             'other_languages': self.languages,
             'version': self.editing_version,
             'translated_from_version': self.translated_from_version,
+            'GOOGLE_ANALYTICS_ADDITIONS': self.get_analytics_additions(),
             'upload_subtitles_form': SubtitlesUploadForm(
                 request.user, self.video,
                 initial={'language_code':

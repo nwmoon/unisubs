@@ -1,14 +1,28 @@
-{% if not RUN_LOCALLY %}
-    <script type="text/javascript">
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+<script type="text/javascript">
+  var sendIds =[];
+  {% if not RUN_LOCALLY %}
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-ga('create', '{{ GOOGLE_ANALYTICS_NUMBER }}', 'auto');
-ga('send', 'pageview');
+  ga('create', '{{ GOOGLE_ANALYTICS_NUMBER }}', 'auto');
+  ga('send', 'pageview');
+  sendIds.push('');
+  {% if  GOOGLE_ANALYTICS_ADDITIONS %}
+  {% for tracking_code in GOOGLE_ANALYTICS_ADDITIONS %}
+  ga('create', '{{ tracking_code }}', 'auto', {'name': '{{ forloop.counter }}'});
+  ga('{{ forloop.counter }}.send', 'pageview');
+  sendIds.push('{{ forloop.counter }}.');
+  {% endfor %}
+  {% endif %}
+  {% else %}
+  <!-- no analytics since we are running locally -->
+  {% endif %}
+  var sendAnalytics = function() {
+  analytics = Array.slice(arguments);
+  sendIds.forEach(function(sendId) {
+          ga.apply(undefined, [sendId + 'send', 'event'].concat(analytics));
+      });
+  };
 </script>
-    </script>
-{% else %}
-<!-- no analytics since we are running locally -->
-{% endif %}
 

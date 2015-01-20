@@ -116,12 +116,10 @@ class DeleteLanguageModelTest(UnpublishTestCase):
         Task(team=self.team, team_video=self.team_video, assignee=None,
              language='de', type=Task.TYPE_IDS['Translate']).save()
         # make an in-progress translation task
-        v = pipeline.add_subtitles(self.video, 'ja', None, complete=False,
-                                   visibility='private')
         Task(team=self.team, team_video=self.team_video,
              language='ja', type=Task.TYPE_IDS['Translate'],
-             assignee=self.user,
-             new_subtitle_version=v).save()
+             assignee=self.user).save()
+        v = pipeline.add_subtitles(self.video, 'ja', None, action='save-draft')
         # make review/approve tasks
         TaskFactory.create_review(self.team_video, 'es', self.user)
         TaskFactory.create_approve(self.team_video, 'sv', self.user)
@@ -223,34 +221,6 @@ class DeleteLanguageViewTest(UnpublishTestCase):
         self.client.login(username=self.user.username, password='password')
         self.url = '/en/teams/%s/delete-language/%s/' % (
             self.team.slug, self.language.pk)
-
-    @mock.patch('teams.views.update_one_team_video')
-    @mock.patch('videos.metadata_manager.update_metadata')
-    @mock.patch('teams.views._propagate_unpublish_to_external_services')
-    def test_unpublish(self, mock_propagate_unpublish, mock_update_metadata,
-                       mock_update_one_team_video):
-        response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
-
-        response = self.client.post(self.url, {
-            'verify_text': 'Yes I want to delete this language',
-        })
-        # check that the language is deleted
-        self.assertEquals(self.language.subtitleversion_set.extant().count(),
-                          0)
-        # check that external services have been updated
-        self.assertEquals(mock_propagate_unpublish.call_count, 1)
-        self.assertEquals(mock_propagate_unpublish.call_args[0],
-                          (self.language.pk, self.language.language_code,
-                           self.video))
-        self.assertEquals(mock_update_metadata.call_count, 1)
-        self.assertEquals(mock_update_metadata.call_args[0], (self.video.pk,))
-        self.assertEquals(mock_update_one_team_video.call_count, 1)
-        self.assertEquals(mock_update_one_team_video.call_args[0],
-                          (self.team_video.pk,))
-        # we shoud redirect back to the video page.
-        self.assertRedirects(response, self.video.get_absolute_url(),
-                             target_status_code=302)
 
     def test_unpublish_with_forking(self):
         sub_lang1 = self.make_dependent_language('ru', self.versions[0])

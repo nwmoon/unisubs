@@ -301,6 +301,16 @@ var Site = function(Site) {
             });
         }
     };
+    this.analytics = function() {
+        if (typeof sendAnalytics !== 'undefined')
+            sendAnalytics.apply(undefined, Array.slice(arguments));
+    };
+    this.setupSearchBox = function() {
+	var closure = this;
+        $('form.search-form').submit(function(ev) {
+	    closure.analytics('debug-website', 'debug-search', $('#id_q').val());
+        });
+    };
     this.setupModalDialogs = function($rootElt) {
         $('a.open-modal', $rootElt).each(function() {
             var $link = $(this);
@@ -441,6 +451,7 @@ var Site = function(Site) {
                 });
             }
             that.setupModalDialogs();
+            that.setupSearchBox();
             $.fn.tabs = function(options){
                 this.each(function(){
                     var $this = $(this);

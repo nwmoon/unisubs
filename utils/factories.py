@@ -231,17 +231,17 @@ class TaskFactory(DjangoModelFactory):
             - there are no Tasks or SubtitleVersions for this video+language
             - review is enabled for the team
         """
-        sub_data = kwargs.pop('sub_data', None)
+        try:
+            sub_data = kwargs.pop('sub_data')
+        except KeyError:
+            sub_data = SubtitleSetFactory()
         if 'type' in kwargs and isinstance(kwargs['type'], basestring):
             kwargs['type'] = teams.models.Task.TYPE_IDS[kwargs['type']]
         team = team_video.team
-        task = cls.create(team=team, team_video=team_video, assignee=None,
-                          language=language_code, **kwargs)
-        version = pipeline.add_subtitles(team_video.video, language_code,
-                                         sub_data, complete=False,
-                                         visibility='private')
-        task.assignee = subtitler
-        task.new_subtitle_version = version
+        task = cls.create(team=team, team_video=team_video,
+                          assignee=subtitler, language=language_code, **kwargs)
+        pipeline.add_subtitles(team_video.video, language_code, sub_data,
+                               author=subtitler, action='save-draft')
         return task.complete()
 
     @classmethod

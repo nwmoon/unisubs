@@ -477,7 +477,7 @@ class YouTubeAccount(ExternalAccount):
             # later.  The documentation around these errors isn't great, hence
             # the paranoid try.. except block here
             try:
-                if e.status == 403 and 'too_many_recent_calls' in e.body:
+                if 'too_many_recent_calls' in e.body:
                     raise RetryableSyncingError(e, 'Youtube Quota Error')
             except:
                 pass

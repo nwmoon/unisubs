@@ -34,21 +34,12 @@ def paginate(items, per_page, page, allow_more=0):
         page_obj = paginator.page(paginator.num_pages)
 
     return page_obj.object_list, {
-        'page': page,
         'paginator': paginator,
         'page_obj': page_obj,
-        'pages': paginator.num_pages,
-        'has_next': page_obj.has_next(),
-        'more': allow_more,
-        'has_previous': page_obj.has_previous(),
         'is_paginated': page_obj.has_other_pages(),
-        'hits': paginator.count,
-        'results_per_page': paginator.per_page,
-        'next': page_obj.next_page_number(),
-        'previous': page_obj.previous_page_number(),
     }
 
-def paginator(context, anchor='', adjacent_pages=3):
+def paginator(context, adjacent_pages=3):
     """
     To be used in conjunction with the object_list generic view.
 
@@ -57,17 +48,15 @@ def paginator(context, anchor='', adjacent_pages=3):
     view.
 
     """
-    if isinstance(anchor, int):
-        adjacent_pages = anchor
-        anchor = ''
-    startPage = max(context['page'] - adjacent_pages, 1)
-    if startPage <= 3: startPage = 1
-    endPage = context['page'] + adjacent_pages + 1
-    if endPage >= context['pages'] - 1: endPage = context['pages'] + 1
-    page_numbers = [n for n in range(startPage, endPage) \
-            if n > 0 and n <= context['pages']]
-    page_obj = context['page_obj']
     paginator = context['paginator']
+    page_obj = context['page_obj']
+
+    startPage = max(page_obj.number - adjacent_pages, 1)
+    if startPage <= 3: startPage = 1
+    endPage = page_obj.number + adjacent_pages + 1
+    if endPage >= paginator.num_pages - 1: endPage = paginator.num_pages + 1
+    page_numbers = [n for n in range(startPage, endPage) \
+            if n > 0 and n <= paginator.num_pages]
     
     getvars = ''
     if 'request' in context:
@@ -83,19 +72,18 @@ def paginator(context, anchor='', adjacent_pages=3):
         'more': context['more'] if 'more' in context else None,
         'page_obj': page_obj,
         'paginator': paginator,
-        'hits': context['hits'],
-        'results_per_page': context['results_per_page'],
-        'page': context['page'],
-        'pages': context['pages'],
+        'hits': paginator.count,
+        'results_per_page': paginator.per_page,
+        'page': page_obj.number,
+        'pages': paginator.num_pages,
         'page_numbers': page_numbers,
-        'next': context['next'],
-        'previous': context['previous'],
-        'has_next': context['has_next'],
-        'has_previous': context['has_previous'],
+        'next': page_obj.next_page_number(),
+        'previous': page_obj.previous_page_number(),
+        'has_next': page_obj.has_next(),
+        'has_previous': page_obj.has_previous(),
         'show_first': 1 not in page_numbers,
         'getvars': getvars,
-        'show_last': context['pages'] not in page_numbers,
-        'anchor': anchor
+        'show_last': paginator.num_pages not in page_numbers,
     }
 
 register.inclusion_tag('_paginator.html', takes_context=True)(paginator)
