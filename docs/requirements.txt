@@ -25,3 +25,4 @@ unidecode
 gdata==2.0.16
 django-math-captcha==0.1
 django-registration
+pygal
