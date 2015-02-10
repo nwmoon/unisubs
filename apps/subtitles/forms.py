@@ -35,7 +35,9 @@ from teams.permissions import (
 from videos.tasks import video_changed_tasks
 from utils.text import fmt
 from utils.subtitles import load_subtitles
-from utils.translation import get_language_choices, get_language_label
+from utils.translation import (ALL_LANGUAGE_CHOICES,
+                               get_language_choices,
+                               get_language_label)
 
 
 SUBTITLE_FILESIZE_LIMIT_KB = 512
@@ -55,25 +57,23 @@ class SubtitlesUploadForm(forms.Form):
                                            initial='')
 
     def __init__(self, user, video, allow_transcription=True, *args, **kwargs):
+        allow_all_languages = kwargs.pop('allow_all_languages', False)
         self.video = video
         self.user = user
         self._sl_created = False
 
         super(SubtitlesUploadForm, self).__init__(*args, **kwargs)
 
-        # This has to be set here.  get_language_choices looks at the language
-        # of the current thread via the magical get_language() Django function,
-        # so if you just set it once at the beginning of the file it's not going
-        # to properly change for the user's UI language.
-        all_languages = get_language_choices(with_empty=True)
+        if allow_all_languages:
+            all_languages = ALL_LANGUAGE_CHOICES
+        else:
+            all_languages = get_language_choices(with_empty=True)
         self.fields['language_code'].choices = all_languages
         self.fields['primary_audio_language_code'].choices = all_languages
 
-        language_qs = (SubtitleLanguage.objects.having_public_versions()
-                       .filter(video=video))
         choices = [
-            (sl.language_code, sl.get_language_code_display())
-            for sl in language_qs
+            (language_code, get_language_label(language_code))
+            for language_code in video.languages_with_versions()
         ]
         if allow_transcription:
             choices.append(('', 'None (Direct from Video)'))
@@ -321,10 +321,10 @@ class SubtitlesUploadForm(forms.Form):
 
         if subtitle_language:
             previous_version = subtitle_language.get_tip()
-            metadata = subtitle_language.get_metadata(public=False)
             if previous_version:
                 title = previous_version.title
                 description = previous_version.description
+                metadata = previous_version.get_metadata()
 
         return title, description, metadata
 

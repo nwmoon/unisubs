@@ -1,13 +1,13 @@
-{% load widget i18n subtitles_tags teams_tags videos_tags %}
+{% load amara_cache widget i18n subtitles_tags teams_tags videos_tags %}
+{% cache-by-video video-tab %}
 <div class="tab" id="video-tab"> 
-  <div class="amara-embed" data-hide-subtitle-me="true" data-hide-logo="true" data-height="{{ height }}px" data-width="{{ width }}px" data-url="{{ video_url }}" data-show-subtitles-default="true" data-noanalytics="true">
+  <div class="amara-embed" data-hide-subtitle-me="true" data-hide-logo="true" data-height="{{ height }}px" data-width="{{ width }}px" data-url="{{ video.get_video_url }}" data-show-subtitles-default="true" data-noanalytics="true">
   </div>
     <div id="metadata" {% if video.latest_version.language.is_rtl %}class="is-rtl"{% endif %}>
-        {% for field in metadata %}
-            <h4>{{ field.label}}: {{ field.content}} </h4>
-        {% endfor %}
+        {% video-metadata video %}
     </div>
     <div id="description"{% if video.latest_version.language.is_rtl %} class="is-rtl"{% endif %}>
         {{ video.description|urlize|linebreaks }}
     </div>
 </div>
+{% endcache %}

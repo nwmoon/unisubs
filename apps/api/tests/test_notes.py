@@ -31,7 +31,7 @@ class TestActionsAPI(TestCase):
     def setUp(self):
         self.video = VideoFactory()
         self.user = UserFactory()
-        self.api_path = ('/api2/partners/videos/{0}/languages/en'
+        self.api_path = ('/api/videos/{0}/languages/en'
                          '/subtitles/notes/'.format(self.video.video_id))
         self.client = APIClient()
         self.client.force_authenticate(self.user)

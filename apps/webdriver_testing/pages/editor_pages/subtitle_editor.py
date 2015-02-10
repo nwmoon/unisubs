@@ -206,7 +206,7 @@ class SubtitleEditor(EditorDialogs):
         self.click_saved_ok()
 
     def dialog_title(self):
-        self.wait_for_element_visible(self._DIALOG_HEADING)
+        self.wait_for_element_present(self._DIALOG_HEADING, 30)
         return self.get_text_by_css(self._DIALOG_HEADING) 
 
     def complete_review(self, result='Accept'):

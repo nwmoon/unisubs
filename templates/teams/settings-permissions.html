@@ -1,5 +1,6 @@
 {% extends "teams/base.html" %}
 {% load i18n teams_tags paginator %}
+{% load url from future %}
 
 {% block title %}
     {{ team }} {% trans 'Settings' %} | Amara
@@ -102,7 +103,7 @@
 
                     <label for="id_autocreate_translate">
                         {{ workflow_form.autocreate_translate }}
-                        {% trans 'Automatically create translation tasks for preferred languages' %} (<a href="{% url teams:settings_languages slug=team.slug %}">{% trans 'manage languages' %}</a>)
+                        {% trans 'Automatically create translation tasks for preferred languages' %} (<a href="{% url "teams:settings_languages" slug=team.slug %}">{% trans 'manage languages' %}</a>)
                     </label>
 
                     <label for="id_review_allowed">{% trans 'Review' %}</label>

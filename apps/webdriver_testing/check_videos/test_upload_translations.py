@@ -2,12 +2,12 @@ import os
 import codecs
 import time
 
+from caching.tests.utils import assert_invalidates_model_cache
+from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import VideoUrlFactory
 from webdriver_testing.pages.site_pages import editor_page 
 
 class TestCaseUploadTranslation(WebdriverTestCase):
@@ -18,7 +18,7 @@ class TestCaseUploadTranslation(WebdriverTestCase):
     def setUpClass(cls):
         super(TestCaseUploadTranslation, cls).setUpClass()
         cls.data_utils = data_helpers.DataHelpers()
-        cls.user = UserFactory.create(username = 'user')
+        cls.user = UserFactory()
         cls.video_pg = video_page.VideoPage(cls)
         cls.video_language_pg = video_language_page.VideoLanguagePage(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
@@ -57,10 +57,11 @@ class TestCaseUploadTranslation(WebdriverTestCase):
         """Upload a new translation.
 
         """
-        test_file = 'Timed_text.sv.dfxp'
-        sub_file = os.path.join(self.subs_data_dir, test_file)       
-        sc = self._upload_and_verify(self.tv, sub_file, 'Swedish', 'sv')
-        self.assertEqual(sc, 72)    
+        with assert_invalidates_model_cache(self.tv):
+            test_file = 'Timed_text.sv.dfxp'
+            sub_file = os.path.join(self.subs_data_dir, test_file)       
+            sc = self._upload_and_verify(self.tv, sub_file, 'Swedish', 'sv')
+            self.assertEqual(sc, 72)    
 
 
     def test_editable(self):

@@ -34,12 +34,13 @@ class VimeoVideoType(VideoType):
     def __init__(self, url):
         self.url = url
         self.videoid = self._get_vimeo_id(url)
-        try:
-            self.shortmem = vimeo.get_shortmem(url)
-        except VidscraperError, e:
-            # we're not raising an error here because it 
-            # disallows us from adding private Vimeo videos.
-            pass
+        if vimeo.VIMEO_API_KEY and vimeo.VIMEO_API_SECRET:
+            try:
+                self.shortmem = vimeo.get_shortmem(url)
+            except VidscraperError, e:
+                # we're not raising an error here because it 
+                # disallows us from adding private Vimeo videos.
+                pass
         
     @property
     def video_id(self):

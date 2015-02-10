@@ -4,10 +4,9 @@ API Documentation
 This is the documentation of v2 of Amara's API. Please contact us
 if you’d like to use the Amara API for commercial purposes.
 
-.. note:: The v1 of the API is deprecated, but can still be accessed through
-    http://www.amara.org/api/1.0/documentation/ . Users should migrate
-    to the v2 of the API. If you're missing a feature on the API, please `let us
-    know <https://support.amara.org/>`_ .
+.. note:: This version of the API will be replaced in the near future.  See
+   `the API changes blog post <http://about.amara.org/2015/01/20/api-changes/>`_
+   for more info.
 
 Authentication
 --------------
@@ -358,6 +357,8 @@ Example response:
         ]
     }
 
+.. _old-subtitles-resource:
+
 Subtitles Resource
 ~~~~~~~~~~~~~~~~~~
 
@@ -384,13 +385,19 @@ Creating new subtitles for a language:
 .. http:post:: /api2/partners/videos/[video-id]/languages/[lang-identifier]/subtitles/
 .. http:post:: /api2/partners/videos/asfssd/languages/en/subtitles/
 
-    :query subtitles: The subtitles to submit
-    :query sub_format: The format used to parse the subs. The same formats as
-        for fetching subtitles are accepted. Optional - defaults to ``srt``.
-    :query title: Give a title to the new revision
-    :query description: Give a description to the new revision
+    :query video-id: ID of the video to create subtitles for
+    :query lang-identifier: language code of the subtitles
 
-    :form is_complete: Boolean indicating if the complete subtitling set is available for this language - optional, defaults to false.
+    :form subtitles: The subtitles to submit
+    :form sub_format: The format used to parse the subs. The same formats as
+        for fetching subtitles are accepted. Optional - defaults to ``srt``.
+    :form title: Give a title to the new revision
+    :form description: Give a description to the new revision
+    :form is_complete: Boolean indicating if the complete subtitling set is
+        available for this language - optional, defaults to false.
+    :form action: Name of the action to perform - optional.  If given,
+        the is_complete param will be ignored.  See the 
+        :ref:`old-subtitles-action-resource` for details.
 
 This will create a new subtitle version with the new subtitles.
 
@@ -436,6 +443,93 @@ Example response:
         "video_title": "The Golden Gate Way"
     }
 
+.. _old-subtitles-action-resource:
+
+Subtitles Action Resource
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Actions are operations on subtitles.  Actions correspond to the buttons in the
+upper-right hand corner of the subtitle editor (save, save a draft, approve,
+reject, etc).  This resource is used to list and perform actions on the
+subtitle set.
+
+.. note:: You can also perform an action together a new set of subtitles using
+    the action param of the :ref:`old-subtitles-resource`.
+
+Get the list of possible actions:
+
+.. http:get:: /api/videos/[video-id]/languages/[lang-identifier]/subtitles/actions/
+
+    :query video-id: ID of the video
+    :query lang-identifier: subtitle language code
+
+
+Example response:
+
+.. code-block:: json
+
+    [
+        {
+            "action": "save",
+            "label": "Save",
+            "complete": true
+        },
+        {
+            "action": "save-draft",
+            "label": "Save Draft",
+            "complete": false
+        },
+    ]
+
+Perform an action on a subtitle set
+
+.. http:post:: /api/videos/[video-id]/languages/[lang-identifier]/subtitles/actions/
+
+    :query video-id: ID of the video
+    :query lang-identifier: subtitle language code
+
+    :form action action of the action to perform
+
+Subtitles Notes Resource
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Get/Create notes saved in the editor.
+
+.. note:: Subtitle notes currently only works on team videos
+
+Get the list of notes:
+
+.. http:get:: /api/videos/[video-id]/languages/[lang-identifier]/subtitles/notes
+
+    :query video-id: ID of the video
+    :query lang-identifier: subtitle language code
+
+
+Example response:
+
+.. code-block:: json
+
+    [
+        {
+            "user": "Bob",
+            "created": "2015-01-20T15:57:37",
+            "body": "Hello"
+        },
+        {
+            "user": "Mary",
+            "created": "2015-01-20T15:58:01",
+            "body": "World"
+        }
+    ]
+
+Create a new note
+
+.. http:post:: /api/videos/[video-id]/languages/[lang-identifier]/subtitles/actions/
+
+    :query video-id: ID of the video
+    :query lang-identifier: subtitle language code
+
+    :form body: note body
 
 Language Resource
 ~~~~~~~~~~~~~~~~~
@@ -511,6 +605,9 @@ Updating video-urls:
 .. http:put:: /api2/partners/videos/[video-id]/urls/[url-id]/
 
 Creating video-urls:
+
+    :form url: Video URL (this must match the current URL)
+    :form primary: If True, this URL will be made the primary URL
 
 .. http:post:: /api2/partners/videos/[video-id]/urls/
 
@@ -839,7 +936,10 @@ List activity items:
 
 .. http:get:: /api2/partners/activity/
 
-    :query team: Show only items related to a given team (team slug)
+    :query team: Show only items related to a given team (team slug).
+    :query team-activity: If team is given, we normally return activity on the
+       team's videos.  If you want to see activity for the team itself (members
+       joining/leaving and team video deletions, then add team-activity=1)
     :query video: Show only items related to a given video (video id)
     :query type: Show only items with a given activity type (int, see below)
     :query language: Show only items with a given language (language code)

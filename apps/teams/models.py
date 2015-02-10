@@ -29,16 +29,18 @@ from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.core.files import File
 from django.db import models
+from django.db.models import query, Q
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.http import Http404
 from django.template.loader import render_to_string
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ugettext
 from haystack import site
 from haystack.query import SQ
 
 import teams.moderation_const as MODERATION
+from caching import ModelCacheManager
 from comments.models import Comment
-from auth.models import CustomUser as User
+from auth.models import UserLanguage, CustomUser as User
 from auth.providers import get_authentication_provider
 from messages import tasks as notifier
 from subtitles import shims
@@ -52,10 +54,13 @@ from teams import tasks
 from teams import workflows
 from videos.tasks import video_changed_tasks
 from utils import DEFAULT_PROTOCOL
+from utils import translation
 from utils.amazon import S3EnabledImageField, S3EnabledFileField
 from utils.panslugify import pan_slugify
 from utils.searching import get_terms
-from videos.models import Video, VideoUrl, SubtitleVersion, SubtitleLanguage
+from videos.models import (Video, VideoUrl, SubtitleVersion, SubtitleLanguage,
+                           Action)
+from videos.tasks import video_changed_tasks
 from subtitles.models import (
     SubtitleVersion as NewSubtitleVersion,
     SubtitleLanguage as NewSubtitleLanguage,
@@ -70,14 +75,57 @@ logger = logging.getLogger(__name__)
 celery_logger = logging.getLogger('celery.task')
 
 BILLING_CUTOFF = getattr(settings, 'BILLING_CUTOFF', None)
-ALL_LANGUAGES = [(val, _(name))for val, name in settings.ALL_LANGUAGES]
-VALID_LANGUAGE_CODES = [unicode(x[0]) for x in ALL_LANGUAGES]
 
 # Teams
+class TeamQuerySet(query.QuerySet):
+    def add_members_count(self):
+        """Add _members_count field to this query
+
+        This can be used to order/filter the query and also avoids a query in
+        when Team.members_count() is called.
+        """
+        select = {
+            '_members_count': (
+                'SELECT COUNT(1) '
+                'FROM teams_teammember tm '
+                'WHERE tm.team_id=teams_team.id'
+            )
+        }
+        return self.extra(select=select)
+
+    def add_videos_count(self):
+        """Add _videos_count field to this query
+
+        This can be used to order/filter the query and also avoids a query in
+        when Team.video_count() is called.
+        """
+        select = {
+            '_videos_count':  (
+                'SELECT COUNT(1) '
+                'FROM teams_teamvideo tv '
+                'WHERE tv.team_id=teams_team.id'
+            )
+        }
+        return self.extra(select=select)
+
+    def add_user_is_member(self, user):
+        """Add user_is_member field to this query """
+        if not user.is_authenticated():
+            return self.extra(select={'user_is_member': 0})
+        select = {
+            'user_is_member':  (
+                'EXISTS (SELECT 1 '
+                'FROM teams_teammember tm '
+                'WHERE tm.team_id=teams_team.id '
+                'AND tm.user_id=%s)'
+            )
+        }
+        return self.extra(select=select, select_params=[user.id])
+
 class TeamManager(models.Manager):
     def get_query_set(self):
         """Return a QS of all non-deleted teams."""
-        return super(TeamManager, self).get_query_set().filter(deleted=False)
+        return TeamQuerySet(Team).filter(deleted=False)
 
     def for_user(self, user, exclude_private=False):
         """Return the teams visible for the given user.
@@ -111,7 +159,6 @@ class TeamManager(models.Manager):
             notify_interval=notify_interval,
             teamvideo__created__gt=models.F('last_notification_time'))
             .distinct())
-
 
 class Team(models.Model):
     APPLICATION = 1
@@ -238,6 +285,8 @@ class Team(models.Model):
     objects = TeamManager()
     all_objects = models.Manager() # For accessing deleted teams, if necessary.
 
+    cache = ModelCacheManager()
+
     class Meta:
         ordering = ['name']
         verbose_name = _(u'Team')
@@ -250,6 +299,7 @@ class Team(models.Model):
     def save(self, *args, **kwargs):
         creating = self.pk is None
         super(Team, self).save(*args, **kwargs)
+        self.cache.invalidate()
         if creating:
             # create a default project
             self.default_project
@@ -275,6 +325,23 @@ class Team(models.Model):
         return reverse('teams:team_tasks', kwargs={
             'slug': self.slug,
         })
+
+    def languages(self, members_joined_since=None):
+        """Returns the languages spoken by the member of the team
+        """
+        if members_joined_since:
+            users = self.members_since(members_joined_since)
+        else:
+            users = self.users.all()
+        return UserLanguage.objects.filter(user__in=users).values_list('language', flat=True)
+
+    def active_users(self, since=None, published=True):
+        sv = NewSubtitleVersion.objects.filter(video__in=self.videos.all())
+        if published:
+            sv = sv.filter(Q(visibility_override='public') | Q(visibility='public'))
+        if since:
+            sv = sv.filter(created__gt=datetime.datetime.now() - datetime.timedelta(days=since))
+        return sv.exclude(author__username="anonymous").values_list('author', 'subtitle_language')
 
     def render_message(self, msg):
         """Return a string of HTML represention a team header for a notification.
@@ -374,13 +441,20 @@ class Team(models.Model):
         return member
 
     def user_is_member(self, user):
-        return self.get_member(user) is not None
+        members = self.cache.get('members')
+        if members is None:
+            members = list(self.members.values_list('user_id', flat=True))
+            self.cache.set('members', members)
+        return user.id in members
 
     def uncache_member(self, user):
         try:
             del self._member_cache[user.id]
         except KeyError:
             pass
+
+    def user_can_view_videos(self, user):
+        return self.is_visible or self.user_is_member(user)
 
     def _is_role(self, user, role=None):
         """Return whether the given user has the given role in this team.
@@ -434,6 +508,25 @@ class Team(models.Model):
             return False
         return self.is_member(user)
 
+    def fetch_video_actions(self, video_language=None,
+                            subtitle_language=None):
+        """Fetch the Action objects for this team's videos
+
+        Args:
+            video_language: only actions for videos with this
+                            primary_audio_language_code
+            subtitle_language: only actions that have subtitles in these
+                               languages
+        """
+        video_q = TeamVideo.objects.filter(team=self).values_list('video_id')
+        if video_language is not None:
+            video_q = video_q.filter(
+                video__primary_audio_language_code=video_language)
+        if subtitle_language is not None:
+            video_q = video_q.filter(
+                video__newsubtitlelanguage_set__language_code=subtitle_language)
+        return Action.objects.filter(video_id__in=video_q)
+
     # moderation
 
 
@@ -460,15 +553,25 @@ class Team(models.Model):
 
     # Item counts
     @property
-    def member_count(self):
+    def members_count(self):
         """Return the number of members of this team.
 
         Caches the result in-object for performance.
 
         """
-        if not hasattr(self, '_member_count'):
-            setattr(self, '_member_count', self.users.count())
-        return self._member_count
+        if not hasattr(self, '_members_count'):
+            setattr(self, '_members_count', self.users.count())
+        return self._members_count
+
+    def members_count_since(self, joined_since):
+        """Return the number of members of this team who joined the last n days.
+        """
+        return self.users.filter(date_joined__gt=datetime.datetime.now() - datetime.timedelta(days=joined_since)).count()
+
+    def members_since(self, joined_since):
+        """ Returns the members who joined the team the last n days
+        """
+        return self.users.filter(date_joined__gt=datetime.datetime.now() - datetime.timedelta(days=joined_since))
 
     @property
     def videos_count(self):
@@ -480,6 +583,16 @@ class Team(models.Model):
         if not hasattr(self, '_videos_count'):
             setattr(self, '_videos_count', self.teamvideo_set.count())
         return self._videos_count
+
+    def videos_count_since(self, added_since = None):
+        """Return the number of videos of this team added the last n days.
+        """
+        return self.teamvideo_set.filter(created__gt=datetime.datetime.now() - datetime.timedelta(days=added_since)).count()
+
+    def videos_since(self, added_since):
+        """Returns the videos of this team added the last n days.
+        """
+        return self.videos.filter(created__gt=datetime.datetime.now() - datetime.timedelta(days=added_since))
 
     def unassigned_tasks(self, sort=None):
         qs = Task.objects.filter(team=self, deleted=False, completed=None, assignee=None, type=Task.TYPE_IDS['Approve'])
@@ -508,10 +621,21 @@ class Team(models.Model):
 
         Caches the result in-object for performance.
 
+        Note: the count is capped at 1001 tasks.  If a team has more than
+        that, we generally just want to display "> 1000".  Use
+        get_tasks_count_display() to do that.
+
         """
         if not hasattr(self, '_tasks_count'):
             setattr(self, '_tasks_count', self._count_tasks())
         return self._tasks_count
+
+    def get_tasks_count_display(self):
+        """Get a string to display for our tasks count."""
+        if self.tasks_count <= 1000:
+            return unicode(self.tasks_count)
+        else:
+            return ugettext('> 1000')
 
     # Applications (people applying to join)
     def application_message(self):
@@ -622,6 +746,29 @@ class Team(models.Model):
         """
         return TeamLanguagePreference.objects.get_readable(self)
 
+    def get_team_languages(self, since=None):
+        query_sl = NewSubtitleLanguage.objects.filter(video__in=self.videos.all())
+        new_languages = []
+        if since:
+            query_sl = query_sl.filter(id__in=NewSubtitleVersion.objects.filter(video__in=self.videos.all(),
+                                                                             created__gt=datetime.datetime.now() - datetime.timedelta(days=since)).order_by('subtitle_language').values_list('subtitle_language', flat=True).distinct())
+            new_languages = list(NewSubtitleLanguage.objects.filter(video__in=self.videos_since(since)).values_list('language_code', 'subtitles_complete'))
+        query_sl = query_sl.values_list('language_code', 'subtitles_complete')
+        languages = list(query_sl)
+
+        def first_member(x):
+            return x[0]
+        complete_languages = map(first_member, filter(lambda x: x[1], languages))
+        incomplete_languages = map(first_member, filter(lambda x: not x[1], languages))
+        new_languages = map(first_member, new_languages)
+        if since:
+            return (complete_languages, incomplete_languages, new_languages)
+        else:
+            return (complete_languages, incomplete_languages)
+
+
+
+    
 # This needs to be constructed after the model definition since we need a
 # reference to the class itself.
 Team._meta.permissions = TEAM_PERMISSIONS
@@ -800,6 +947,8 @@ class TeamVideo(models.Model):
 
         if not self.pk:
             self.created = datetime.datetime.now()
+        self.video.cache.invalidate()
+        self.video.clear_team_video_cache()
         super(TeamVideo, self).save(*args, **kwargs)
         video_changed_tasks(self.video.pk)
 
@@ -890,10 +1039,8 @@ class TeamVideo(models.Model):
                                               to_team=new_team,
                                               to_project=self.project)
 
-            # Update all Solr data.
-            metadata_manager.update_metadata(video.pk)
-            video.update_search_index()
-            tasks.update_one_team_video(self.pk)
+            # Update search data and other things
+            video_changed_tasks.delay(video.pk)
 
             # Create any necessary tasks.
             autocreate_tasks(self)
@@ -931,6 +1078,15 @@ class TeamVideo(models.Model):
         else:
             return None
 
+    @staticmethod
+    def get_videos_non_language_ids(team, language_code, non_empty_language_code=False):
+        if non_empty_language_code:
+            return TeamVideo.objects.filter(
+                team=team).exclude(
+                    video__primary_audio_language_code__gt=language_code).values_list('id', flat=True)
+        return TeamVideo.objects.filter(
+            team=team).exclude(
+                video__primary_audio_language_code=language_code).values_list('id', flat=True)
 
 class TeamVideoMigration(models.Model):
     from_team = models.ForeignKey(Team, related_name='+')
@@ -1044,6 +1200,8 @@ def team_video_delete(sender, instance, **kwargs):
         video.update_search_index()
     except Video.DoesNotExist:
         pass
+    if instance.video_id is not None:
+        Video.cache.invalidate_by_pk(instance.video_id)
 
 def on_language_deleted(sender, **kwargs):
     """When a language is deleted, delete all tasks associated with it."""
@@ -1130,6 +1288,13 @@ class TeamMember(models.Model):
     def __unicode__(self):
         return u'%s' % self.user
 
+    def save(self, *args, **kwargs):
+        super(TeamMember, self).save(*args, **kwargs)
+        Team.cache.invalidate_by_pk(self.team_id)
+
+    def delete(self):
+        super(TeamMember, self).delete()
+        Team.cache.invalidate_by_pk(self.team_id)
 
     def project_narrowings(self):
         """Return any project narrowings applied to this member."""
@@ -1211,7 +1376,8 @@ class MembershipNarrowing(models.Model):
     """
     member = models.ForeignKey(TeamMember, related_name="narrowings")
     project = models.ForeignKey(Project, null=True, blank=True)
-    language = models.CharField(max_length=24, blank=True, choices=ALL_LANGUAGES)
+    language = models.CharField(max_length=24, blank=True,
+                                choices=translation.ALL_LANGUAGE_CHOICES)
 
     added_by = models.ForeignKey(TeamMember, related_name="narrowing_includer", null=True, blank=True)
 
@@ -1242,7 +1408,12 @@ class MembershipNarrowing(models.Model):
 
             assert not duplicate_exists, "Duplicate project narrowing detected!"
 
-        return super(MembershipNarrowing, self).save(*args, **kwargs)
+        super(MembershipNarrowing, self).save(*args, **kwargs)
+        Team.cache.invalidate_by_pk(self.member.team_id)
+
+    def delete(self):
+        super(MembershipNarrowing, self).delete()
+        Team.cache.invalidate_by_pk(self.member.team_id)
 
 class TeamSubtitleNote(SubtitleNoteBase):
     team = models.ForeignKey(Team, related_name='+')
@@ -1794,8 +1965,9 @@ class Task(models.Model):
 
     team = models.ForeignKey(Team)
     team_video = models.ForeignKey(TeamVideo)
-    language = models.CharField(max_length=16, choices=ALL_LANGUAGES, blank=True,
-                                db_index=True)
+    language = models.CharField(max_length=16,
+                                choices=translation.ALL_LANGUAGE_CHOICES,
+                                blank=True, db_index=True)
     assignee = models.ForeignKey(User, blank=True, null=True)
     subtitle_version = models.ForeignKey(SubtitleVersion, blank=True, null=True)
     new_subtitle_version = models.ForeignKey(NewSubtitleVersion,
@@ -2356,13 +2528,16 @@ class Task(models.Model):
         is_review_or_approve = self.get_type_display() in ('Review', 'Approve')
 
         if self.language:
-            assert self.language in VALID_LANGUAGE_CODES, \
-                "Subtitle Language should be a valid code."
+            if not self.language in translation.ALL_LANGUAGE_CODES:
+                raise ValidationError(
+                    "Subtitle Language should be a valid code.")
 
         result = super(Task, self).save(*args, **kwargs)
 
         if update_team_video_index:
             tasks.update_one_team_video.delay(self.team_video.pk)
+
+        Video.cache.invalidate_by_pk(self.team_video.video_id)
 
         return result
 
@@ -2395,6 +2570,7 @@ class Setting(models.Model):
         (101, 'messages_manager'),
         (102, 'messages_admin'),
         (103, 'messages_application'),
+        (104, 'messages_joins'),
         (200, 'guidelines_subtitle'),
         (201, 'guidelines_translate'),
         (202, 'guidelines_review'),
@@ -2443,21 +2619,19 @@ class Setting(models.Model):
 class TeamLanguagePreferenceManager(models.Manager):
     def _generate_writable(self, team):
         """Return the set of language codes that are writeable for this team."""
-        langs_set = set([x[0] for x in settings.ALL_LANGUAGES])
 
         unwritable = self.for_team(team).filter(allow_writes=False, preferred=False).values("language_code")
         unwritable = set([x['language_code'] for x in unwritable])
 
-        return langs_set - unwritable
+        return translation.ALL_LANGUAGE_CODES - unwritable
 
     def _generate_readable(self, team):
         """Return the set of language codes that are readable for this team."""
-        langs = set([x[0] for x in settings.ALL_LANGUAGES])
 
         unreadable = self.for_team(team).filter(allow_reads=False, preferred=False).values("language_code")
         unreadable = set([x['language_code'] for x in unreadable])
 
-        return langs - unreadable
+        return translation.ALL_LANGUAGE_CODES - unreadable
 
     def _generate_preferred(self, team):
         """Return the set of language codes that are preferred for this team."""
@@ -2547,8 +2721,8 @@ class TeamLanguagePreference(models.Model):
     team = models.ForeignKey(Team, related_name="lang_preferences")
     language_code = models.CharField(max_length=16)
 
-    allow_reads = models.BooleanField()
-    allow_writes = models.BooleanField()
+    allow_reads = models.BooleanField(default=False)
+    allow_writes = models.BooleanField(default=False)
     preferred = models.BooleanField(default=False)
 
     objects = TeamLanguagePreferenceManager()
@@ -2650,7 +2824,7 @@ class TeamNotificationSetting(models.Model):
 
     def get_notification_class(self):
         try:
-            from notificationclasses import NOTIFICATION_CLASS_MAP
+            from ted.notificationclasses import NOTIFICATION_CLASS_MAP
 
             return NOTIFICATION_CLASS_MAP[self.notification_class]
         except ImportError:
@@ -2728,6 +2902,7 @@ class BillingReport(models.Model):
             'Team',
             'Video Title',
             'Video ID',
+            'Project',
             'Language',
             'Minutes',
             'Original',
@@ -2738,6 +2913,7 @@ class BillingReport(models.Model):
         rows = [header]
         for approve_task in self._get_approved_tasks():
             video = approve_task.team_video.video
+            project = approve_task.team_video.project.name if approve_task.team_video.project else _('none')
             version = approve_task.new_subtitle_version
             language = version.subtitle_language
             subtitle_task = (Task.objects.complete_subtitle_or_translate()
@@ -2748,6 +2924,7 @@ class BillingReport(models.Model):
                 approve_task.team.name,
                 video.title_display(),
                 video.video_id,
+                project,
                 approve_task.language,
                 get_minutes_for_version(version, False),
                 language.is_primary_audio_language(),
@@ -2764,6 +2941,7 @@ class BillingReport(models.Model):
             'Team',
             'Video Title',
             'Video ID',
+            'Project',
             'Language',
             'Minutes',
             'Original',
@@ -2775,6 +2953,7 @@ class BillingReport(models.Model):
         data_rows = []
         for approve_task in self._get_approved_tasks():
             video = approve_task.team_video.video
+            project = approve_task.team_video.project.name if approve_task.team_video.project else _('none')
             version = approve_task.get_subtitle_version()
             language = version.subtitle_language
 
@@ -2804,6 +2983,7 @@ class BillingReport(models.Model):
                     approve_task.team.name,
                     video.title_display(),
                     video.video_id,
+                    project,
                     language.language_code,
                     get_minutes_for_version(version, False),
                     language.is_primary_audio_language(),
@@ -2900,6 +3080,7 @@ class BillingReportGenerator(object):
         return [
             'Video Title',
             'Video ID',
+            'Project',
             'Language',
             'Minutes',
             'Original',
@@ -2914,6 +3095,7 @@ class BillingReportGenerator(object):
         return [
             (video and video.title_display()) or "----",
             (video and video.video_id) or "deleted",
+            (record.project.name if record.project else _('none')),
             (record.new_subtitle_language and record.new_subtitle_language.language_code) or "----",
             record.minutes,
             record.is_original,
@@ -2961,6 +3143,7 @@ NOT EXISTS (
         return [
             video.title_display(),
             video.video_id,
+            _('none'),
             language.language_code,
             0,
             language.is_primary_audio_language(),
@@ -3046,9 +3229,10 @@ class BillingRecordManager(models.Manager):
         is_original = language.is_primary_audio_language()
         source = version.origin
         team = tv.team
-
+        project = tv.project
         new_record = BillingRecord.objects.create(
             video=video,
+            project = project,
             new_subtitle_version=version,
             new_subtitle_language=language,
             is_original=is_original, team=team,
@@ -3101,7 +3285,7 @@ def get_minutes_for_version(version, round_up_to_integer):
 class BillingRecord(models.Model):
     # The billing record should still exist if the video is deleted
     video = models.ForeignKey(Video, blank=True, null=True, on_delete=models.SET_NULL)
-
+    project = models.ForeignKey(Project, blank=True, null=True, on_delete=models.SET_NULL)
     subtitle_version = models.ForeignKey(SubtitleVersion, null=True,
             blank=True, on_delete=models.SET_NULL)
     new_subtitle_version = models.ForeignKey(NewSubtitleVersion, null=True,
@@ -3113,7 +3297,7 @@ class BillingRecord(models.Model):
             blank=True, on_delete=models.SET_NULL)
 
     minutes = models.FloatField(blank=True, null=True)
-    is_original = models.BooleanField()
+    is_original = models.BooleanField(default=False)
     team = models.ForeignKey(Team)
     created = models.DateTimeField()
     source = models.CharField(max_length=255)

@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+import time
+
 from video_page import VideoPage
 import requests
 

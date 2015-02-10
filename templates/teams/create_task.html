@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load i18n teams_tags widget media_bundle form_helpers %}
+{% load url from future %}
 
 {% block body_attrs %}id="teams" class="v1 create-task"{% endblock %}
 
@@ -94,7 +95,7 @@
                 <a href="#">{% trans 'New task form' %}</a>
             </li>
             <li>
-                <a href="{% url teams:team_tasks team.slug %}?team_video={{ team_video.id }}">← {% trans 'Back to tasks list' %}</a>
+                <a href="{% url "teams:team_tasks" team.slug %}?team_video={{ team_video.id }}">← {% trans 'Back to tasks list' %}</a>
             </li>
         </ul>
     </div>

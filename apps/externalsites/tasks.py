@@ -23,25 +23,24 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from externalsites import credit
 from externalsites import subfetch
-from externalsites.models import get_account, get_sync_account
+from externalsites.models import get_account, get_sync_account, SyncHistory
 from subtitles.models import SubtitleLanguage, SubtitleVersion
 from utils import youtube
 from videos.models import VideoUrl
 
-celery_logger = logging.getLogger('celery.task')
+logger = logging.getLogger(__name__)
 
 @task
 def update_subtitles(account_type, account_id, video_url_id, lang_id):
     """Update a subtitles for a language"""
-    celery_logger.info("externalsites.tasks.update_subtitles"
-                       "(%s, %s, %s, %s)", account_type, account_id,
-                       video_url_id, lang_id)
+    logger.info("externalsites.tasks.update_subtitles(%s, %s, %s, %s)",
+                account_type, account_id, video_url_id, lang_id)
     try:
         account = get_account(account_type, account_id)
         language = SubtitleLanguage.objects.get(id=lang_id)
         video_url = VideoUrl.objects.get(id=video_url_id)
     except ObjectDoesNotExist, e:
-        celery_logger.error(
+        logger.error(
             'Lookup error in update_subtitles(): %s' % e,
             exc_info=True,
             extra={
@@ -60,16 +59,15 @@ def update_subtitles(account_type, account_id, video_url_id, lang_id):
 @task
 def delete_subtitles(account_type, account_id, video_url_id, lang_id):
     """Delete a subtitles for a language"""
-    celery_logger.info("externalsites.tasks.delete_subtitles"
-                       "(%s, %s, %s, %s)", account_type, account_id,
-                       video_url_id, lang_id)
+    logger.info("externalsites.tasks.delete_subtitles(%s, %s, %s, %s)",
+                account_type, account_id, video_url_id, lang_id)
 
     try:
         account = get_account(account_type, account_id)
         video_url = VideoUrl.objects.get(id=video_url_id)
         language = SubtitleLanguage.objects.get(id=lang_id)
     except ObjectDoesNotExist, e:
-        celery_logger.error(
+        logger.error(
             'Lookup error in delete_subtitles(): %s' % e,
             exc_info=True,
             extra={
@@ -89,12 +87,12 @@ def delete_subtitles(account_type, account_id, video_url_id, lang_id):
 @task
 def update_all_subtitles(account_type, account_id):
     """Update all subtitles for a given account."""
-    celery_logger.info("externalsites.tasks.update_all_subtitles(%s, %s)",
-                       account_type, account_id)
+    logger.info("externalsites.tasks.update_all_subtitles(%s, %s)",
+                account_type, account_id)
     try:
         account = get_account(account_type, account_id)
     except ObjectDoesNotExist, e:
-        celery_logger.error(
+        logger.error(
             'Lookup error in update_all_subtitles(): %s' % e,
             exc_info=True,
             extra={
@@ -133,3 +131,13 @@ def add_amara_credit(video_url_id):
 @task
 def fetch_subs(video_url_id):
     subfetch.fetch_subs(VideoUrl.objects.get(id=video_url_id))
+
+@task
+def retry_failed_sync():
+    sh = SyncHistory.objects.get_attempt_to_resync()
+    if sh is None:
+        logging.info("retry_failed_sync: nothing to resync")
+        return
+    logging.info("retry_failed_sync: resyncing %s", sh)
+    account = sh.get_account()
+    account.update_subtitles(sh.video_url, sh.language)

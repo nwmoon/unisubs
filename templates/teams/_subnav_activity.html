@@ -1,0 +1,27 @@
+{% load i18n teams_tags %}
+{% load url from future %}
+
+<ul>
+    <li {% if current_sub == "videos" %}class="current"{% endif %}>
+        <a href="{% url "teams:activity" team.slug %}">{% trans "Videos" %}</a>
+    </li>
+    <li {% if current_sub == "team" %}class="current"{% endif %}>
+        <a href="{% url "teams:team-activity" team.slug %}">{% trans "Team" %}</a>
+    </li>
+    <li {% if current_sub == "videosstats" %}class="current"{% endif %}>
+        <a href="{% url "teams:videosstatistics-activity" team.slug %}">{% trans "Videos Statistics" %}</a>
+    </li>
+    {% if team|can_view_stats_tab:user %}
+    <li {% if current_sub == "teamstats" %}class="current"{% endif %}>
+        <a href="{% url "teams:teamstatistics-activity" team.slug %}">{% trans "Team Statistics" %}</a>
+    </li>
+    {% endif %}
+    {% if current_sub == "videos" or current_sub == "team" %}
+    <li>
+      <a href="#filter" id="sort-filter" class="default-open">
+	{% trans 'Filter and Sort' %}
+	<span></span>
+      </a>
+    </li>
+    {% endif %}
+</ul>

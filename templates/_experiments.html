@@ -1,0 +1,15 @@
+{% if EXPERIMENTS_CODE and not RUN_LOCALLY %}
+<script src="//www.google-analytics.com/cx/api.js?experiment={{ EXPERIMENTS_CODE }}"></script>
+<script type="text/javascript">
+// Ask Google Analytics which variation to show the user.
+var chosenVariation = cxApi.chooseVariation();
+  
+// Wait for the DOM to load, then execute the view for the chosen variation.
+$(document).ready(function() {
+  // Execute the chosen view
+  if ((typeof pageVariations !== 'undefined') && (chosenVariation in pageVariations))
+    pageVariations[chosenVariation]();
+  }
+);
+</script>
+{% endif %}

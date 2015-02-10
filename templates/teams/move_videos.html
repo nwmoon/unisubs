@@ -1,6 +1,7 @@
 {% extends "teams/base.html" %}
 
-{% load i18n utils_tags teams_tags paginator profiles_tags markup %}
+{% load i18n utils_tags teams_tags paginator profiles_tags %}
+{% load url from future %}
 
 {% block title %}
     {% trans 'Videos' %} - {{ team }} | Amara
@@ -52,7 +53,7 @@
             <input type="hidden" name="q" value="{{ query }}" />
             <button class="reduced" id="update">Update</button>
             {% if filtered %}
-            <a href="{% url teams:detail team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
+            <a href="{% url "teams:detail" team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
             {% endif %}
             <div class="group">
                 <div class="filter-chunk">
@@ -108,6 +109,9 @@
                 <option value="any"{% if primary_audio_language_filter == 'any' %} selected="selected"{% endif %}>{% trans "any" %}</option>
                 <option value="+"{% if primary_audio_language_filter == '+' %} selected="selected"{% endif %}>{% trans "set" %}</option>
                 <option value="-"{% if primary_audio_language_filter == '-' %} selected="selected"{% endif %}>{% trans "not set" %}</option>
+                {% for code, name in language_choices %}
+                <option {% if primary_audio_language_filter == code %}selected="selected"{% endif %} value="{{ code }}">{{ name }}</option>
+                {% endfor %}
               </select>
             </div>
 	    {% endif %}

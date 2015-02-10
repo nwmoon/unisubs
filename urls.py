@@ -17,16 +17,18 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
 from django import http
-from django.conf.urls.defaults import include, patterns, url
+from django.conf.urls import include, patterns, url
 from django.conf import settings
 from django.contrib import admin
+from django.shortcuts import render
 from django.template import RequestContext, loader
-from django.views.generic.simple import direct_to_template, redirect_to
+from django.views.generic.base import TemplateView, RedirectView
 from sitemaps import sitemaps, sitemap_view, sitemap_index
 from socialauth.models import AuthMeta, OpenidProfile
 from django.views.decorators.clickjacking import xframe_options_exempt
 
 import optionalapps
+from utils.genericviews import JSTemplateView
 
 admin.autodiscover()
 
@@ -53,9 +55,9 @@ js_info_dict = {
 # run monkey patch django
 from utils import urlvalidator
 urlpatterns = patterns('',
-    url('^500/$', direct_to_template, { 'template': '500.html' }),
-    url('^404/$', direct_to_template, { 'template': '404.html' }),
-    url('^robots.txt$', direct_to_template, { 'template': 'robots.txt' }),
+    url('^500/$', TemplateView.as_view(template_name='500.html')),
+    url('^404/$', TemplateView.as_view(template_name='404.html')),
+    url('^robots.txt$', TemplateView.as_view(template_name='robots.txt')),
     url(r'^crossdomain.xml$',
         'crossdomain_views.root_crossdomain'),
     url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict,
@@ -66,8 +68,6 @@ urlpatterns = patterns('',
         include('comments.urls', namespace='comments')),
     url(r'^messages/',
         include('messages.urls', namespace='messages')),
-    url(r'^rosetta/',
-        include('rosetta.urls')),
     # TODO: Not sure what this is.  It's breaking the app under Django 1.4
     # url(r'^pcf-targetter/',
     #     include('targetter.urls', namespace='targetter')),
@@ -102,48 +102,55 @@ urlpatterns = patterns('',
         app_name='widget')),
     url(r'^jsdemo/(\w+)',
         'jsdemo.views.jsdemo'),
-    url(r'^statistic/',
-        include('statistic.urls', namespace='statistic')),
     url(r'^search/',
         include('search.urls', 'search')),
-    url(r'^uslogging/',
-        include('uslogging.urls', 'uslogging')),
-    url(r'^community$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'community.html'}, 'community'),
-    url(r'^enterprise/[\w-]*$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'enterprise.html'}, 'enterprise_page'),
-    url(r'^dfxp-wrapper-test/$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'dfxp-wrapper-test.html'}, 'dfxp-wrapper-test'),
-    url(r'^embedder/$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'embedder.html'}, 'embedder_page'),
-    url(r'^embedder-iframe/$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'embedder-iframe.js', 'mimetype': 'application/javascript', 'extra_context': {'static_url': settings.STATIC_URL}}, 'embedder_iframe'),
-    url(r'^embedder-offsite/$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'embedder-offsite.html'}, 'embedder_page_offsite'),
+    url(r'^community$',
+        TemplateView.as_view(template_name='community.html'),
+        name='community'),
+    url(r'^enterprise/[\w-]*$',
+        TemplateView.as_view(template_name='enterprise.html'),
+        name='enterprise_page'),
+    url(r'^dfxp-wrapper-test/$',
+        TemplateView.as_view(template_name='dfxp-wrapper-test.html'),
+        name='dfxp-wrapper-test'),
+    url(r'^embedder/$', TemplateView.as_view(template_name='embedder.html'),
+        'embedder_page'),
+    url(r'^embedder-iframe/$',
+        JSTemplateView.as_view(template_name='embedder-iframe.js'),
+        name='embedder_iframe'),
+    url(r'^embedder-offsite/$',
+        TemplateView.as_view(template_name='embedder-offsite.html'),
+        name='embedder_page_offsite'),
     url(r'^embedder-widget-iframe/(?P<analytics>.*)', 'widget.views.embedder_widget', name='embedder_widget'),
-    url(r'^streaming-transcript/$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'streaming-transcript.html'}, 'streaming_transcript_demo'),
-    url(r'^w3c/p3p.xml$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'p3p.xml'}),
-    url(r'^w3c/Policies.xml$', 'django.views.generic.simple.direct_to_template',
-        {'template': 'Policies.xml'}, 'policy_page'),
-    url(r'^about$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'about.html'}, 'about_page'),
-    url(r'^security', 'django.views.generic.simple.direct_to_template',
-        {'template': 'security.html'}, 'security_page'),
-    url(r'^get-code/$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'embed_page.html'}, 'get_code_page'),
-    url(r'^dmca$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'dmca.html'}, 'dmca_page'),
-    url(r'^faq$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'faq.html'}, 'faq_page'),
-    url(r'^terms$', redirect_to, {'url': 'http://about.amara.org/tos/'}),
-    url(r'^opensubtitles2010$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'opensubtitles2010.html'}, 'opensubtitles2010_page'),
-    url(r'^test-ogg$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'alpha-test01-ogg.htm'}, 'test-ogg-page'),
-    url(r'^test-mp4$',  'django.views.generic.simple.direct_to_template',
-        {'template': 'alpha-test01-mp4.htm'}, 'test-mp4-page'),
+    url(r'^streaming-transcript/$',
+        TemplateView.as_view(template_name='streaming-transcript.html'),
+        name='streaming_transcript_demo'),
+    url(r'^w3c/p3p.xml$',
+        TemplateView.as_view(template_name='p3p.xml')),
+    url(r'^w3c/Policies.xml$',
+        TemplateView.as_view(template_name='Policies.xml'),
+        name='policy_page'),
+    url(r'^about$', TemplateView.as_view(template_name='about.html'),
+        name='about_page'),
+    url(r'^security', TemplateView.as_view(template_name='security.html'),
+        name='security_page'),
+    url(r'^get-code/$',
+        TemplateView.as_view(template_name='embed_page.html'),
+        name='get_code_page'),
+    url(r'^dmca$',  TemplateView.as_view(template_name='dmca.html'),
+        name='dmca_page'),
+    url(r'^faq$',  TemplateView.as_view(template_name='faq.html'),
+        name='faq_page'),
+    url(r'^terms$', RedirectView.as_view(url='http://about.amara.org/tos/')),
+    url(r'^opensubtitles2010$',
+        TemplateView.as_view(template_name='opensubtitles2010.html'),
+        name='opensubtitles2010_page'),
+    url(r'^test-ogg$',
+        TemplateView.as_view(template_name='alpha-test01-ogg.htm'),
+        name='test-ogg-page'),
+    url(r'^test-mp4$',
+        TemplateView.as_view(template_name='alpha-test01-mp4.htm'),
+        name='test-mp4-page'),
     url(r'^sitemap\.xml$', sitemap_index, {'sitemaps': sitemaps},
         name="sitemap-index"),
     url(r'^sitemap-(?P<section>.+)\.xml$', sitemap_view, {'sitemaps': sitemaps},
@@ -164,12 +171,21 @@ urlpatterns = patterns('',
                             app_name='staticmedia')),
     url(r'^auth/', include('auth.urls', namespace='auth', app_name='auth')),
     url(r'^auth/', include('thirdpartyaccounts.urls', namespace='thirdpartyaccounts', app_name='thirdpartyaccounts')),
-    url(r'^api2/partners/', include('api.urls', namespace='api')),
+    url(r'^api/', include('api.urls', namespace='api')),
     ## Video shortlinks
     url(r'^v/(?P<encoded_pk>\w+)/$', 'videos.views.shortlink', name='shortlink')
 )
 
 urlpatterns += optionalapps.get_urlpatterns()
+
+try:
+    import debug_toolbar
+except ImportError:
+    pass
+else:
+    urlpatterns += patterns('',
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    )
 
 if settings.DEBUG:
     urlpatterns += patterns('',
@@ -177,10 +193,10 @@ if settings.DEBUG:
          {'document_root': settings.STATIC_ROOT, 'show_indexes': True}),
         (r'^user-data/(?P<path>.*)$', 'django.views.static.serve',
          {'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
-        (r'^raw_template/(?P<template>.*)',
-            'django.views.generic.simple.direct_to_template'),
     )
 
-def handler500(request, template_name='500.html'):
-    t = loader.get_template(template_name)
-    return http.HttpResponseServerError(t.render(RequestContext(request)))
+def handler500(request):
+    return render(request, '500.html', status=500)
+
+def handler403(request):
+    return render(request, '403.html', status=403)

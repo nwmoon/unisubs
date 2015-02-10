@@ -5,6 +5,7 @@ import os
 import time 
 from django.test import TestCase
 from django.core import management
+from videos.models import Video
 from webdriver_testing.pages.site_pages import site_modals
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing import data_helpers
@@ -20,13 +21,19 @@ class TestCaseTools(WebdriverTestCase):
     def setUpClass(cls):
         super(TestCaseTools, cls).setUpClass()
         cls.modal = site_modals.SiteModals(cls)
-        cls.user = UserFactory.create()
         cls.data_utils = data_helpers.DataHelpers()
-        data = {'url': 'http://www.youtube.com/watch?v=5CKwCfLUwj4',
-                'video__title': 'Open Source Philosophy',
-                                 'type': 'Y'
-               }
-        cls.video = cls.data_utils.create_video(**data)
+        cls.editor_pg = editor_page.EditorPage(cls)
+        cls.video_pg = video_page.VideoPage(cls)
+        cls.user = UserFactory.create()
+        cls.video_pg.open_page('auth/login/')
+        cls.video_pg.log_in(cls.user.username, 'password')
+        data = { 'video_url': 'http://www.youtube.com/watch?v=5CKwCfLUwj4',
+                 'title': 'Open Source Philosophy' }
+        url_part = 'videos/'
+        r = cls.data_utils.make_request(cls.user, 'post', url_part, **data)
+        cls.video, _  = Video.get_or_create_for_url(
+                    'http://www.youtube.com/watch?v=5CKwCfLUwj4')        
+
         cls.data_utils.add_subs(video=cls.video)
         langs = ['en', 'da', 'ar', 'tr', 'zh-cn', 'nl']
 
@@ -42,17 +49,12 @@ class TestCaseTools(WebdriverTestCase):
                    }
             cls.data_utils.add_subs(**defaults)
         management.call_command('update_index', interactive=False) 
-        cls.editor_pg = editor_page.EditorPage(cls)
-        cls.video_pg = video_page.VideoPage(cls)
-        cls.video_pg.open_page('auth/login/', alert_check=True)
-        cls.video_pg.log_in(cls.user.username, 'password')
 
     def tearDown(self):
         try:
             self.editor_pg.exit()
         except:
-            self.editor_pg.open_page('/')
-            self.editor_pg.handle_js_alert('accept') 
+            pass
 
     def test_timings_present_for_new_translation(self):
         """New translation starts with lines and times. """
@@ -89,14 +91,4 @@ class TestCaseTools(WebdriverTestCase):
         self.editor_pg.open_ed_with_base(self.video.video_id, 'sv', 'nl')
         self.editor_pg.select_ref_language('Dutch')
         time.sleep(3)
-        self.assertEqual("Element not displayed", self.editor_pg.copy_timings())
-
-    def test_copy_timings_reference_private(self):
-        """No copy in menu if reference subs are draft (private). """
-        sl_tr = self.video.subtitle_language('tr').get_tip(full=True)
-        sl_tr.visibility_override = 'private'
-        sl_tr.save()
-
-        self.editor_pg.open_editor_page(self.video.video_id, 'en')
-        self.editor_pg.select_ref_language('Turkish')
         self.assertEqual("Element not displayed", self.editor_pg.copy_timings())

@@ -46,12 +46,16 @@ var angular = angular || null;
     var getVideoLangAPIUrl = function(videoId) {
         return API_BASE_PATH_VIDEOS + videoId + '/languages/';
     };
+    var getSubtitlesAPIURL = function(videoId, languageCode) {
+        return ('/api/videos/' + videoId +
+                '/languages/' + languageCode + '/subtitles/');
+    };
     var getActionAPIUrl = function(videoId, languageCode) {
-        return getSubtitleSaveAPIUrl(videoId, languageCode) + 'actions/';
+        return getSubtitlesAPIURL(videoId, languageCode) + 'actions/';
     };
 
     var getNoteAPIUrl = function(videoId, languageCode) {
-        return getSubtitleSaveAPIUrl(videoId, languageCode) + 'notes/';
+        return getSubtitlesAPIURL(videoId, languageCode) + 'notes/';
     };
 
     /*

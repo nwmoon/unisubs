@@ -1,6 +1,7 @@
 {% extends "messages/base.html" %}
 
 {% load paginator i18n %}
+{% load url from future %}
 
 {% block title %}
     {% trans 'Messages - Sent' %} | Amara
@@ -10,7 +11,7 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% url messages:rpc_api %}" type="text/javascript"></script>       
+    <script src="{% url "messages:rpc_api" %}" type="text/javascript"></script>       
     <script type="text/javascript">
         window.STATIC_URL = '{{ STATIC_URL }}';
         window.DELETE_MESSAGE_CONFIRM = '{% trans 'Do you really wish to delete this message?' %}';

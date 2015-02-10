@@ -25,8 +25,8 @@ class TestCaseTranscribing(WebdriverTestCase):
         self.data_utils = data_helpers.DataHelpers()
         self.modal = site_modals.SiteModals(self)
         self.editor_pg = editor_page.EditorPage(self)
-        td = {'url': ('http://qa.pculture.org/amara_tests/'
-                   'Birds_short.webmsd.webm')
+        td = {'video_url': ('http://qa.pculture.org/amara_tests/'
+                            'Birds_short.webmsd.webm')
              }
         self.test_video = self.data_utils.create_video(**td)
         self.video_pg = video_page.VideoPage(self)

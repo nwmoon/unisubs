@@ -25,6 +25,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models import query, Q
 from django.utils.translation import ugettext_lazy as _
+from gdata.client import RequestError
 import babelsubs
 # because of our insane circular imports we need to import haystack right here
 # or else things blow up
@@ -32,7 +33,8 @@ import haystack
 
 from auth.models import CustomUser as User
 from externalsites import syncing
-from externalsites.exceptions import SyncingError, YouTubeAccountExistsError
+from externalsites.exceptions import (SyncingError, RetryableSyncingError,
+                                      YouTubeAccountExistsError)
 from subtitles.models import SubtitleLanguage, SubtitleVersion
 from teams.models import Team
 from utils import youtube
@@ -97,6 +99,17 @@ class ExternalAccount(models.Model):
     owner_id = models.IntegerField()
 
     objects = ExternalAccountManager()
+
+    def delete(self):
+        models_to_delete = [
+            SyncedSubtitleVersion,
+            SyncHistory,
+        ]
+        for model in models_to_delete:
+            qs = model.objects.filter(account_type=self.account_type,
+                                      account_id=self.id)
+            qs.delete()
+        super(ExternalAccount, self).delete()
 
     @property
     def team(self):
@@ -462,13 +475,25 @@ class YouTubeAccount(ExternalAccount):
             channel_id=video_url.owner_username)
 
     def do_update_subtitles(self, video_url, language, version):
-        """Do the work needed to update subititles.
+        """Do the work needed to update subtitles.
 
         Subclasses must implement this method.
         """
         access_token = youtube.get_new_access_token(self.oauth_refresh_token)
-        syncing.youtube.update_subtitles(video_url.videoid, access_token,
-                                         version)
+        try:
+            syncing.youtube.update_subtitles(video_url.videoid, access_token,
+                                             version)
+        except RequestError, e:
+            # If the exception was for a quota error, we want to try to resync
+            # later.  The documentation around these errors isn't great, hence
+            # the paranoid try.. except block here
+            try:
+                if 'too_many_recent_calls' in e.body:
+                    raise RetryableSyncingError(e, 'Youtube Quota Error')
+            except:
+                pass
+            # should re-raise the error so that the SyncHistory gets updated
+            raise
 
     def do_delete_subtitles(self, video_url, language):
         access_token = youtube.get_new_access_token(self.oauth_refresh_token)
@@ -621,10 +646,13 @@ class SyncHistoryManager(models.Manager):
         return self.filter(language=language).order_by('-id')
 
     def create_for_success(self, **kwargs):
-        # for SyncingError, we just use the message directly, since it
-        # describes a known failure point, for other errors we convert the
-        # object to a string
-        return self.create(result=SyncHistory.RESULT_SUCCESS, **kwargs)
+        sh = self.create(result=SyncHistory.RESULT_SUCCESS, **kwargs)
+        # clear the retry flag for this account/language since we just
+        # successfully synced.
+        self.filter(account_type=sh.account_type, account_id=sh.account_id,
+                    video_url=sh.video_url, language=sh.language,
+                    retry=True).update(retry=False)
+        return sh
 
     def create_for_error(self, e, **kwargs):
         # for SyncingError, we just use the message directly, since it
@@ -634,6 +662,8 @@ class SyncHistoryManager(models.Manager):
             details = e.msg
         else:
             details = str(e)
+        if 'retry' not in kwargs:
+            kwargs['retry'] = isinstance(e, RetryableSyncingError)
         return self.create(result=SyncHistory.RESULT_ERROR, details=details,
                            **kwargs)
 
@@ -648,6 +678,23 @@ class SyncHistoryManager(models.Manager):
 
     def get_query_set(self):
         return SyncHistoryQuerySet(self.model)
+
+    def get_attempt_to_resync(self):
+        """Lookup failed sync attempt that we should retry.
+
+        Returns:
+            SyncHistory object to retry or None if there are no sync attempts
+            to retry.  We will clear the retry flag before returning the
+            SyncHistory object.
+        """
+        qs = self.filter(retry=True)[:1]
+        try:
+            sh = qs.select_related('video_url', 'language').get()
+        except SyncHistory.DoesNotExist:
+            return None
+        sh.retry = False
+        sh.save()
+        return sh
 
 class SyncHistory(models.Model):
     """History of all subtitle sync attempts."""
@@ -677,6 +724,8 @@ class SyncHistory(models.Model):
     version = models.ForeignKey(SubtitleVersion, null=True, blank=True)
     result = models.CharField(max_length=1, choices=RESULT_CHOICES)
     details = models.CharField(max_length=255, blank=True, default='')
+    # should we try to resync these subtitles?
+    retry = models.BooleanField(default=False)
 
     objects = SyncHistoryManager()
 

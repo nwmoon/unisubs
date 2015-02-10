@@ -57,8 +57,6 @@ class SearchForm(forms.Form):
         ('total_views', _(u'Total Views')),
     )
     q = forms.CharField(label=_(u'query'), required=False)
-    sort = forms.ChoiceField(choices=SORT_CHOICES, required=False, initial='score',
-                             label=_(u'Sort By'))
     langs = forms.ChoiceField(choices=ALL_LANGUAGES, required=False, label=_(u'Subtitled Into'),
                               help_text=_(u'Left blank for any language'), initial='')
     video_lang = forms.ChoiceField(choices=ALL_LANGUAGES, required=False, label=_(u'Video In'),
@@ -80,24 +78,6 @@ class SearchForm(forms.Form):
         return (self.cleaned_data['q'] or
                 self.cleaned_data['langs'] or
                 self.cleaned_data['video_lang'])
-
-    def get_display_views(self):
-        if not hasattr(self, 'cleaned_data'):
-            return
-
-        sort = self.cleaned_data.get('sort')
-
-        if not sort:
-            return
-
-        if sort == 'today_views':
-            return 'today'
-        elif sort == 'week_views':
-            return 'week'
-        elif sort == 'month_views':
-            return 'month'
-        elif sort == 'total_views':
-            return 'total'
 
     def _make_choices_from_faceting(self, data):
         choices = []

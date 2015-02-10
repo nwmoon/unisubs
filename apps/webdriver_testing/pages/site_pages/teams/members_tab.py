@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import time
+
 from webdriver_testing.pages.site_pages.teams import ATeamPage
 
 class MembersTab(ATeamPage):
@@ -64,7 +65,7 @@ class MembersTab(ATeamPage):
         return self.is_element_present(self._INVITE_MEMBERS)
 
 
-    def invite_user_via_form(self, username, message, role):
+    def invite_user_via_form(self, user, message, role):
         """Invite a user to a team via the invite form.
 
         """
@@ -72,11 +73,16 @@ class MembersTab(ATeamPage):
         self.click_by_css(self._INVITE_MEMBERS)
         self.wait_for_element_present(self._INVITEE_USERNAME_PULLDOWN)
         self.click_by_css(self._INVITEE_USERNAME_PULLDOWN)
-        self.type_by_css('div.chzn-search input', username)
-        if len(username.split()) == 1:
-            username = " ".join([username, '('+username+')'])
+        self.type_by_css('div.chzn-search input', user.username)
+        if user.first_name:
+            user = "{0} ({1} {2})".format(user.username,
+                                          user.first_name,
+                                          user.last_name)
+        else:
+            user = "{0} ({0})".format(user.username)
+       
         self.select_from_chosen(self._INVITEE_USERNAME, 
-                                [username])
+                                user)
         self.type_by_css(self._INVITEE_MESSAGE, message)
         self.select_option_by_text(self._INVITEE_ROLE, role)
         self.submit_by_css(self._INVITATION_SEND)

@@ -22,7 +22,7 @@
 #  link context.  For usage documentation see:
 #
 #     http://www.tummy.com/Community/Articles/django-pagination/
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 from messages.views import rpc_router
 
 urlpatterns = patterns('messages.views',

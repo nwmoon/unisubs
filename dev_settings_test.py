@@ -52,11 +52,11 @@ PASSWORD_HASHERS = (
 
 # Let the nose CaptureLogging plugin handle logging.  It doesn't display
 # logging at all, except if there's a test failure.
-# del LOGGING
+del LOGGING
 
 NOSE_ARGS = ['--logging-filter=test_steps, -remote_connection, '
              '-selenium.webdriver.remote.remote_connection',
-             '--with-xunit',
+             '--with-xunit', '--logging-level=ERROR',
              '--xunit-file=nosetests.xml',
             ]
 

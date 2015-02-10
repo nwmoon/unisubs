@@ -1,6 +1,7 @@
 {% extends "profiles/base.html" %}
 
 {% load i18n auth_tags profiles_tags %}
+{% load url from future %}
 
 {% block title %}{% trans "Edit Profile" %} | Amara{% endblock %}
 
@@ -86,7 +87,7 @@
             };
             $('#id_picture').change(function(){
                 $('.edit_profile').ajaxSubmit({
-                    url: '{% url profiles:edit_avatar %}',
+                    url: '{% url "profiles:edit_avatar" %}',
                     dataType: 'json',
                     success: function(response){
                         if(response.status != 'error'){
@@ -110,7 +111,7 @@
                 if(confirm('{% trans "Do you really want to delete your photo?" %}')){
                     $.ajax({
                         type: "POST",
-                        url: '{% url profiles:remove_avatar %}',
+                        url: '{% url "profiles:remove_avatar" %}',
                         data: {remove: true},
                         success: function(response){
                             console.log(response);

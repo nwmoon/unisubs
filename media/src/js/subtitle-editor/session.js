@@ -27,15 +27,7 @@ var angular = angular || null;
          * approving/recting tasks, etc.
          */
         $scope.sessionBackend = {
-            saveSubtitles: function(markComplete) {
-                return SubtitleStorage.saveSubtitles(
-                    $scope.workingSubtitles.subtitleList.toXMLString(),
-                    $scope.workingSubtitles.title,
-                    $scope.workingSubtitles.description,
-                    $scope.workingSubtitles.metadata,
-                    markComplete, null).then(this.afterSaveSubtitles);
-            },
-            saveSubtitlesWithAction: function(action) {
+            saveSubtitles: function(action) {
                 return SubtitleStorage.saveSubtitles(
                     $scope.workingSubtitles.subtitleList.toXMLString(),
                     $scope.workingSubtitles.title,
@@ -70,21 +62,19 @@ var angular = angular || null;
          *     respond to our requests.
          */
 
-        function saveSubtitles(markComplete) {
+        function saveSubtitles(action) {
+            $scope.analytics('editor', 'save', action);
             if($scope.overrides.forceSaveError) {
                 var deferred = $q.defer();
                 deferred.reject('Simulated Error');
                 return deferred.promise;
-             } else if($scope.session.subtitlesChanged || markComplete !== undefined) {
-                return $scope.sessionBackend.saveSubtitles(markComplete)
-                    .then(function() {
-                        $scope.session.subtitlesChanged = false;
-                    });
+             } else if($scope.session.subtitlesChanged) {
+                return $scope.sessionBackend.saveSubtitles(action).then(function() {
+                    $scope.session.subtitlesChanged = false;
+                });
             } else {
-                // No changes need to be saved, just return a dummy promise.
-                var deferred = $q.defer();
-                deferred.resolve(true);
-                return deferred.promise;
+                // No changes need to be saved, just perform the action
+                return $scope.sessionBackend.performAction(action);
             }
         }
 
@@ -107,10 +97,10 @@ var angular = angular || null;
                     });
                 }
             },
-            save: function() {
+            saveDraft: function() {
                 var msg = $sce.trustAsHtml('Saving&hellip;');
                 $scope.dialogManager.showFreezeBox(msg);
-                saveSubtitles().then(function onSuccess() {
+                saveSubtitles('save-draft').then(function onSuccess() {
                     $scope.dialogManager.closeFreezeBox();
                     $scope.dialogManager.openDialog('changesSaved', {
                         exit: $scope.exitEditor
@@ -120,24 +110,13 @@ var angular = angular || null;
                     $scope.dialogManager.open('save-error');
                 });
             },
-            /*
-            endorse: function() {
-                $scope.dialogManager.showFreezeBox(
-                        $sce.trustAsHtml('Publishing subtitles&hellip;'));
-                if(EditorData.task_id) {
-                    var promise = saveSubtitles(true)
-                        .then($scope.sessionBackend.approveTask);
-                } else {
-                    var promise = saveSubtitles(true);
-                }
-                promise.then(function() {
-                    $scope.exitEditor();
-                });
-            },
-            */
         };
 
-        $scope.actions = _.map(EditorData.actions, function(action) {
+        var visibleActions = _.filter(EditorData.actions, function(action) {
+            return action.name != 'save-draft';
+        });
+
+        $scope.actions = _.map(visibleActions, function(action) {
             var sessionAction = {
                 label: action.label,
                 class: action.class,
@@ -151,13 +130,7 @@ var angular = angular || null;
                 perform: function() {
                     var msg = $sce.trustAsHtml(action.in_progress_text + '&hellip;');
                     $scope.dialogManager.showFreezeBox(msg);
-                    if($scope.session.subtitlesChanged) {
-                        var promise = $scope.sessionBackend.saveSubtitlesWithAction(action.name);
-                    } else {
-                        var promise = $scope.sessionBackend.performAction(action.name);
-                    }
-
-                    promise.then(
+                    saveSubtitles(action.name).then(
                         function onSuccess() {
                             $scope.dialogManager.closeFreezeBox();
                             $scope.exitEditor();
@@ -165,7 +138,8 @@ var angular = angular || null;
                         function onError() {
                             $scope.dialogManager.closeFreezeBox();
                             $scope.dialogManager.open('save-error');
-                        });
+                        }
+                    );
                 }
             };
 
@@ -187,7 +161,7 @@ var angular = angular || null;
         $scope.onSaveDraftClicked = function($event) {
             $event.preventDefault();
             $event.stopPropagation();
-            $scope.session.save();
+            $scope.session.saveDraft();
         }
 
         $scope.$root.$on('work-done', function() {

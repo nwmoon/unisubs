@@ -42,8 +42,8 @@ div.admin-edit-specific-version select {
   color: #656565;
   margin: 0;
   font-size: 14px;
-  font-family: 'Raleway',"Helvetica Neue",Helvetica,sans-serif;
-  font-weight: 100;
+  font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+  font-weight: 200;
   letter-spacing: 0.035em;
   word-spacing: 0.04em;
   line-height: 1.42857;
@@ -86,9 +86,9 @@ body.profile .email-confirmation, body.dashboard .email-confirmation {
 #main_bar {
     font-size: 14px;
     font-weight: 100;
-    letter-spacing: .035em;
+    letter-spacing: .06em;
     word-spacing: 0.04em;
-    font-family:  'Raleway', "Helvetica Neue", Helvetica, sans-serif;
+    font-family:  "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;;
     background-color: #f2f2f3;
     color: #f2f2f3;
     height: 55px;
@@ -107,7 +107,7 @@ body.profile .email-confirmation, body.dashboard .email-confirmation {
     background: transparent url(../images/icon_nav_search.png) 0 0 no-repeat;
     border: 0;
     color: #555;
-    font-family: 'Raleway', Helvetica, Arial, sans-serif;
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;;
     font-size: 12px;
     padding: 0 0 0 25px;
     width: 115px;
@@ -132,7 +132,7 @@ body.profile .email-confirmation, body.dashboard .email-confirmation {
     padding: 0;
 }
 #main_bar ul#bar_menu li#nav_submit {
-    font-family:  'Raleway', "Helvetica Neue", Helvetica, sans-serif;
+    font-family:  "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;;
 }
 #main_bar ul#bar_menu li#nav_submit a:hover em.icon {
     opacity: 1.0
@@ -244,7 +244,7 @@ body.profile .email-confirmation, body.dashboard .email-confirmation {
 #main_bar ul#bar_menu li a {
     color: #656565;
     display: block;
-    font-family: "Raleway", Helvetica, Arial, sans-serif;
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;;
     font-size: 14px;
     font-weight: 300;
     padding: 20px 15px;
@@ -323,7 +323,7 @@ body.profile .email-confirmation, body.dashboard .email-confirmation {
 }
 
 .help-tab a {
-  font-family: 'Raleway', "Helvetica Neue", Helvetica, sans-serif;
+  font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;;
   color: #f2f2f3;
   font-size: 13px;
   font-weight: 300;
@@ -499,7 +499,7 @@ ul#subnav li a:hover {
 
 #footer {
   background-color: #f2f2f3;
-  font-family: 'Raleway',"Helvetica Neue",Helvetica,sans-serif;
+  font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;;
   font-size: 14px;
   letter-spacing: 0.035em;
   word-spacing: 0.04em;

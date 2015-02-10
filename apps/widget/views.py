@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
+import json
 import re
 import time
 import traceback
 
 import babelsubs
 
-import simplejson as json
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -29,22 +29,20 @@ from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.db.models import ObjectDoesNotExist
 from django.http import HttpResponse, Http404, HttpResponseServerError, HttpResponseRedirect
-from django.shortcuts import render_to_response, redirect, get_object_or_404
+from django.shortcuts import (render, render_to_response, redirect,
+                              get_object_or_404)
 from django.template import RequestContext
 from django.template.defaultfilters import urlize, linebreaks, force_escape
 from django.utils.encoding import iri_to_uri
 from django.utils.http import cookie_date
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.simple import direct_to_template
 from django.views.decorators.clickjacking import xframe_options_exempt
-from simplejson.decoder import JSONDecodeError
 
 import widget
 from auth.models import CustomUser
 from teams.models import Task
 from teams.permissions import get_member
-from uslogging.models import WidgetDialogCall
 from utils import DEFAULT_PROTOCOL
 from utils.metrics import Meter
 from videos import models
@@ -60,8 +58,9 @@ def embedder_widget(request, analytics):
     """
     This serves the new embedder.
     """
-    return direct_to_template(request, 'embedder-widget.html',
-                              {'noanalytics': analytics == "noanalytics/"})
+    return render(request, 'embedder-widget.html', {
+        'noanalytics': analytics == "noanalytics/",
+    })
 
 def embed(request, version_no=''):
     """
@@ -376,17 +375,16 @@ def rpc(request, method_name, null=False):
     Meter('widget-rpc-calls').inc()
     if method_name[:1] == '_':
         return HttpResponseServerError('cant call private method')
-    _log_call(request.browser_id, method_name, request.POST.copy())
     args = { 'request': request }
     try:
         for k, v in request.POST.items():
             try:
                 args[k.encode('ascii')] = json.loads(v)
-            except JSONDecodeError:
+            except ValueError:
                 pass
     except UnicodeEncodeError:
         return HttpResponseServerError('non-ascii chars received')
-    except JSONDecodeError:
+    except ValueError:
         return HttpResponseServerError('invalid json')
     rpc_module = null_rpc_views if null else rpc_views
     try:
@@ -408,13 +406,12 @@ def rpc(request, method_name, null=False):
 
 @csrf_exempt
 def xd_rpc(request, method_name, null=False):
-    _log_call(request.browser_id, method_name, request.POST.copy())
     args = { 'request' : request }
     for k, v in request.POST.items():
         if k[0:4] == 'xdp:':
             try:
                 args[k[4:].encode('ascii')] = json.loads(v)
-            except JSONDecodeError:
+            except ValueError:
                 pass
     rpc_module = null_rpc_views if null else rpc_views
     func = getattr(rpc_module, method_name)
@@ -429,7 +426,6 @@ def xd_rpc(request, method_name, null=False):
 
 def jsonp(request, method_name, null=False):
     Meter('widget-jsonp-calls').inc()
-    _log_call(request.browser_id, method_name, request.GET.copy())
     callback = request.GET.get('callback', 'callback')
     args = { 'request' : request }
     for k, v in request.GET.items():
@@ -441,12 +437,3 @@ def jsonp(request, method_name, null=False):
     return HttpResponse(
         "{0}({1});".format(callback, json.dumps(result)),
         "text/javascript")
-
-def _log_call(browser_id, method_name, request_args):
-    if method_name in ['start_editing', 'fork', 'set_title',
-                       'save_subtitles', 'finished_subtitles']:
-        call = WidgetDialogCall(
-            browser_id=browser_id,
-            method=method_name,
-            request_args=request_args)
-        call.save()

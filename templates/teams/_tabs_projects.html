@@ -1,21 +1,22 @@
 {% load i18n teams_tags query_string %}
+{% load url from future %}
 
 <ul class="tabs">
     <li{% if current == "videos" %} class="current" {% endif %}>
-        <a href="{% url teams:project_video_list slug=team.slug,project_slug=project.slug %}{% query_string request.GET %}">
+        <a href="{% url "teams:project_video_list" slug=team.slug project_slug=project.slug %}{% query_string request.GET %}">
             {% trans "Videos" %}
         </a>
     </li>
     {% if team|is_team_member:user %}
         <li{% if current == "tasks" %} class="current" {% endif %}>
-            <a href="{% url teams:project_tasks slug=team.slug, project_slug=project.slug %}?assignee=none">
+            <a href="{% url "teams:project_tasks" slug=team.slug project_slug=project.slug %}?assignee=none">
                 {% trans "Tasks" %}
             </a>
         </li>
 
         {% if team|can_view_settings_tab:user %}
             <li{% if current == "settings" %} class="current" {% endif %}>
-                <a href="{% url teams:edit_project slug=team.slug project_slug=project.slug %}">
+                <a href="{% url "teams:edit_project" slug=team.slug project_slug=project.slug %}">
                     {% trans "Settings" %}
                 </a>
             </li>

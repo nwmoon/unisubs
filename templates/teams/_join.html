@@ -1,11 +1,12 @@
 {% load i18n teams_tags %}
+{% load url from future %}
 
 {% if not team|is_team_member:user %}
     <div class="join">
         {% if user.is_authenticated %}
             {% if team.is_open %}
                 {% if team.auth_provider and user.partner.slug != team.auth_provider.code %}
-                    <p><a href="{% url logout %}?next={{ team.auth_provider.url }}">
+                    <p><a href="{% url "logout" %}?next={{ team.auth_provider.url }}">
                         {% trans 'Join via' %}
                         {% if team.auth_provider.image_url %}
                             <img src="{{ team.auth_provider.image_url }}" alt="{{ team.auth_provider.verbose_name }}"/>
@@ -24,7 +25,7 @@
 
             {% if team.is_by_application %}
                 {% if team.auth_provider and user.partner.slug != team.auth_provider.code %}
-                    <p><a href="{% url logout %}?next={{ team.auth_provider.url }}">
+                    <p><a href="{% url "logout" %}?next={{ team.auth_provider.url }}">
                         {% trans 'Login via' %}
                         {% if team.auth_provider.image_url %}
                             <img src="{{ team.auth_provider.image_url }}" alt="{{ team.auth_provider.verbose_name }}"/>
@@ -57,9 +58,9 @@
                 </a></p>
             {% else %}
                 {% if team.is_open %}
-                    <p><a id="signin-join" href="{% url auth:login %}?next={% url teams:join_team team.slug %}">{% trans "Join our team" %}</a></p>
+                    <p><a id="signin-join" href="{% url "auth:login" %}?next={% url "teams:join_team" team.slug %}">{% trans "Join our team" %}</a></p>
                 {% else %}
-                    <p><a id="signin-join" href="{% url auth:login %}?next={% url teams:dashboard team.slug %}">{% trans "Sign in" %}</a> {% trans "to join our team" %}</p>
+                    <p><a id="signin-join" href="{% url "auth:login" %}?next={% url "teams:dashboard" team.slug %}">{% trans "Sign in" %}</a> {% trans "to join our team" %}</p>
                 {% endif %}
             {% endif %}
         {% endif %}

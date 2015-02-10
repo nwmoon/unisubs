@@ -19,9 +19,11 @@
 from django import forms
 from django.contrib import admin
 from django.contrib import messages as django_messages
+from django.contrib.admin.views.main import ChangeList
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
+from auth.models import CustomUser as User
 from messages.forms import TeamAdminPageMessageForm
 from teams.models import (
     Team, TeamMember, TeamVideo, Workflow, Task, Setting, MembershipNarrowing,
@@ -72,10 +74,45 @@ class TeamAdmin(admin.ModelAdmin):
         queryset.update(highlight=False)
     unhighlight.short_description = _('Unfeature teams')
 
+class TeamMemberChangeList(ChangeList):
+    # This class is a bit of a hack.
+    #
+    # We want to fetch the team and user fields for TeamMember without created
+    # a bunch of extra queries.  Normally we would use select_related(), but
+    # this causes things to run slowly.  So what we really want to use is
+    # prefetch_related(), but it has a bug in Django 1.4 that prevents it from
+    # working with model inheritance like we use with CustomUser (ticket
+    # 19420).
+    #
+    # To work around all this, we manually do the work that prefetch_related
+    # does.
+
+    def get_results(self, request):
+        super(TeamMemberChangeList, self).get_results(request)
+        self.join_users(self.result_list)
+        self.join_teams(self.result_list)
+
+    def join_users(self, results):
+        user_ids = [r.user_id for r in results]
+        user_qs = User.objects.filter(id__in=user_ids)
+        user_map = dict((u.id, u) for u in user_qs)
+        for member in results:
+            member.user = user_map.get(member.user_id)
+
+    def join_teams(self, results):
+        team_ids = [r.team_id for r in results]
+        team_qs = Team.objects.filter(id__in=team_ids)
+        team_map = dict((u.id, u) for u in team_qs)
+        for member in results:
+            member.team = team_map.get(member.team_id)
+
 class TeamMemberAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'team__name', 'user__first_name', 'user__last_name')
     list_display = ('role', 'team_link', 'user_link', 'created',)
     raw_id_fields = ('user', 'team')
+
+    def get_changelist(self, request, **kwargs):
+        return TeamMemberChangeList
 
     def team_link(self, obj):
         url = reverse('admin:teams_team_change', args=[obj.team_id])
@@ -200,6 +237,7 @@ class BillingReportAdmin(admin.ModelAdmin):
 
 class InviteAdmin(admin.ModelAdmin):
     list_display = ('user', 'team', 'role', 'approved',)
+    raw_id_fields = ('user',)
 
 
 class ApplicationAdmin(admin.ModelAdmin):
@@ -237,6 +275,7 @@ class ApplicationAdmin(admin.ModelAdmin):
 class BillingRecordAdmin(admin.ModelAdmin):
     list_display = (
         'video',
+        'project',
         'new_subtitle_language',
         'minutes',
         'is_original',
@@ -249,7 +288,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
     list_filter = ('team', 'created', 'source', 'is_original',)
     raw_id_fields = ('user', 'subtitle_language',
                      'new_subtitle_language', 'subtitle_version',
-                    'new_subtitle_version', 'video' ,
+                     'new_subtitle_version', 'video', 'project',
     )
 
 

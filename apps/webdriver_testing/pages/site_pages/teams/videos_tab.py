@@ -246,6 +246,7 @@ class VideosTab(ATeamPage):
     def edit_video(self, video=None, project=None, team=None, thumb=None):
         self.logger.info('Editing the video %s' % video)
         self._click_video_action('Edit', video)
+        time.sleep(3)
         if team:
             self.logger.info('Changing the team to %s' % team)
             self.click_by_css('a.chzn-single span')
@@ -262,7 +263,9 @@ class VideosTab(ATeamPage):
             if thumb:
                 self.logger.info('Changing the thumbnail')
                 self.type_by_css(self._THUMB, thumb)
-            self.click_by_css(self._SUBMIT)
+            time.sleep(3)
+            self.wait_for_element_visible('form.edit-video div button')
+            self.click_by_css('form.edit-video div button')
         else: #cancel out of the dialog with no actions
             self.logger.info('Made no changes.')
 
@@ -366,4 +369,5 @@ class VideosTab(ATeamPage):
 
     def submit_bulk_move(self):
         self.click_by_css(self._MOVE_SELECTED) 
+        time.sleep(3)
 

@@ -19,7 +19,6 @@
 var angular = angular || null;
 (function(){
     var module = angular.module('amara.SubtitleEditor.subtitles.filters', []);
-    var HIDES_ON = ['deleted', 'private']
 
     /*
     * Display a human friendly format.
@@ -55,11 +54,13 @@ var angular = angular || null;
     });
     module.filter('versionDropDownDisplay', function(){
         return function (versionData){
-            var res =  'Version ' + versionData.version_no +
-                        (HIDES_ON.indexOf(versionData.visibility) > -1 ?
-                            " (" + versionData.visibility + ")":
-                            "");
-            return res;
+            if(versionData.visibility == 'private'
+                || versionData.visibility == 'deleted') {
+                return "Version " + versionData.version_no +
+                            " (" + versionData.visibility + ")";
+            } else {
+                return "Version " + versionData.version_no;
+            }
         }
     })
     module.filter('metadataTypeName', function(){

@@ -15,12 +15,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
+from datetime import datetime, timedelta
 import functools
+import json
 import logging
 import random
+import pickle
 
 import babelsubs
-from datetime import datetime
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -33,12 +36,12 @@ from django.http import (
     Http404, HttpResponseForbidden, HttpResponseRedirect, HttpResponse,
     HttpResponseBadRequest, HttpResponseServerError
 )
-from django.shortcuts import get_object_or_404, redirect, render_to_response
+from django.shortcuts import (get_object_or_404, redirect, render_to_response,
+                              render)
 from django.template import RequestContext
-from django.utils import simplejson as json
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import iri_to_uri, force_unicode
-from django.views.generic.list_detail import object_list
+from django.core.cache import cache
 
 import widget
 from auth.models import UserLanguage, CustomUser as User
@@ -51,7 +54,7 @@ from teams.forms import (
     GuidelinesMessagesForm, RenameableSettingsForm, ProjectForm, LanguagesForm,
     DeleteLanguageForm, MoveTeamVideoForm, TaskUploadForm,
     make_billing_report_form, TaskCreateSubtitlesForm,
-    TeamMultiVideoCreateSubtitlesForm, MoveVideosForm
+    TeamMultiVideoCreateSubtitlesForm, MoveVideosForm, AddVideoToTeamForm,
 )
 from teams.models import (
     Team, TeamMember, Invite, Application, TeamVideo, Task, Project, Workflow,
@@ -64,7 +67,7 @@ from teams.permissions import (
     roles_user_can_assign, can_join_team, can_edit_video, can_delete_tasks,
     can_perform_task, can_rename_team, can_change_team_settings,
     can_perform_task_for, can_delete_team, can_delete_video, can_remove_video,
-    can_delete_language, can_move_videos, can_sort_by_primary_language
+    can_delete_language, can_move_videos, can_view_stats_tab, can_sort_by_primary_language
 )
 from teams.signals import api_teamvideo_new
 from teams.tasks import (
@@ -76,6 +79,7 @@ from videos.tasks import video_changed_tasks
 from utils import render_to, render_to_json, DEFAULT_PROTOCOL
 from utils.forms import flatten_errorlists
 from utils.metrics import time as timefn
+from utils.objectlist import object_list
 from utils.panslugify import pan_slugify
 from utils.searching import get_terms
 from utils.text import fmt
@@ -90,11 +94,11 @@ from subtitles.models import SubtitleLanguage, SubtitleVersion
 from widget.rpc import add_general_settings
 from widget.views import base_widget_params
 from teams import workflows
+from statistics import compute_statistics
 
 from teams.bulk_actions import complete_approve_tasks
 
 logger = logging.getLogger("teams.views")
-
 
 TASKS_ON_PAGE = getattr(settings, 'TASKS_ON_PAGE', 20)
 TEAMS_ON_PAGE = getattr(settings, 'TEAMS_ON_PAGE', 10)
@@ -109,7 +113,7 @@ UNASSIGNED_TASKS_ON_PAGE = getattr(settings, 'UNASSIGNED_TASKS_ON_PAGE', 15)
 ACTIONS_ON_PAGE = getattr(settings, 'ACTIONS_ON_PAGE', 20)
 DEV = getattr(settings, 'DEV', False)
 DEV_OR_STAGING = DEV or getattr(settings, 'STAGING', False)
-
+ALL_LANGUAGES_DICT = dict(settings.ALL_LANGUAGES)
 BILLING_CUTOFF = getattr(settings, 'BILLING_CUTOFF', None)
 
 def get_team_for_view(slug, user, exclude_private=True):
@@ -139,7 +143,9 @@ def index(request, my_teams=False):
         qs = Team.objects.filter(members__user=request.user)
     else:
         ordering = request.GET.get('o', 'members')
-        qs = Team.objects.for_user(request.user).annotate(_member_count=Count('users__pk'))
+        qs = (Team.objects.for_user(request.user)
+              .add_videos_count().add_members_count()
+              .add_user_is_member(request.user))
 
     if q:
         qs = qs.filter(Q(name__icontains=q)|Q(description__icontains=q))
@@ -147,7 +153,7 @@ def index(request, my_teams=False):
     order_fields = {
         'name': 'name',
         'date': 'created',
-        'members': '_member_count'
+        'members': '_members_count'
     }
     order_fields_name = {
         'name': _(u'Name'),
@@ -164,18 +170,12 @@ def index(request, my_teams=False):
     if ordering in order_fields and order_type in ['asc', 'desc']:
         qs = qs.order_by(('-' if order_type == 'desc' else '')+order_fields[ordering])
 
-    highlighted_ids = list(Team.objects.for_user(request.user).filter(highlight=True).values_list('id', flat=True))
-    random.shuffle(highlighted_ids)
-    highlighted_qs = Team.objects.filter(pk__in=highlighted_ids[:HIGHTLIGHTED_TEAMS_ON_PAGE]) \
-        .annotate(_member_count=Count('users__pk'))
-
     extra_context = {
         'my_teams': my_teams,
         'query': q,
         'ordering': ordering,
         'order_type': order_type,
         'order_name': order_fields_name.get(ordering, 'name'),
-        'highlighted_qs': highlighted_qs,
     }
     return object_list(request, queryset=qs,
                        paginate_by=TEAMS_ON_PAGE,
@@ -623,7 +623,7 @@ def move_videos(request, slug, project_slug=None, languages=None):
     query = request.GET.get('q', '')
     sort = request.GET.get('sort')
     language_filter = request.GET.get('lang')
-    primary_audio_language_filter = request.GET.get('primary-audio-lang', 'any')
+    primary_audio_language_filter = request.GET.get('primary-audio-lang', 'any' if can_sort_by_primary_language(team, request.user) else None)
     language_code = language_filter if language_filter != 'any' else None
     primary_audio_language_code = primary_audio_language_filter if primary_audio_language_filter != 'any' else None
     language_mode = request.GET.get('lang-mode', '+')
@@ -634,27 +634,26 @@ def move_videos(request, slug, project_slug=None, languages=None):
                                      language_code, language_mode,
                                      sort)
 
-    # TODO: This needs to be improved but should not be too bad
-    # because it only applies on already filtered videos, and
-    # only in case there is a primary_audio_language_code filter
-    #
-    # It is to check the primary_audio_language_code
-    # which is part of video, not team_video
+    # This part is a little insane, because we have the constrain
+    # of not changing the index, and there is a shorter limit
+    # in queries to haystack or solr
     if primary_audio_language_code is not None:
-        team_videos_pks = qs.values_list('team_video_pk', flat=True)
         if primary_audio_language_code == "-":
-            team_videos = TeamVideo.objects.filter(
-                id__in=team_videos_pks,
-                video__primary_audio_language_code__in=["", None]).values_list('id', flat=True)
+            team_videos = TeamVideo.get_videos_non_language_ids(team, "")
+        elif primary_audio_language_code == "+":
+            team_videos = TeamVideo.get_videos_non_language_ids(team, "", non_empty_language_code=True)
         else:
-            team_videos = TeamVideo.objects.filter(id__in=team_videos_pks, video__primary_audio_language_code__gt="").values_list('id', flat=True)
-        # This is necessary because team_video_pk is not indexed by solr
-        qs = filter(lambda x: x.team_video_pk in team_videos, qs)
+            team_videos = TeamVideo.get_videos_non_language_ids(team, primary_audio_language_code)
 
-    # This is a temporary restriction until we properly fix
-    # the performance issues there
-    if not can_sort_by_primary_language(team, request.user):
-        primary_audio_language_filter = None
+        # For longer lists, it gets too long for solr. So we have to exclude chunk by chunk
+        # rather than filter.
+        # Also we get around the missing team_video_pk index by using the id, which we
+        # know how it is generated
+        # This does not work for very long lists though, that's why we block that
+        # feature for large teams
+        for chunk in (team_videos[pos:pos + 1000] for pos in xrange(0, len(team_videos), 1000)):
+            qs = qs.exclude(id__in=map(lambda x: "teams.teamvideo.%s" % x, chunk))
+
     extra_context = {
         'team': team,
         'member': member,
@@ -743,6 +742,23 @@ def move_videos(request, slug, project_slug=None, languages=None):
                     record._team_video.original_language_code = record.original_language
                     record._team_video.completed_langs = record.video_completed_langs
     return extra_context
+
+@login_required
+def add_video_to_team(request, video_id):
+    video = get_object_or_404(Video, video_id=video_id)
+    if request.method == 'POST':
+        form = AddVideoToTeamForm(request.user, request.POST)
+        if form.is_valid():
+            team = Team.objects.get(id=form.cleaned_data['team'])
+            team_video = TeamVideo.objects.create(video=video, team=team)
+            update_one_team_video.delay(team_video.pk)
+            return redirect(video.get_absolute_url())
+    else:
+        form = AddVideoToTeamForm(request.user)
+    return render(request, 'teams/add-video-to-team.html', {
+        'video': video,
+        'form': form,
+    })
 
 @render_to('teams/add_video.html')
 @login_required
@@ -892,10 +908,44 @@ def remove_video(request, team_video_pk):
         messages.success(request, msg)
         return HttpResponseRedirect(next)
 
-@timefn
-@render_to('teams/activity.html')
-def activity(request, slug):
+
+class TableCell():
+    """Convenience class to pass
+    table data to template, namely
+    cell contents and whether they are
+    headers.
+    """
+    def __init__(self, content, header=False):
+        self.content = content
+        self.header = header
+    def __repr__(self):
+        return str(self.content)
+
+@login_required
+def statistics(request, slug, tab='teamstats'):
+    """For the team activity, statistics tabs
+    """
     team = get_team_for_view(slug, request.user)
+    if tab == 'teamstats' and not can_view_stats_tab(team, request.user):
+        return HttpResponseForbidden("Not allowed")
+    cache_key = 'stats-' + slug + '-' + tab
+    cached_context = cache.get(cache_key)
+    if cached_context:
+        context = pickle.loads(cached_context)
+    else:
+        context = compute_statistics(team, stats_type=tab)
+        cache.set(cache_key, pickle.dumps(context), 60*60*24)
+    context['activity_tab'] = tab
+    context['team'] = team
+    return render(request, 'teams/statistics.html', context)
+
+def activity(request, slug, tab='videos'):
+    team = get_team_for_view(slug, request.user)
+
+    try:
+        page = int(request.GET['page'])
+    except (ValueError, KeyError):
+        page = 1
 
     user = request.user if request.user.is_authenticated() else None
     try:
@@ -907,25 +957,72 @@ def activity(request, slug):
     #
     # Much like the Tasks page, this query performs extremely poorly when run
     # normally.  So we split it into two parts here so that each will run fast.
-    action_ids = Action.objects.for_team(team, ids=True)
-    action_ids, pagination_info = paginate(action_ids, ACTIONS_ON_PAGE,
-                                           request.GET.get('page'))
-    action_ids = list(action_ids)
+    if tab == 'team':
+        action_qs = Action.objects.filter(team=team)
+    else:
+        video_language = request.GET.get('video_language')
+        if video_language == 'any':
+            video_language = None
+        subtitles_language = request.GET.get('subtitles_language')
+        if subtitles_language == 'any':
+            subtitles_language = None
+        action_qs = team.fetch_video_actions(video_language,
+                                             subtitles_language)
+    end = page * ACTIONS_ON_PAGE
+    start = end - ACTIONS_ON_PAGE
 
-    activity_list = list(Action.objects.filter(id__in=action_ids).select_related(
-            'video', 'user', 'new_language', 'new_language__video'
-    ).order_by())
-    activity_list.sort(key=lambda a: action_ids.index(a.pk))
+    if request.GET.get('action_type') and request.GET.get('action_type') != 'any':
+        action_qs = action_qs.filter(action_type = int(request.GET.get('action_type')))
+
+    action_qs = action_qs.select_related('new_language', 'video')
+
+    sort = request.GET.get('sort', '-created')
+    action_qs = action_qs.order_by(sort)
+
+    action_qs = action_qs[start:end].select_related(
+        'user', 'new_language__video'
+    )
+
+    activity_list = list(action_qs)
+    language_choices = None
+    if tab == 'videos':
+        readable_langs = TeamLanguagePreference.objects.get_readable(team)
+        language_choices = [(code, name) for code, name in get_language_choices()
+                            if code in readable_langs]
+    action_types = Action.TYPES_CATEGORIES[tab]
+
+    has_more = len(activity_list) >= ACTIONS_ON_PAGE
+
+    query = request.GET.get('q', '')
+
+    filtered = bool(set(request.GET.keys()).intersection([
+        'action_type', 'language', 'sort']))
 
     context = {
         'activity_list': activity_list,
+        'query': query,
+        'filtered': filtered,
+        'action_types': action_types,
+        'language_choices': language_choices,
         'team': team,
-        'member': member
+        'member': member,
+        'activity_tab': tab,
+        'next_page': page + 1,
+        'has_more': has_more
     }
-    context.update(pagination_info)
+    if not request.is_ajax():
+        return render(request, 'teams/activity.html', context)
+    else:
+        # for ajax requests we only want to return the activity list, since
+        # that's all that the JS code needs.
+        return render(request, 'teams/_activity-list.html', context)
 
-    return context
-
+def team_activity(request, slug):
+    return activity(request, slug, tab='team')
+def teamstatistics_activity(request, slug):
+    return statistics(request, slug, tab='teamstats')
+def videosstatistics_activity(request, slug):
+    return statistics(request, slug, tab='videosstats')
 
 # Members
 @timefn
@@ -1401,7 +1498,7 @@ def _tasks_list(request, team, project, filters, user):
         if filters['language'] != 'all':
             tasks = tasks.filter(language=filters['language'])
     elif request.user.is_authenticated() and request.user.get_languages():
-        languages = [ul.language for ul in request.user.get_languages()] + ['']
+        languages = request.user.get_languages() + ['']
         tasks = tasks.filter(language__in=languages)
 
     if filters.get('q'):
@@ -1544,7 +1641,7 @@ def old_dashboard(request, team):
             for tv in team_videos:
                 videos.append(tv.teamvideo)
         else:
-            lang_list = [l.language for l in user_languages]
+            lang_list = user_languages
 
             for video in team_videos.all():
                 subtitled_languages = (video.newsubtitlelanguage_set
@@ -1553,7 +1650,7 @@ def old_dashboard(request, team):
                                                  .values_list("language_code", flat=True))
                 if len(subtitled_languages) != len(user_languages):
                     tv = video.teamvideo
-                    tv.languages = [l for l in user_languages if l.language not in subtitled_languages]
+                    tv.languages = [l for l in user_languages if l not in subtitled_languages]
                     videos.append(tv)
     else:
         videos = []
@@ -2403,8 +2500,8 @@ def billing(request):
 
     else:
         form = BillingReportForm()
-
-    reports = BillingReport.objects.all().order_by('-pk')
+    # We only get reports started less than a year ago, and prefetch teams
+    reports = BillingReport.objects.filter(start_date__gte=datetime.now()-timedelta(days=61)).prefetch_related('teams').order_by('-pk')
 
     return render_to_response('teams/billing/reports.html', {
         'form': form,

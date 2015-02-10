@@ -15,14 +15,20 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program.  If not, see http://www.gnu.org/licenses/agpl-3.0.html.
 
-from django.conf.urls import patterns, url
+from django.conf.urls import patterns, url, include
+from rest_framework import routers
+
 from api import views
 
-urlpatterns = patterns('',
+
+router = routers.SimpleRouter()
+router.register(r'videos', views.VideoViewSet)
+
+urlpatterns = router.urls + patterns('',
     url(r'^videos/(?P<video_id>[\w\d_.-]+)'
-        '/languages/(?P<language_code>[\w\d-]+)/subtitles/actions/',
-        views.Actions.as_view()),
+        '/languages/(?P<language_code>[\w\d-]+)/subtitles/actions/$',
+        views.Actions.as_view(), name='subtitle-actions'),
     url(r'^videos/(?P<video_id>[\w\d_.-]+)'
-        '/languages/(?P<language_code>[\w\d-]+)/subtitles/notes/',
+        '/languages/(?P<language_code>[\w\d-]+)/subtitles/notes/$',
         views.NotesList.as_view()),
 )

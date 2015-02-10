@@ -1,12 +1,10 @@
 import codecs
 import os
-
+from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import VideoUrlFactory
 from webdriver_testing.pages.editor_pages import subtitle_editor
 
 
@@ -18,12 +16,12 @@ class TestCaseViewSubtitles(WebdriverTestCase):
     def setUpClass(cls):
         super(TestCaseViewSubtitles, cls).setUpClass()
         cls.data_utils = data_helpers.DataHelpers()
-        cls.user = UserFactory.create()
+        cls.user = UserFactory()
         cls.video_pg = video_page.VideoPage(cls)
         cls.video_language_pg = video_language_page.VideoLanguagePage(cls)
         cls.subs_dir = os.path.join(os.getcwd(), 'apps', 
             'webdriver_testing', 'subtitle_data')
-        cls.video = VideoUrlFactory().video
+        cls.video = VideoFactory()
         #Upload original language de
         complete = True
         data = {'language_code': 'de',
@@ -116,7 +114,7 @@ class TestCaseViewSubtitles(WebdriverTestCase):
         """Language list displays when no subs for primary audio lang exists.
 
         """
-        vid = VideoUrlFactory().video
+        vid = VideoFactory()
 
         #Upload en, primary audio = de
         complete = True

@@ -15,7 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
-from django.conf.urls.defaults import url, patterns
+
+from django.conf.urls import url, patterns
+from django.views.generic.base import TemplateView
+
+from utils.genericviews import JSTemplateView
 
 urlpatterns = patterns(
     'widget.views',
@@ -43,17 +47,11 @@ urlpatterns += patterns(
         kwargs={'next': '/widget/close_window/'}),
     url(r'^facebook_login/', 'thirdpartyaccounts.views.facebook_login'),
     url(r'^close_window/$',
-        'django.views.generic.simple.direct_to_template',
-        {'template' : 'widget/close_window.html'}),
+        TemplateView.as_view(template_name='widget/close_window.html')),
     url(r'^config.js$',
-        'django.views.generic.simple.direct_to_template',
-        {'template': 'widget/config.js',
-         'mimetype': 'text/javascript' }),
+        JSTemplateView.as_view(template_name='widget/config.js')),
     url(r'^statwidgetconfig.js$',
-        'django.views.generic.simple.direct_to_template',
-        {'template': 'widget/statwidgetconfig.js',
-         'mimetype': 'text/javascript' }),
+        JSTemplateView.as_view(template_name='widget/statwidgetconfig.js')),
     url(r'^extension_demo.html$',
-        'django.views.generic.simple.direct_to_template',
-        {'template':'widget/extension_demo.html'})
+        TemplateView.as_view(template_name='widget/extension_demo.html')),
 )

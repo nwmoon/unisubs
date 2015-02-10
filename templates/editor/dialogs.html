@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load url from future %}
 <aside modal-dialog="guidelines" allow-close class="modal" role="dialog" id="guidelines-modal" tabindex="-1" aria-labeledby="guidelines-heading" dir="[[ workingSubtitles.language.dir ]]">
     <ng-switch on="showTeamGuidelines()">
     <h3 ng-switch-when="true">[[ teamName ]] Guidelines</h3>
@@ -377,7 +378,7 @@
         <p class="error" ng-show="uploadError">
         {% trans "Upload failed. The file you uploaded might be invalid or an unsupported format." %}
         </p>
-        <form method="post" id="upload-subtitles-form" action="{% url videos:upload_subtitles %}" enctype="multipart/form-data">
+        <form method="post" id="upload-subtitles-form" action="{% url "videos:upload_subtitles" %}" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="video" value="{{ video.id }}" />
             <div style="visibility: hidden">
@@ -387,7 +388,6 @@
                 <input type="file" name="draft" id="subtitles-file-field" />
             </div>
             <footer class="buttons">
-                <button ng-click="dialogManager.onCloseClick($event)">{% trans "Cancel" %}</button>
                 <button ng-click="submitUploadForm($event)" class="upload-subtitles-submit-button-" ng-disabled="uploading">
                     <ng-switch on="uploading">
                     <span ng-switch-when="true">
@@ -398,6 +398,7 @@
                     </span>
                     </ng-switch>
                 </button>
+                <button ng-click="dialogManager.onCloseClick($event)">{% trans "Cancel" %}</button>
             </footer>
         </form>
     </aside>

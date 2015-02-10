@@ -1,12 +1,13 @@
 {% extends "profiles/base.html" %}
 
 {% load i18n messages_tags recent_activity paginator %}
+{% load url from future %}
 
 {% block title %}{{ user_info }} | Amara{% endblock %}
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% url messages:rpc_api %}" type="text/javascript"></script>  
+    <script src="{% url "messages:rpc_api" %}" type="text/javascript"></script>  
 {% endblock %}
 
 {% block view_content %}
@@ -53,7 +54,7 @@
     {% if user.is_staff and perms.videos.edit_video %}
         <ul id="page_controls">
             <li>
-                <a href="{% url admin:auth_customuser_change user_info.pk %}" target="blank">{% trans 'Edit user' %}</a>
+                <a href="{% url "admin:auth_customuser_change" user_info.pk %}" target="blank">{% trans 'Edit user' %}</a>
             </li>
         </ul>
     {% endif %}

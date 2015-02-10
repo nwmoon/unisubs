@@ -99,7 +99,8 @@ def update_from_feed():
     qs = VideoFeed.objects.exclude(last_update__gt=datetime.now()-
                                    timedelta(hours=1))
     for feed in qs:
-        update_video_feed.delay(feed.pk)
+        update_video_feed_with_rate_limit.apply_async(
+            args=(feed.pk,), queue='feeds')
 
 @task
 def update_video_feed(video_feed_id):
@@ -109,6 +110,10 @@ def update_video_feed(video_feed_id):
     except VideoFeed:
         msg = '**update_video_feed**. VideoFeed does not exist. ID: %s' % video_feed_id
         client.captureMessage(msg)
+
+@task(rate_limit='500/m')
+def update_video_feed_with_rate_limit(video_feed_id):
+    return update_video_feed(video_feed_id)
 
 @task(ignore_result=False)
 def add(a, b):

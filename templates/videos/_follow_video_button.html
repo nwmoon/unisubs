@@ -1,4 +1,5 @@
 {% load i18n videos_tags  %}
+{% load url from future %}
 
 <button class="follow-button"></button>
   
@@ -208,7 +209,7 @@
             isAuthenticated: {% if user.is_authenticated %} true{% else %}false{% endif %},
             isVideoFollower: {% if video|is_follower:user %}true{% else %}false{% endif %},
             isLanguageFollower: {% if language|is_follower:user %}true{% else %}false{% endif %},
-            loginUrl: '{% url auth:login %}?next={{ request.path_info|urlencode }}'
+            loginUrl: '{% url "auth:login" %}?next={{ request.path_info|urlencode }}'
         });
 
         $('.follow-button').each(function(){

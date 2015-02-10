@@ -6,7 +6,7 @@ import os
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import UserFactory
+from utils.factories import *
 
 class TestCaseDownloadSubs(WebdriverTestCase):
     """TestSuite for download subtitles from the video's lanugage page   """
@@ -74,7 +74,7 @@ class TestCaseDownloadSubs(WebdriverTestCase):
         #Open the video's language page, and verify the download link is valid 
         #and outputs the expected data and file format.
         dl_content = self._check_download_subtitles(test_video, lang_code, download_format)
-        self.assertIn('<i>[narrator] Once upon a time,</i>',
+        self.assertIn('Every week we sit around and gaba gaba--',
                       dl_content)
 
 

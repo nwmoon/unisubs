@@ -3,19 +3,13 @@
 <h3>{% trans 'Share' %}</h3>
 
 <ul class="buttons">
-    {% if not RUN_LOCALLY %}
-        <li><a href="#" onclick="return share_on_facebook(event);" class="facebook" title="{% trans 'Post to Facebook' %}">{% trans 'Post to Facebook' %}</a></li>
-        <li><a href="{{share_panel_twitter_url}}" target="post_to_twitter" class="twitter" title="{% trans 'Post to Twitter' %}">{% trans 'Post to Twitter' %}</a></li>
-        <li><a href="{{share_panel_email_url}}" target="email_friends" class="email" title="{% trans 'Email to friends' %}">{% trans 'Email to friends' %}</a></li>
-        <li class="unisubs-facebook-like"><iframe src="https://www.facebook.com/plugins/like.php?href={{ share_panel_permalink|urlencode }}&layout=button_count&show_faces=false&width=150&action=like&colorscheme=light&height=25" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:150px; height:25px; padding: .45em .25em;" allowTransparency="true"></iframe></li>
-    {% endif %}
+    <li><a href="#" onclick="return share_on_facebook(event);" class="facebook" title="{% trans 'Post to Facebook' %}">{% trans 'Post to Facebook' %}</a></li>
+    <li><a href="{{share_panel_twitter_url}}" target="post_to_twitter" class="twitter" title="{% trans 'Post to Twitter' %}">{% trans 'Post to Twitter' %}</a></li>
+    <li><a href="{{share_panel_email_url}}" target="email_friends" class="email" title="{% trans 'Email to friends' %}">{% trans 'Email to friends' %}</a></li>
+    <li class="unisubs-facebook-like"><iframe src="https://www.facebook.com/plugins/like.php?href={{ share_panel_permalink|urlencode }}&layout=button_count&show_faces=false&width=150&action=like&colorscheme=light&height=25" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:150px; height:25px; padding: .45em .25em;" allowTransparency="true"></iframe></li>
 </ul>
 <script type="text/javascript">
-    jQuery('.unisubs-share .unisubs-twitter-share').click(function(){
-        jQuery.get('{% url statistic:tw_update_share_statistic %}');
-    });
     function share_on_facebook(event) {
-        jQuery.get('{% url statistic:fb_update_share_statistic %}');
         window.open('{{share_panel_facebook_url}}',
                 'post_to_fb', 'status=0,width=560,height=320');
         return false;

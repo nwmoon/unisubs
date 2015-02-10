@@ -5,10 +5,6 @@ from django.db.models import signals
 from haystack import indexes, site
 from haystack.exceptions import NotRegistered
 from haystack.utils import get_identifier
-from redisco import models as rmodels
-
-from utils.redis_utils import default_connection
-
 
 class CelerySearchIndex(indexes.SearchIndex):
     def _setup_save(self, model):
@@ -61,13 +57,3 @@ def update_search_index(model_class, pk):
         return None
 
     search_index.update_object(obj)
-
-class LogEntry(rmodels.Model):
-    num = rmodels.IntegerField()
-    time = rmodels.FloatField()
-    date = rmodels.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = 'Search index update statistic'
-        verbose_name_plural = 'Search index update statistic'
-        db = default_connection

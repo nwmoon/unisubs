@@ -1,6 +1,7 @@
 {% extends "teams/base.html" %}
 
-{% load i18n utils_tags teams_tags paginator profiles_tags markup %}
+{% load i18n utils_tags teams_tags paginator profiles_tags %}
+{% load url from future %}
 
 {% block title %}
     {% trans 'Videos' %} - {{ team }} | Amara
@@ -43,13 +44,13 @@
                 </fieldset>
             </form>
             {% if can_move_videos %}
-                <a href="{% url teams:move_videos team.slug %}{% if project %}?project={{ project.pk }}{% endif %}" class="button">{% trans "Move Videos" %}</a>
+                <a href="{% url "teams:move_videos" team.slug %}{% if project %}?project={{ project.pk }}{% endif %}" class="button">{% trans "Move Videos" %}</a>
             {% endif %}
             {% if can_add_video %}
-                <a href="{% url teams:add_video team.slug %}{% if project %}?project={{ project.pk }}{% endif %}" class="button">{% trans "Add Video" %}</a>
+                <a href="{% url "teams:add_video" team.slug %}{% if project %}?project={{ project.pk }}{% endif %}" class="button">{% trans "Add Video" %}</a>
             {% endif %}
             {% if team|can_view_settings_tab:user %}
-                <a class="button" href="{% url teams:video_feeds slug=team.slug %}">
+                <a class="button" href="{% url "teams:video_feeds" slug=team.slug %}">
                     {% trans "Video Feeds" %}
                 </a>
             {% endif %}
@@ -62,7 +63,7 @@
             <input type="hidden" name="q" value="{{ query }}" />
             <button class="reduced" id="update">Update</button>
             {% if filtered %}
-            <a href="{% url teams:detail team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
+            <a href="{% url "teams:detail" team.slug %}{% if query %}?q={{ query }}{% endif %}" class="button cancel">Clear</a>
             {% endif %}
             <div class="group">
                 <div class="filter-chunk">

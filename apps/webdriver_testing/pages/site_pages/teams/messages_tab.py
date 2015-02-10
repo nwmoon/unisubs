@@ -13,7 +13,8 @@ class MessagesTab(ATeamPage):
     _APPLICATION_MESSAGE = 'textarea#id_messages_application'
     _NEW_MANAGER_MESSAGE = 'textarea#id_messages_manager'
     _NEW_ADMIN_MESSAGE = 'textarea#id_messages_admin'
-    _MESSAGES = ['INVITATION', 'APPLICATION', 'NEW_MANAGER', 'NEW_ADMIN'] 
+    _NEW_MEMBER_MESSAGE = 'textarea#id_messages_joins'
+    _MESSAGES = ['INVITATION', 'APPLICATION', 'NEW_MANAGER', 'NEW_ADMIN', 'NEW_MEMBER'] 
     
     #GUIDELINES FIELDS
     _SUBTITLE_GUIDELINES = 'textarea#id_guidelines_subtitle'

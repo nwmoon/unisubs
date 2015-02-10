@@ -1,24 +1,7 @@
 {% extends "hands_base.html" %}
-{% load i18n media_bundle feedback recent_activity widget i18n announcement_tags messages_tags profiles_tags teams_tags %}
+{% load cache %}
 {% block body_attrs %}id="index"{% endblock %}
 
 {% block main_content %}
- {% include 'hands_main.html' %}
+  {% include 'hands_main.html' %}
 {% endblock %}
-
-
-<!-- Reset the net and other IDL banner js -->
-<div>
-<script type="text/javascript">
-    window._idl = {};
-    _idl.variant = "modal";
-    (function() {
-        var idl = document.createElement('script');
-        idl.type = 'text/javascript';
-        idl.async = true;
-        idl.src = '//members.internetdefenseleague.org/include/?url=' + (_idl.url || '') + '&campaign=' + (_idl.campaign || '') + '&variant=' + (_idl.variant || 'modal');
-        document.getElementsByTagName('body')[0].appendChild(idl);
-    })();
-</script>
-
-</div>

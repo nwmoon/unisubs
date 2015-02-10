@@ -1,6 +1,8 @@
 import os
-
+from caching.tests.utils import assert_invalidates_model_cache
 from django.core import management
+
+from utils.factories import *
 
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing import data_helpers
@@ -8,11 +10,7 @@ from webdriver_testing.pages.site_pages.teams.tasks_tab import TasksTab
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import watch_page
-from webdriver_testing.data_factories import TeamVideoFactory
-from webdriver_testing.data_factories import TeamMemberFactory
-from webdriver_testing.data_factories import WorkflowFactory
 from webdriver_testing.data_factories import TeamLangPrefFactory
-from webdriver_testing.data_factories import UserFactory
 from webdriver_testing.pages.site_pages import editor_page
 
 class TestCaseWorkflows(WebdriverTestCase):
@@ -25,21 +23,22 @@ class TestCaseWorkflows(WebdriverTestCase):
         cls.data_utils = data_helpers.DataHelpers()
         cls.video_lang_pg = video_language_page.VideoLanguagePage(cls)
         cls.video_pg = video_page.VideoPage(cls)
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                               translate_policy=20,
+                               subtitle_policy=20)
 
-        cls.user = UserFactory.create()
-        cls.owner = UserFactory.create()
-        cls.basic_team = TeamMemberFactory.create(team__workflow_enabled=False,
-                                            team__translate_policy=20, #any team
-                                            team__subtitle_policy=20, #any team
-                                            user = cls.owner,
-                                            ).team
+        cls.basic_team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               translate_policy=20,
+                               subtitle_policy=20)
 
-        cls.team = TeamMemberFactory.create(team__workflow_enabled=True,
-                                            team__translate_policy=20, #any team
-                                            team__subtitle_policy=20, #any team
-                                            team__task_assign_policy=10, #any team
-                                            user = cls.owner,
-                                            ).team
         cls.workflow = WorkflowFactory(team = cls.team,
                                        autocreate_subtitle=True,
                                        autocreate_translate=True,
@@ -51,8 +50,6 @@ class TestCaseWorkflows(WebdriverTestCase):
             TeamLangPrefFactory.create(team=cls.team, language_code=language,
                                        preferred=True)
 
-        cls.admin = TeamMemberFactory(role="ROLE_ADMIN",team=cls.team).user
-        cls.contributor = TeamMemberFactory(team=cls.team, role="ROLE_CONTRIBUTOR").user
         cls.subs_dir = os.path.join(os.getcwd(), 'apps', 'webdriver_testing', 
                                     'subtitle_data') 
         cls.rev1 = os.path.join(cls.subs_dir, 'Timed_text.en.srt')
@@ -64,21 +61,21 @@ class TestCaseWorkflows(WebdriverTestCase):
         #Create en source language 2 revisions - approved.
         cls.video, cls.tv = cls._add_team_video()
   
-        cls._upload_subtitles(cls.video, 'en', cls.rev1, cls.contributor, 
+        cls._upload_subtitles(cls.video, 'en', cls.rev1, cls.member, 
                               complete=False)
-        cls._upload_subtitles(cls.video, 'en', cls.rev2, cls.contributor)
+        cls._upload_subtitles(cls.video, 'en', cls.rev2, cls.member)
         cls.data_utils.complete_review_task(cls.tv, 20, cls.admin)
         cls.data_utils.complete_approve_task(cls.tv, 20, cls.admin)
        
         #Add sv translation, reviewed
-        cls._upload_translation(cls.video, 'sv', cls.sv, cls.contributor)
+        cls._upload_translation(cls.video, 'sv', cls.sv, cls.member)
         cls.data_utils.complete_review_task(cls.tv, 20, cls.admin)
 
         #Add de translation complete waiting review
-        cls._upload_translation(cls.video, 'de', cls.sv, cls.contributor)
+        cls._upload_translation(cls.video, 'de', cls.sv, cls.member)
 
         #Add ru translation, incomplete.
-        cls._upload_translation(cls.video, 'ru', cls.sv, cls.contributor, 
+        cls._upload_translation(cls.video, 'ru', cls.sv, cls.member, 
                                 complete=False)
         cls.video.subtitle_language('en').clear_tip_cache()
         sl_sv = cls.video.subtitle_language('sv').clear_tip_cache()
@@ -112,7 +109,7 @@ class TestCaseWorkflows(WebdriverTestCase):
     @classmethod
     def _add_team_video(cls):
         video = cls.data_utils.create_video()
-        tv = TeamVideoFactory(team=cls.team, added_by=cls.owner, video=video)
+        tv = TeamVideoFactory(team=cls.team, added_by=cls.admin, video=video)
         return video, tv
 
     def test_delete_button_team_admins(self):
@@ -125,12 +122,13 @@ class TestCaseWorkflows(WebdriverTestCase):
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'sv')
         self.assertTrue(self.video_lang_pg.delete_subtitles_language_exists())
 
-
     def test_delete_button_team_owners(self):
         """Team Owners can Delete Subtitle Language.
 
         """
-        self.video_lang_pg.log_in(self.owner.username, 'password')
+
+        owner = TeamMemberFactory(team=self.team).user
+        self.video_lang_pg.log_in(owner.username, 'password')
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertTrue(self.video_lang_pg.delete_subtitles_language_exists())
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'sv')
@@ -154,7 +152,7 @@ class TestCaseWorkflows(WebdriverTestCase):
         """
         staff = UserFactory.create(is_staff=True)
         self.video_lang_pg.log_in(staff.username, 'password')
-        video = self.data_utils.create_video_with_subs(self.owner)
+        video = self.data_utils.create_video_with_subs(self.admin)
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.delete_subtitles_language_exists())
@@ -164,25 +162,25 @@ class TestCaseWorkflows(WebdriverTestCase):
 
         """
         video = self.data_utils.create_video()
-        tv = TeamVideoFactory(team=self.basic_team, added_by=self.owner, video=video)
+        tv = TeamVideoFactory(team=self.basic_team, added_by=self.admin, video=video)
 
-        self._upload_subtitles(video, 'en', self.rev1, self.contributor)
+        self._upload_subtitles(video, 'en', self.rev1, self.member)
         staff = UserFactory.create(is_staff=True)
-        self.video_lang_pg.log_in(self.owner.username, 'password')
+        self.video_lang_pg.log_in(self.admin.username, 'password')
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'en')
         self.assertTrue(self.video_lang_pg.delete_subtitles_language_exists())
 
 
         video, tv = self._add_team_video()
-        self._upload_subtitles(self.video, 'en', self.rev1, self.contributor)
+        self._upload_subtitles(self.video, 'en', self.rev1, self.member)
 
 
     def test_delete_button_members(self):
         """Members do not see the Delete Subtitle Language button.
 
         """
-        self.video_lang_pg.log_in(self.contributor.username, 'password')
+        self.video_lang_pg.log_in(self.member.username, 'password')
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
         self.assertFalse(self.video_lang_pg.delete_subtitles_language_exists())
         self.video_lang_pg.open_video_lang_page(self.video.video_id, 'sv')
@@ -201,39 +199,6 @@ class TestCaseWorkflows(WebdriverTestCase):
         self.assertFalse(self.video_lang_pg.delete_subtitles_language_exists())
 
 
-
-    def test_dependent_languages(self):
-        """Option to delete depedendent languages of source.
-
-        """
-        self.video_lang_pg.log_in(self.owner.username, 'password')
-        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
-        dsl_button = self.video_lang_pg.delete_subtitles_language_exists()
-        dsl_button.click()
-        self.logger.info(self.video_lang_pg.dependent_langs())
-        langs, _  = self.video_lang_pg.dependent_langs()
-        self.assertEqual(['Swedish', 'German', 'Russian'], langs)
-
-
-    def test_forked_languages_not_listed(self):
-        """Forked languages not included in delete list.
-
-        """
-        self._upload_translation(self.video, 'it', self.sv, self.contributor)
-        it = self.video.subtitle_language('it')
-        it.is_forked = True
-        it.save()
-        self.video_lang_pg.log_in(self.owner.username, 'password')
-        self.video_lang_pg.open_video_lang_page(self.video.video_id, 'en')
-        dsl_button = self.video_lang_pg.delete_subtitles_language_exists()
-        dsl_button.click()
-        langs, _  = self.video_lang_pg.dependent_langs()
-
-        self.assertNotIn('Italian', langs)
-
-
-
-
 class TestCaseDeletion(WebdriverTestCase):
     """TestSuite for display of Delete Subtitle Language button. """
     NEW_BROWSER_PER_TEST_CASE = False
@@ -247,14 +212,23 @@ class TestCaseDeletion(WebdriverTestCase):
         cls.tasks_tab = TasksTab(cls)
         cls.watch_pg = watch_page.WatchPage(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
-        cls.user = UserFactory.create()
-        cls.owner = UserFactory.create()
-        cls.team = TeamMemberFactory.create(team__workflow_enabled=True,
-                                            team__translate_policy=20, #any team
-                                            team__subtitle_policy=20, #any team
-                                            team__task_assign_policy=10, #any team
-                                            user = cls.owner,
-                                            ).team
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.team = TeamFactory(admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               workflow_enabled=True,
+                               translate_policy=20,
+                               subtitle_policy=20,
+                               task_assign_policy=10)
+
+        cls.workflow = WorkflowFactory(team = cls.team,
+                                       autocreate_subtitle=True,
+                                       autocreate_translate=True,
+                                       approve_allowed = 10, # manager
+                                       review_allowed = 10, # peer
+                                       )
         cls.workflow = WorkflowFactory(team = cls.team,
                                        autocreate_subtitle=True,
                                        autocreate_translate=True,
@@ -266,8 +240,6 @@ class TestCaseDeletion(WebdriverTestCase):
             TeamLangPrefFactory.create(team=cls.team, language_code=language,
                                        preferred=True)
 
-        cls.admin = TeamMemberFactory(role="ROLE_ADMIN",team=cls.team).user
-        cls.contributor = TeamMemberFactory(team=cls.team, role="ROLE_CONTRIBUTOR").user
         cls.subs_dir = os.path.join(os.getcwd(), 'apps', 'webdriver_testing', 
                                     'subtitle_data') 
         cls.rev1 = os.path.join(cls.subs_dir, 'Timed_text.en.srt')
@@ -275,9 +247,6 @@ class TestCaseDeletion(WebdriverTestCase):
 
         cls.sv = os.path.join(cls.subs_dir, 'Timed_text.sv.dfxp')
         ru = os.path.join(cls.subs_dir, 'less_lines.ssa')
-
-
-
         cls.logger.info("""
                          Create video with en as primary audio lang.
                             Subtitle, review and approve.
@@ -290,36 +259,37 @@ class TestCaseDeletion(WebdriverTestCase):
 
         #Create en source language 2 revisions - approved.
         cls.video, cls.tv = cls._add_team_video()
-        cls._upload_subtitles(cls.video, 'en', cls.rev1, cls.contributor, 
+        cls._upload_subtitles(cls.video, 'en', cls.rev1, cls.member, 
                               complete=False)
-        cls._upload_subtitles(cls.video, 'en', cls.rev2, cls.contributor)
+        cls._upload_subtitles(cls.video, 'en', cls.rev2, cls.member)
         cls.data_utils.complete_review_task(cls.tv, 20, cls.admin)
         cls.data_utils.complete_approve_task(cls.tv, 20, cls.admin)
        
         #Add sv translation, reviewed
-        cls._upload_translation(cls.video, 'sv', cls.sv, cls.contributor)
+        cls._upload_translation(cls.video, 'sv', cls.sv, cls.member)
         cls.data_utils.complete_review_task(cls.tv, 20, cls.admin)
 
         #Add it translation, reviewed
-        cls._upload_translation(cls.video, 'it', cls.sv, cls.contributor)
+        cls._upload_translation(cls.video, 'it', cls.sv, cls.member)
         cls.data_utils.complete_review_task(cls.tv, 20, cls.admin)
 
         #Add hr translation, needs review
-        cls._upload_translation(cls.video, 'hr', cls.sv, cls.contributor)
+        cls._upload_translation(cls.video, 'hr', cls.sv, cls.member)
 
 
         #Add de translation complete waiting review
-        cls._upload_translation(cls.video, 'de', cls.sv, cls.contributor)
+        cls._upload_translation(cls.video, 'de', cls.sv, cls.member)
 
         #Add ru translation, incomplete.
-        cls._upload_translation(cls.video, 'ru', cls.sv, cls.contributor, 
+        cls._upload_translation(cls.video, 'ru', cls.sv, cls.member, 
                                 complete=False)
 
         cls.video_lang_pg.open_video_lang_page(cls.video.video_id, 'en')
-        cls.video_lang_pg.log_in(cls.owner.username, 'password')
+        cls.video_lang_pg.log_in(cls.admin.username, 'password')
         cls.video_lang_pg.page_refresh()
 
         #Delete English subtitle language + Swedish and German
+       
         cls.video_lang_pg.delete_subtitle_language(['Swedish', 'German'])
         management.call_command('update_index', interactive=False)
         management.call_command('update_video_metadata')
@@ -356,10 +326,8 @@ class TestCaseDeletion(WebdriverTestCase):
     @classmethod
     def _add_team_video(cls):
         video = cls.data_utils.create_video()
-        tv = TeamVideoFactory(team=cls.team, added_by=cls.owner, video=video)
+        tv = TeamVideoFactory(team=cls.team, added_by=cls.admin, video=video)
         return video, tv
-
-
 
     def test_deleted_source_language_ui(self):
         """Deleted source language no longer listed in the ui.
@@ -370,14 +338,10 @@ class TestCaseDeletion(WebdriverTestCase):
         langs = self.video_pg.subtitle_languages()
         self.assertNotIn('English', langs)
 
-
-
     def test_deleted_source_searching(self):
         """Search results don't match deleted transcript text.
 
         """
-        management.call_command('update_index', interactive=False)
-
         self.watch_pg.open_watch_page()
         test_text = 'This is revision 2'
         results_pg = self.watch_pg.basic_search(test_text)
@@ -447,17 +411,17 @@ class TestCaseDeletion(WebdriverTestCase):
         """
         video, tv = self._add_team_video()
 
-        self._upload_subtitles(video, 'en', self.rev1, self.contributor, 
+        self._upload_subtitles(video, 'en', self.rev1, self.member, 
                               complete=True)
         self.data_utils.complete_review_task(tv, 20, self.admin)
         self.data_utils.complete_approve_task(tv, 20, self.admin)
        
         #Add sv translation, reviewed, approved
-        self._upload_translation(video, 'sv', self.sv, self.contributor)
+        self._upload_translation(video, 'sv', self.sv, self.member)
         self.data_utils.complete_review_task(tv, 20, self.admin)
         self.data_utils.complete_approve_task(tv, 20, self.admin)
 
-        self.video_lang_pg.log_in(self.owner.username, 'password')
+        self.video_lang_pg.log_in(self.admin.username, 'password')
         self.video_lang_pg.page_refresh()
 
         self.video_lang_pg.open_video_lang_page(video.video_id, 'sv')
@@ -480,109 +444,36 @@ class TestCaseDeletion(WebdriverTestCase):
         #Create first video and video subtitles
         video1, tv1 = self._add_team_video()
 
-        self._upload_subtitles(video1, 'en', self.rev1, self.contributor, 
+        self._upload_subtitles(video1, 'en', self.rev1, self.member, 
                               complete=True)
         self.data_utils.complete_review_task(tv1, 20, self.admin)
         self.data_utils.complete_approve_task(tv1, 20, self.admin)
        
-        self._upload_translation(video1, 'sv', self.sv, self.contributor)
+        self._upload_translation(video1, 'sv', self.sv, self.member)
         self.data_utils.complete_review_task(tv1, 20, self.admin)
         self.data_utils.complete_approve_task(tv1, 20, self.admin)
 
         #Create second video and incomplete sv subtitles
         video2, tv2 = self._add_team_video()
 
-        self._upload_subtitles(video2, 'en', self.rev1, self.contributor, 
+        self._upload_subtitles(video2, 'en', self.rev1, self.member, 
                               complete=True)
         self.data_utils.complete_review_task(tv2, 20, self.admin)
         self.data_utils.complete_approve_task(tv2, 20, self.admin)
        
-        self._upload_translation(video2, 'sv', self.sv, self.contributor, 
+        self._upload_translation(video2, 'sv', self.sv, self.member, 
                                  complete=False)
 
-        self.video_lang_pg.log_in(self.owner.username, 'password')
+        self.video_lang_pg.log_in(self.admin.username, 'password')
         self.video_lang_pg.page_refresh()
 
 
         self.video_lang_pg.open_video_lang_page(video1.video_id, 'en')
         #Delete English subtitle language + Swedish for video 1
-        self.video_lang_pg.delete_subtitle_language(['Swedish'])
+        with assert_invalidates_model_cache(video1): 
+            self.video_lang_pg.delete_subtitle_language(['Swedish'])
         self.tasks_tab.open_page('teams/{0}/tasks/?team_video={1}'
                                  '&assignee=anyone&lang=sv'.format(
                                  self.team.slug, tv2.pk))
         self.assertTrue(self.tasks_tab.task_present(
                         'Translate Subtitles into Swedish', video2.title))
-
-
-    def test_forked_dependents(self):
-        """Unchecked dependent languages are forked when source deleted.
-
-        """
-        ru = self.video.subtitle_language('ru')
-        self.assertTrue(ru.is_forked)
-
-    
-    def test_forked_translations_tasks(self):
-        """Tasks for forked translations are not deleted.
-
-        """
-        task = list(self.tv.task_set.filter(language='ru'))
-        self.assertEqual(1, len(task), 
-                         're: https://unisubs.sifterapp.com/issues/2328')
-
-    def test_forked_review_tasks(self):
-        """Review tasks for forked translations are not deleted.
-
-        """
-        self.tasks_tab.open_page('teams/{0}/tasks/?team_video={1}'
-                                 '&assignee=anyone&lang=hr'.format(
-                                 self.team.slug, self.tv.pk))
-
-        task = list(self.tv.task_set.incomplete_review().filter(
-                    language='hr'))
-        self.assertEqual(1, len(task))
-        self.assertTrue(self.tasks_tab.task_present(
-                        'Review Croatian Subtitles', self.video.title))
-
-
-    def test_forked_approve_tasks(self):
-        """Approve tasks for forked translations are not deleted.
-
-        """
-        self.tasks_tab.open_page('teams/{0}/tasks/?team_video={1}'
-                                 '&assignee=anyone&lang=it'.format(
-                                 self.team.slug, self.tv.pk))
-
-        task = list(self.tv.task_set.incomplete_approve().filter(
-                    language='it'))
-        self.assertEqual(1, len(task))
-        self.assertTrue(self.tasks_tab.task_present(
-                        'Approve Italian Subtitles', self.video.title))
-
-    def test_perform_forked_approve_task(self):
-        """Approve tasks for forked translations open in timed dialog.
-
-        """
-        self.tasks_tab.log_in(self.admin.username, 'password')
-        self.tasks_tab.open_page('teams/{0}/tasks/?team_video={1}'
-                                 '&assignee=anyone&lang=it'.format(
-                                 self.team.slug, self.tv.pk))
-
-        self.tasks_tab.perform_task('Approve Italian Subtitles', 
-                                               self.video.title)
-        self.assertEqual('English (original)', self.editor_pg.selected_ref_language())
-        self.assertEqual(u'Editing Italian\u2026', self.editor_pg.working_language())
-
-    def test_perform_forked_review_task(self):
-        """Review tasks for forked translations open in timed dialog.
-
-        """
-        self.tasks_tab.log_in(self.admin.username, 'password')
-        self.tasks_tab.open_page('teams/{0}/tasks/?team_video={1}'
-                                 '&assignee=anyone&lang=hr'.format(
-                                 self.team.slug, self.tv.pk))
-
-        self.tasks_tab.perform_task('Review Croatian Subtitles', 
-                                               self.video.title)
-        self.assertEqual('English (original)', self.editor_pg.selected_ref_language())
-        self.assertEqual(u'Editing Croatian\u2026', self.editor_pg.working_language())

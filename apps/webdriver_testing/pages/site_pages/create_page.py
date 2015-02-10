@@ -25,10 +25,7 @@ class CreatePage(UnisubsPage):
     def submit_video(self, video_url):
         self.logger.info('Submitting the video: %s' %video_url)
         self.wait_for_element_present(self._INPUT_PREFOCUS)
-        self.click_by_css("div#submit_video_form")
-        self.clear_text(self._SINGLE_URL_ENTRY_BOX)
-        self.type_by_css(self._SINGLE_URL_ENTRY_BOX, video_url)
-        self.click_by_css(self._SUBMIT_BUTTON)
+        self.submit_form_text_by_css(self._SINGLE_URL_ENTRY_BOX, video_url)
         self.check_if_element_present('div#messages', wait_time=15)
 
     def _open_multi_submit(self):

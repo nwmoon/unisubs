@@ -163,13 +163,13 @@ class CSSBundle(Bundle):
         source_css = self.concatinate_files()
         if settings.STATIC_MEDIA_COMPRESSED:
             return utils.run_command([
-                'sass', '-t', 'compressed',
+                'sass', '-t', 'compressed', '-E', 'utf-8',
                 '--load-path', os.path.join(static_root(), 'css'),
                 '--scss', '--stdin',
             ], stdin=source_css)
         else:
             return utils.run_command([
-                'sass', '-t', 'expanded',
+                'sass', '-t', 'expanded', '-E', 'utf-8',
                 '--load-path', os.path.join(static_root(), 'css'),
                 '--scss', '--stdin',
             ], stdin=source_css)

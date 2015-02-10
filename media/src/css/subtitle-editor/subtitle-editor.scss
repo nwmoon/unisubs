@@ -19,12 +19,43 @@ $CodePro: 'CodeProLC', $OpenSans;
     font-style: normal;
 }
 
+
+/*******************************************
+* This is to have a page whose size is a multiple
+* of 100 so that there is no rounding glitch
+* with integer percenages of columns
+* TODO, make a SASS loop, was unsuccessful
+*******************************************/
+@media (max-width: 600px) {div.page {width: 600px;}}
+@media (min-width: 600px) and (max-width: 699px) {div.page {width: 600px;}}
+@media (min-width: 700px) and (max-width: 799px) {div.page {width: 700px;}}
+@media (min-width: 800px) and (max-width: 899px) {div.page {width: 800px;}}
+@media (min-width: 900px) and (max-width: 999px) {div.page {width: 900px;}}
+@media (min-width: 1000px) and (max-width: 1099px) {div.page {width: 1000px;}}
+@media (min-width: 1100px) and (max-width: 1199px) {div.page {width: 1100px;}}
+@media (min-width: 1200px) and (max-width: 1299px) {div.page {width: 1200px;}}
+@media (min-width: 1300px) and (max-width: 1399px) {div.page {width: 1300px;}}
+@media (min-width: 1400px) and (max-width: 1499px) {div.page {width: 1400px;}}
+@media (min-width: 1500px) and (max-width: 1599px) {div.page {width: 1500px;}}
+@media (min-width: 1600px) and (max-width: 1699px) {div.page {width: 1600px;}}
+@media (min-width: 1700px) and (max-width: 1799px) {div.page {width: 1700px;}}
+@media (min-width: 1800px) and (max-width: 1899px) {div.page {width: 1800px;}}
+@media (min-width: 1900px) and (max-width: 1999px) {div.page {width: 1900px;}}
+@media (min-width: 2000px) and (max-width: 2099px) {div.page {width: 2000px;}}
+@media (min-width: 2100px) and (max-width: 2199px) {div.page {width: 2100px;}}
+@media (min-width: 2200px) and (max-width: 2299px) {div.page {width: 2200px;}}
+@media (min-width: 2300px) and (max-width: 2399px) {div.page {width: 2300px;}}
+@media (min-width: 2400px) and (max-width: 2499px) {div.page {width: 2400px;}}
+@media (min-width: 2500px) and (max-width: 2599px) {div.page {width: 2500px;}}
+@media (min-width: 2600px) and (max-width: 2699px) {div.page {width: 2600px;}}
+@media (min-width: 2700px) and (max-width: 2799px) {div.page {width: 2700px;}}
+@media (min-width: 2800px) and (max-width: 2899px) {div.page {width: 2800px;}}
+
 /*
  * These colors sould be put in the colors modules, but does it make sense to
  * share them with the rest of the CSS?  Maybe we should have a different file
  * for editor colors.
  */
-
 
 $header-height: 38px;
 $top-section-height: 290px;
@@ -39,6 +70,7 @@ $warning-color: #ff6000;
 $blue: #126295;
 $teal: #15998e;
 $semi-dark-grey: #888;
+$light-grey: #F3F4F5;
 $dark-grey: #333;
 $off-white: #f3f3f3;
 
@@ -108,8 +140,13 @@ $off-white: #f3f3f3;
 
 
 // Page
+body {
+    background: $light-grey;
+    &.loading-finished {
+        background: $dark-grey;
+    }
+}
 html, body {
-    background: #F3F4F5;
     overflow: hidden;
 }
 body {
@@ -199,7 +236,10 @@ div.modal {
 /* General page layout */
 
 .page {
+    background: #F3F4F5;
     position: absolute;
+    margin-right: auto;
+    margin-left: auto;
     top: 0;
     right: 0;
     bottom: 0;
@@ -278,8 +318,6 @@ div.notes {
 
 header.main {
     background: $dark-grey;
-    border-bottom: 1px solid #474849;
-    @include multi-box-shadow(0, -1px, 0, #151617, 0, 5px, 8px, #D7D8D9);
 
     div.site {
         float: left;
@@ -1279,6 +1317,7 @@ div.workflow {
     h2 {
         font-size: 20px;
         margin-bottom: 1em;
+        line-height: 1.2em;
     }
 
     h3 {
@@ -1301,8 +1340,6 @@ div.workflow {
     }
 
     &.review {
-        background: $dark-grey;
-        color: #E6E6E6;
         padding: 2em;
 
         a.edit-metadata {
@@ -1310,6 +1347,9 @@ div.workflow {
         }
 
         .actions {
+            button {
+                margin-right: 10px;
+            }
             position: absolute;
             bottom: 1em;
             left: 2em;
@@ -1377,7 +1417,7 @@ div.workflow {
             padding-left: 30px;
         }
 
-        &[disabled] {
+        &.disabled {
             background-color: $semi-dark-grey;
             border-color: $semi-dark-grey;
             cursor: default;

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from caching.tests.utils import assert_invalidates_model_cache
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages.teams import ATeamPage 
 from webdriver_testing.pages.site_pages.teams_dir_page import TeamsDirPage
@@ -42,8 +43,9 @@ class TestCaseOpenTeamPage(WebdriverTestCase):
         user = UserFactory.create()
         self.a_team_pg.log_in(user.username, 'password')
         self.a_team_pg.open_team_page(self.team.slug)
-        self.a_team_pg.join()
-        self.modal.select_spoken_languages(self.default_langs)
+        with assert_invalidates_model_cache(self.team):
+            self.a_team_pg.join()
+            self.modal.select_spoken_languages(self.default_langs)
 
         # Verify team page displays
         self.assertTrue(self.a_team_pg.is_team(self.team.name))
@@ -86,18 +88,19 @@ class TestCaseApplicationTeamPage(WebdriverTestCase):
         """
         test_joiner = UserFactory.create()
         self.a_team_pg.log_in(test_joiner.username, 'password')
-        self.a_team_pg.open_team_page(self.team.slug)
-        self.a_team_pg.apply()
-        #Check that language selection choices are present
-        self.a_team_pg.application_languages()
-        self.a_team_pg.submit_application()
-        user_app = ApplicationFactory.build(
-            team=self.team,
-            user=test_joiner,
-            )
-        user_app.approve(
-            author = self.team_owner.username, 
-            interface = "web UI")
+        with assert_invalidates_model_cache(self.team):
+            self.a_team_pg.open_team_page(self.team.slug)
+            self.a_team_pg.apply()
+            #Check that language selection choices are present
+            self.a_team_pg.application_languages()
+            self.a_team_pg.submit_application()
+            user_app = ApplicationFactory.build(
+                team=self.team,
+                user=test_joiner,
+                )
+            user_app.approve(
+                author = self.team_owner.username, 
+                interface = "web UI")
         self.members_tab.open_members_page(self.team.slug)
         self.members_tab.member_search(test_joiner.username)
         self.assertEqual(self.members_tab.user_role(), 'Contributor')
@@ -246,17 +249,17 @@ class TestCaseInvitationTeamPage(WebdriverTestCase):
         """Can not invite user with pending invitation.
 
         """
-
-        user = UserFactory.create()
+        owner = TeamMemberFactory(team=self.team).user
+        user = UserFactory()
         invitation = TeamInviteFactory.create(
             team=self.team,
             user=user,
             note="Please come join this great team!",
-            author=self.team_owner,
+            author=owner,
             )
-        self.members_tab.log_in(self.team_owner.username, 'password')
+        self.members_tab.log_in(owner.username, 'password')
         self.members_tab.open_members_page(self.team.slug)
-        self.members_tab.invite_user_via_form(username = user.username,
+        self.members_tab.invite_user_via_form(user = user,
                                               message = 'Join my team',
                                               role = 'Contributor')
         self.assertEqual(('User has already been invited and has not replied '
@@ -281,8 +284,6 @@ class TestCaseInvitationTeamPage(WebdriverTestCase):
         self.team_dir_pg.open_my_teams_page()
         self.logger.info(self.team_dir_pg.teams_on_page())
         self.assertNotIn(self.team.name, self.team_dir_pg.teams_on_page())
-
-
 
 
     def test_join_admin_invitation(self):

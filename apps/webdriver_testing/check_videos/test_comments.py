@@ -3,6 +3,7 @@ import time
 
 from django.core import mail
 from localeurl.templatetags.localeurl_tags import rmlocale
+from caching.tests.utils import assert_invalidates_model_cache
 
 from messages import tasks
 from webdriver_testing.webdriver_base import WebdriverTestCase
@@ -40,7 +41,8 @@ class TestCaseComments(WebdriverTestCase):
         mail.outbox = []
         self.video_pg.log_in(self.user.username, 'password')
         self.video_pg.open_comments()
-        self.video_pg.add_comment('This is a great video')
+        with assert_invalidates_model_cache(self.video):
+            self.video_pg.add_comment('This is a great video')
         tasks.send_video_comment_notification.apply()
         msg = str(mail.outbox[-1].message())
         self.assertIn('This is a great video',

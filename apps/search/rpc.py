@@ -38,9 +38,7 @@ class SearchApiClass(object):
     def _search(self, rdata, user):
         form = SearchForm(rdata)
 
-        display_views = form.get_display_views()
-        output = render_page(rdata.get('page', 1), form.queryset(), 20,
-                             display_views=display_views)
+        output = render_page(rdata.get('page', 1), form.queryset(), 20)
         output['sidebar'] = render_to_string('search/_sidebar.html', {
             'form': form,
             'rdata': rdata,

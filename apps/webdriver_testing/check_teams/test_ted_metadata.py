@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+#!/usr/bin/python # -*- coding: utf-8 -*-
 
 import time
 
@@ -8,24 +7,19 @@ from ted import tasks
 from videos.models import Video
 from subtitles.pipeline import add_subtitles
 
-
+from utils.factories import *
 
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import UserFactory
 from webdriver_testing.data_factories import UserLangFactory
-from webdriver_testing.data_factories import TeamMemberFactory
-from webdriver_testing.data_factories import TeamProjectFactory
 from webdriver_testing.data_factories import TeamLangPrefFactory
 
-
-from webdriver_testing.data_factories import TeamVideoFactory
-from webdriver_testing.data_factories import WorkflowFactory
 from webdriver_testing.pages.site_pages import watch_page
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing.pages.site_pages import edit_video_page
 from webdriver_testing.pages.site_pages.teams.tasks_tab import TasksTab
+from webdriver_testing.pages.site_pages.teams.activity_tab import ActivityTab
 from webdriver_testing.pages.site_pages.teams.videos_tab import VideosTab
 from webdriver_testing.pages.site_pages.teams.dashboard_tab import DashboardTab
 from webdriver_testing.pages.site_pages.profiles import profile_dash_page
@@ -43,29 +37,30 @@ class TestCaseTranscribe(WebdriverTestCase):
         cls.video_pg = video_page.VideoPage(cls)
         cls.admin_video_pg = edit_video_page.EditVideoPage(cls)
         cls.tasks_tab = TasksTab(cls)
-        cls.owner = UserFactory.create(username='TED')
-        cls.superuser = UserFactory.create(is_staff=True, is_superuser=True)
-        cls.transcribe_team = TeamMemberFactory.create(
-                       user = cls.owner,
-                       team__slug = 'ted-transcribe',
-                       team__workflow_enabled=True,
-                       team__name = 'TED Transcribe').team
-                      
-        cls.transcribe_project = TeamProjectFactory.create(
+        cls.superuser = UserFactory(is_staff=True, is_superuser=True)
+        cls.admin = UserFactory()
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.transcribe_team = TeamFactory(
+                               admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               slug = 'ted-transcribe',
+                               workflow_enabled=True,
+                               name = 'TED Transcribe')
+        cls.transcribe_project = ProjectFactory(
                            team=cls.transcribe_team,
                            name='TedTalks',
                            slug='tedtalks')
 
         WorkflowFactory(team = cls.transcribe_team,
-                                            autocreate_subtitle=True,
-                                            autocreate_translate=False,
-                                            approve_allowed = 20,
-                                            review_allowed = 10,
-                                           )
+                        autocreate_subtitle=True,
+                        autocreate_translate=False,
+                        approve_allowed = 20,
+                        review_allowed = 10,
+                        )
 
-        cls.member = TeamMemberFactory(role="ROLE_ADMIN",
-                team = cls.transcribe_team,
-                )
+        cls.team_member = TeamMemberFactory(team=cls.transcribe_team)
         entries = [ { 
                      'ted_talkid': 1800,
                      'ted_duration': '00:14:17',
@@ -96,12 +91,12 @@ class TestCaseTranscribe(WebdriverTestCase):
                 ]
         for entry in entries:
             tasks._parse_entry(cls.transcribe_team, entry, 
-                               cls.member, cls.transcribe_project)
+                               cls.team_member, cls.transcribe_project)
 
         cls.video, _ = Video.get_or_create_for_url(
                        'http://unisubs.example.com/video1800.mp4')
         cls.video_pg.open_video_page(cls.video.video_id)
-        cls.video_pg.log_in('TED', 'password')
+        cls.video_pg.log_in(cls.admin.username, 'password')
 
 
     def test_speakername_draft(self):
@@ -113,7 +108,7 @@ class TestCaseTranscribe(WebdriverTestCase):
                           en.get_metadata())
 
     def test_speakername_tasks_display(self):
-        self.tasks_tab.log_in('TED', 'password')
+        self.tasks_tab.log_in(self.admin.username, 'password')
 
         self.tasks_tab.open_tasks_tab(self.transcribe_team.slug)
         self.assertTrue(self.tasks_tab.task_present('Transcribe English Subtitles', 
@@ -144,6 +139,7 @@ class TestCaseTED(WebdriverTestCase):
         cls.video_lang_pg = video_language_page.VideoLanguagePage(cls)
         cls.profile_dash_pg = profile_dash_page.ProfileDashPage(cls)
 
+        cls.activity_tab = ActivityTab(cls)
         cls.tasks_tab = TasksTab(cls)
         cls.dashboard_tab = DashboardTab(cls)
         cls.videos_tab = VideosTab(cls)
@@ -151,38 +147,36 @@ class TestCaseTED(WebdriverTestCase):
         cls.watch_pg = watch_page.WatchPage(cls)
 
         cls.logger.info("Create TED teams")
-        cls.owner = UserFactory.create(username='TED')
-        cls.ted_team = TeamMemberFactory.create(
-                       user = cls.owner,
-                       team__slug = 'ted',
-                       team__name = 'TED',
-                       team__workflow_enabled=True).team
+        cls.admin = UserFactory()
+        for lang in ['en', 'fi', 'sv']:
+            UserLangFactory(user = cls.admin,
+                            language = lang)
+        cls.manager = UserFactory()
+        cls.member = UserFactory()
+        cls.ted_team = TeamFactory(
+                               admin=cls.admin,
+                               manager=cls.manager,
+                               member=cls.member,
+                               slug = 'ted',
+                               workflow_enabled=True,
+                               name = 'TED')
+        cls.team_member = TeamMemberFactory(team=cls.ted_team)
+        WorkflowFactory(team = cls.ted_team,
+                        autocreate_subtitle=True,
+                        autocreate_translate=True,
+                        approve_allowed = 20,
+                        review_allowed = 10,
+                        )
                       
-        cls.ted_project = TeamProjectFactory.create(
+        cls.ted_project = ProjectFactory.create(
                            team=cls.ted_team,
                            name='TedTalks',
                            slug='tedtalks')
 
-        WorkflowFactory(team = cls.ted_team,
-                                            autocreate_subtitle=True,
-                                            autocreate_translate=True,
-                                            approve_allowed = 20,
-                                            review_allowed = 10,
-                                           )
-
-        cls.member = TeamMemberFactory(role="ROLE_ADMIN",
-                team = cls.ted_team,
-                )
-
-        lang_list = ['en', 'ru', 'pt-br', 'de', 'sv']
+        lang_list = ['en', 'ru', 'pt-br', 'de', 'sv', 'fi']
         for language in lang_list:
             TeamLangPrefFactory.create(team=cls.ted_team, language_code=language,
                                        preferred=True)
-
-        cls.admin = TeamMemberFactory(role="ROLE_ADMIN",
-                                      team=cls.ted_team).user
-        
-        cls.contributor = TeamMemberFactory(team=cls.ted_team).user
 
         entries = [ { 
                    'ted_talkid': 1806,
@@ -214,7 +208,7 @@ class TestCaseTED(WebdriverTestCase):
                 ]
         for entry in entries:
             tasks._parse_entry(cls.ted_team, entry, 
-                               cls.member, cls.ted_project)
+                               cls.team_member, cls.ted_project)
 
 
         cls.speaker_video, _ = Video.get_or_create_for_url(
@@ -224,11 +218,11 @@ class TestCaseTED(WebdriverTestCase):
 
         #Add approved 'en' subs speaker name
         speaker_data =  { 'speaker-name': 'Santa' } 
-        cls._create_subs(cls.speaker_video, 'en', complete=True, metadata=speaker_data) 
+        cls._create_subs(cls.speaker_video, 'en', complete=None, metadata=speaker_data) 
         cls.data_utils.complete_review_task(cls.speaker_video.get_team_video(),
                                             20, cls.admin)
         cls.data_utils.complete_approve_task(cls.speaker_video.get_team_video(),
-                                            20, cls.owner)
+                                            20, cls.admin)
 
         #Add approved 'sv' translation with speaker name
         speaker_data = { 'speaker-name': 'TomTom' }
@@ -238,19 +232,25 @@ class TestCaseTED(WebdriverTestCase):
         sv = cls.speaker_video.subtitle_language('sv').get_tip()
         sv.update_metadata( { 'speaker-name': 'Jultomten'} ) 
         cls.data_utils.complete_approve_task(cls.speaker_video.get_team_video(),
-                                            20, cls.owner)
+                                            20, cls.admin)
 
 
         #Add draft 'de' subs reviewed with speaker name
         speaker_data = { 'speaker-name': 'Klaus' }
         cls._create_subs(cls.speaker_video, 'de', True, metadata=speaker_data, title='de subs title')
         cls.data_utils.complete_review_task(cls.speaker_video.get_team_video(),
-                                            20, cls.owner)
+                                            20, cls.admin)
         #Add ru draft, no speaker name
         cls._create_subs(cls.speaker_video, 'ru')
         management.call_command('update_index', interactive=False)
+        management.call_command('index_team_videos', 'ted')
         cls.video_pg.open_video_page(cls.speaker_video.video_id)
-
+        
+        #Assign Finnish to Admin
+        tv = cls.speaker_video.get_team_video()
+        task = tv.task_set.incomplete().filter(language='fi')[0]
+        task.assignee = cls.admin
+        task.save()
 
     @classmethod
     def _add_speakername(cls, speaker):
@@ -274,10 +274,10 @@ class TestCaseTED(WebdriverTestCase):
         add_subtitles(cls.speaker_video, lc, subtitles_2, 
                       author=cls.admin, 
                       committer=cls.admin, 
-                      complete=complete,
+                      action='complete',
                       metadata=metadata,
                       title=title, 
-                      visibility='private')
+                      )
 
     def test_ted_api_speakername_published(self):
         """TED api returns translated speaker name from published version."""
@@ -342,7 +342,7 @@ class TestCaseTED(WebdriverTestCase):
 
     def test_site_search_video_speakername(self):
         """Site search for video speaker name has results. """
-        speaker = 'Jinsop Lee'
+        speaker = 'Santa'
         self.watch_pg.open_watch_page()
         results_pg = self.watch_pg.basic_search(speaker)
         self.assertTrue(results_pg.search_has_results())
@@ -372,15 +372,11 @@ class TestCaseTED(WebdriverTestCase):
     def test_dashboard_display_speaker(self):
         """Speaker name displays with title on dashboard. """
         self.dashboard_tab.log_out()
-        for lang in ['en', 'ru', 'sv']:
-            UserLangFactory(user = self.admin,
-                            language = lang)
-
         self.dashboard_tab.log_in(self.admin.username, 'password')
         self.dashboard_tab.open_team_page(self.ted_team.slug)
         self.assertTrue(self.dashboard_tab.dash_task_present(
-                            task_type='Create Russian subtitles',
-                            title='Jinsop Lee: TestVideo1'))
+                            task_type='Create Finnish subtitles',
+                            title='Santa: TestVideo1'))
 
     def test_dashboard_display_nospeaker(self):
         """Title only when no speaker name for video on dashboard. """
@@ -394,16 +390,16 @@ class TestCaseTED(WebdriverTestCase):
         self.tasks_tab.log_in(self.admin.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % self.ted_team.slug)
-        self.assertTrue(self.tasks_tab.task_present('Approve German Subtitles',
-                        'Jinsop Lee: TestVideo1'))
+        self.assertTrue(self.tasks_tab.task_present('Translate Subtitles into Finnish',
+                        'Santa: TestVideo1'))
 
     def test_tasks_tab_search_speaker(self):
         """Tasks tab search on speaker name returns search results . """
         self.tasks_tab.log_in(self.admin.username, 'password')
-        self.tasks_tab.open_page('teams/%s/tasks/?project=any&assignee=anyone&q=Jinsop'
+        self.tasks_tab.open_page('teams/%s/tasks/?project=any&assignee=anyone&q=Santa'
                                  % self.ted_team.slug)
-        self.assertTrue(self.tasks_tab.task_present('Approve German Subtitles',
-                        'Jinsop Lee: TestVideo1'))
+        self.assertTrue(self.tasks_tab.task_present('Translate Subtitles into Finnish',
+                        'Santa: TestVideo1'))
 
 
     def test_tasks_tab_display_nospeaker(self):
@@ -419,15 +415,15 @@ class TestCaseTED(WebdriverTestCase):
         self.videos_tab.log_in(self.admin.username, 'password')
         self.videos_tab.open_videos_tab(self.ted_team.slug)
         self.assertTrue(self.videos_tab.is_text_present('h4 a', 
-                                                        'Jinsop Lee: TestVideo1'))
+                                                        'Santa: TestVideo1'))
 
     def test_videos_tab_search_speaker(self):
         """Videos tab search on speaker name returns search results . """
         self.videos_tab.log_in(self.admin.username, 'password')
-        self.videos_tab.open_page('/teams/%s/videos/?assignee=&project=&lang=&q=Jinsop'
+        self.videos_tab.open_page('/teams/%s/videos/?assignee=&project=&lang=&q=Santa'
                                  % self.ted_team.slug)
         self.assertTrue(self.videos_tab.is_text_present('h4 a', 
-                                                        'Jinsop Lee: TestVideo1'))
+                                                        'Santa: TestVideo1'))
 
     def test_videos_tab_display_nospeaker(self):
         """Title only when no speaker name for video on videos tab. """
@@ -455,7 +451,7 @@ class TestCaseTED(WebdriverTestCase):
         self.video_pg.open_video_activity(self.speaker_video.video_id)
         video_activities = self.video_pg.activity_list()
         for activity in video_activities:
-            if 'Jinsop Lee: TestVideo1' in activity:
+            if 'Santa: ' in activity:
                 break
         else:
             self.fail('speaker name not found in any activities, %s' % video_activities)
@@ -465,7 +461,12 @@ class TestCaseTED(WebdriverTestCase):
         self.profile_dash_pg.open_profile_dashboard()
         user_tasks = self.profile_dash_pg.current_tasks()
         for t in user_tasks:
-            if 'Jinsop Lee: TestVideo1' in t:
+            if 'Santa: TestVideo1' in t:
                 break
         else:
             self.fail('speaker name not found in any tasks, %s' % user_tasks)
+
+
+    def test_activity_tab(self):
+        self.activity_tab.log_in(self.admin.username, 'password')
+        self.activity_tab.open_activity_tab(self.ted_team.slug)

@@ -5,7 +5,6 @@
 *.orig
 *.db
 pip-log.txt
-deploy/src/*
 *.sqlite3
 *calcdeps.js
 .DS_Store
@@ -44,12 +43,10 @@ media/release
 media/static-cache
 media/teams/*
 media/videos/*
-deploy/fabric.log
 amara-fabric/
 disabled
 server_local_settings.py
 /mediabundles_list.py
-deploy/build/*
 celerybeat-schedule
 /media/js/site_base_js.js
 /media/docs/*
@@ -83,7 +80,6 @@ unisubsdevemails/
 testacular-test-results.xml
 .idea/
 amara-fabric/
-babelsubs/
 tmp.sql
 node_modules/
 /buildout
@@ -92,7 +88,9 @@ frontend-unit-tests-results.xml
 /docker-dev-environment/cidfiles
 .deploy_keys
 dev_settings_local.py
-babelsubs
-babelsubs-git
+/babelsubs
+/babelsubs-git
+/unilangs
+/unilangs-git
 /amara-enterprise
 /amara-vimeo

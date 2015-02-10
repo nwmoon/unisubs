@@ -19,14 +19,14 @@
 """Django models represention subtitles."""
 
 import itertools
+import json
 from datetime import datetime, date, timedelta
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import query, Q
-from django.utils import simplejson as json
+from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
 
 from subtitles import cache
@@ -39,20 +39,12 @@ from babelsubs.storage import calc_changes
 from babelsubs.generators.html import HTMLGenerator
 from babelsubs import load_from
 from subtitles import signals
+from utils.compress import compress, decompress
+from utils.subtitles import create_new_subtitles
+from utils import translation
 from videos.behaviors import make_video_title
 
-from utils.compress import compress, decompress
-from utils.redis_utils import RedisSimpleField
-from utils.subtitles import create_new_subtitles
-from utils.translation import is_rtl
-
-
-ALL_LANGUAGES = sorted([(val, _(name)) for val, name in settings.ALL_LANGUAGES],
-                       key=lambda v: v[1])
-VALID_LANGUAGE_CODES = [unicode(x[0]) for x in ALL_LANGUAGES]
-
 WRITELOCK_EXPIRATION = 30 # 30 seconds
-
 
 # Utility functions -----------------------------------------------------------
 def mapcat(fn, iterable):
@@ -363,7 +355,8 @@ class SubtitleLanguage(models.Model):
     """
     # Basic Data
     video = models.ForeignKey(Video, related_name='newsubtitlelanguage_set')
-    language_code = models.CharField(max_length=16, choices=ALL_LANGUAGES)
+    language_code = models.CharField(max_length=16,
+                                     choices=translation.ALL_LANGUAGE_CHOICES)
     created = models.DateTimeField(editable=False)
 
     # Should be True if the latest version for this set of subtitles covers all
@@ -468,7 +461,7 @@ class SubtitleLanguage(models.Model):
 
 
     def is_rtl(self):
-        return is_rtl(self.language_code)
+        return translation.is_rtl(self.language_code)
 
     def dir(self):
         if self.is_rtl():
@@ -483,8 +476,10 @@ class SubtitleLanguage(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        assert self.language_code in VALID_LANGUAGE_CODES, \
-            "Subtitle Language %s should be a valid code." % self.language_code
+        if not self.language_code in translation.ALL_LANGUAGE_CODES:
+            raise ValidationError(
+                "Subtitle Language %s should be a valid code." %
+                self.language_code)
 
         creating = not self.pk
 
@@ -498,10 +493,7 @@ class SubtitleLanguage(models.Model):
         if tip is not None:
             return tip.title_display()
         else:
-            # fall back to the video title, but prevent infinite loops if we
-            # are the primary audio language
-            return self.video.title_display(
-                use_language_title=not self.is_primary_audio_language())
+            return self.video.title
 
     def get_tip(self, public=False, full=False):
         """Return the tipmost version of this language (if any).
@@ -745,14 +737,10 @@ class SubtitleLanguage(models.Model):
         sv = SubtitleVersion(*args, **kwargs)
 
         sv.set_subtitles(kwargs.get('subtitles', None))
-        if metadata is not None:
-            sv.update_metadata(metadata, commit=False)
-            # save the video to commit the changes to it
-            self.video.save()
         self._sanity_check_parents(sv, parents)
 
         sv.full_clean()
-        sv.save()
+        sv.save(metadata=metadata)
 
         for p in parents:
             sv.parents.add(p)
@@ -795,6 +783,7 @@ class SubtitleLanguage(models.Model):
             signals.language_deleted.send(lang)
             from teams.signals import api_language_deleted
             api_language_deleted.send(lang)
+        Video.cache.invalidate_by_pk(self.video_id)
 
     def update_signoff_counts(self):
         """Update the denormalized signoff count fields and save."""
@@ -1048,6 +1037,9 @@ LIMIT 1;""", (self.id, self.id))
         return SubtitleLanguage.objects.having_nonempty_versions().filter(
                 video=self.video).exists()
 
+    def user_is_follower(self, user):
+        return self.followers.filter(id=user.id).exists()
+
     def notification_list(self, exclude=None):
         qs = self.followers.filter(notify_by_email=True, is_active=True)
 
@@ -1216,7 +1208,8 @@ class SubtitleVersion(models.Model):
 
     video = models.ForeignKey(Video, related_name='newsubtitleversion_set')
     subtitle_language = models.ForeignKey(SubtitleLanguage)
-    language_code = models.CharField(max_length=16, choices=ALL_LANGUAGES)
+    language_code = models.CharField(max_length=16,
+                                     choices=translation.ALL_LANGUAGE_CHOICES)
 
     # If you just want to *check* the visibility of a version you probably want
     # to use the is_public and is_private methods instead, which handle the
@@ -1288,8 +1281,7 @@ class SubtitleVersion(models.Model):
         else:
             # fall back to the video title, but prevent infinite loops if we
             # are the primary audio language
-            return self.video.title_display(
-                use_language_title=not self.is_for_primary_audio_language())
+            return self.video.title
 
     def is_for_primary_audio_language(self):
         return self.video.primary_audio_language_code == self.language_code
@@ -1415,9 +1407,14 @@ class SubtitleVersion(models.Model):
 
     def save(self, *args, **kwargs):
         creating = not self.pk
+        video_needs_save = False
+        metadata = kwargs.pop('metadata', None)
 
         if creating and not self.created:
             self.created = datetime.now()
+        if metadata is not None:
+            self.update_metadata(metadata, commit=False)
+            video_needs_save = True
 
         # Sanity checking of the denormalized data.
         assert self.language_code == self.subtitle_language.language_code, \
@@ -1429,16 +1426,14 @@ class SubtitleVersion(models.Model):
         assert self.visibility in ('public', 'private',), \
             "Version visibility must be either 'public' or 'private'!"
 
-        from django.conf import settings
-        if hasattr(settings, 'TERN_IMPORT') and settings.TERN_IMPORT:
-            # This check is a shim for the data import.  We can delete it once
-            # that's done and just always create an action.
-            pass
-        else:
-            Action.create_caption_handler(self, self.created)
+        Action.create_caption_handler(self, self.created)
 
-        return super(SubtitleVersion, self).save(*args, **kwargs)
+        super(SubtitleVersion, self).save(*args, **kwargs)
 
+        if self.is_public() and self.is_for_primary_audio_language():
+            self._set_video_data()
+        elif video_needs_save:
+            self.video.save()
 
     def get_ancestors(self):
         """Return all ancestors of this version.  WARNING: MAY EAT YOUR DB!
@@ -1582,12 +1577,13 @@ class SubtitleVersion(models.Model):
         return self.subtitle_language.subtitleversion_set
 
     def update_metadata(self, new_metadata, commit=True):
-        lang = self.subtitle_language
         metadata.update_child_and_video(self, self.video, new_metadata,
                                         commit)
 
     def get_metadata(self):
-        return metadata.get_child_metadata(self, self.video)
+        return metadata.get_child_metadata(
+            self, self.video,
+            fallback_to_video=self.is_for_primary_audio_language())
 
     def get_metadata_for_display(self):
         return self.get_metadata().convert_for_display()
@@ -1728,15 +1724,21 @@ class SubtitleVersion(models.Model):
     def publish(self):
         """Make this version publicly viewable."""
 
-        team_video = self.video.get_team_video()
-
-        assert team_video, \
-               "Cannot publish for a video not moderated by a team."
         was_public = self.is_public()
         self.visibility = 'public'
         self.save()
         if not was_public and self.is_tip():
             self.subtitle_language.set_tip_cache('public', self)
+        if self.is_for_primary_audio_language():
+            self._set_video_data()
+
+    def _set_video_data(self):
+        if self.title:
+            self.video.title = self.title
+        if self.description:
+            self.video.description = self.description
+        self.video.update_metadata(self.get_metadata(), commit=False)
+        self.video.save()
 
     def unpublish(self, delete=False, signal=True):
         """Unpublish this version.
@@ -1746,9 +1748,6 @@ class SubtitleVersion(models.Model):
         :param signal: when set we will emit the public_tip_changed() or
         language_deleted signal
         """
-        team_video = self.video.get_team_video()
-        assert team_video, \
-               "Cannot unpublish for a video not moderated by a team."
         if signal:
             was_tip = self.is_tip()
 
@@ -1806,13 +1805,20 @@ class SubtitleVersionMetadata(models.Model):
 
 class SubtitleNoteBase(models.Model):
     video = models.ForeignKey(Video, related_name='+')
-    language_code = models.CharField(max_length=16, choices=ALL_LANGUAGES)
+    language_code = models.CharField(max_length=16,
+                                     choices=translation.ALL_LANGUAGE_CHOICES)
     user = models.ForeignKey(User, related_name='+', null=True)
     body = models.TextField()
     created = models.DateTimeField(default=datetime.now)
 
     class Meta:
         abstract = True
+
+    def get_username(self):
+        if self.user:
+            return self.user.username
+        else:
+            return ugettext('None')
 
 class SubtitleNote(SubtitleNoteBase):
     pass

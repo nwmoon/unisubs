@@ -42,7 +42,6 @@ from localeurl.utils import universal_url
 from teams.moderation_const import REVIEWED_AND_PUBLISHED, \
      REVIEWED_AND_PENDING_APPROVAL, REVIEWED_AND_SENT_BACK
 
-
 from messages.models import Message
 from utils import send_templated_email
 from utils.metrics import Meter
@@ -89,7 +88,6 @@ def send_new_message_notification(message_id):
     }
     Meter('templated-emails-sent-by-type.message-received').inc()
     send_templated_email(user, subject, "messages/email/message_received.html", context)
-
 
 @task()
 def team_invitation_sent(invite_pk):
@@ -214,7 +212,7 @@ def team_member_new(member_pk):
     if getattr(settings, "MESSAGES_DISABLED", False):
         return
     from messages.models import Message
-    from teams.models import TeamMember
+    from teams.models import TeamMember, Setting
     member = TeamMember.objects.get(pk=member_pk)
     if not _team_sends_notification(member.team,'block_team_member_new_message'):
         return False
@@ -250,7 +248,14 @@ def team_member_new(member_pk):
         Meter('templated-emails-sent-by-type.teams.new-member').inc()
         send_templated_email(m.user, subject, template_name, context)
 
-
+    # does this team have a custom message for this?
+    team_default_message = None
+    messages = Setting.objects.messages().filter(team=member.team)
+    if messages.exists():
+        for m in messages:
+            if m.get_key_display() == 'messages_joins':
+                team_default_message = m.data
+                break
     # now send welcome mail to the new member
     template_name = "messages/team-welcome.txt"
     context = {
@@ -258,6 +263,7 @@ def team_member_new(member_pk):
        "url_base":get_url_base(),
        "role":member.role,
        "user":member.user,
+       "custom_message": team_default_message,
     }
     body = render_to_string(template_name,context)
 
@@ -526,6 +532,7 @@ def approved_notification(task_pk, published=False):
     from teams.models import Task
     from videos.models import Action
     from messages.models import Message
+    from teams.models import TeamNotificationSetting
     try:
         task = Task.objects.select_related(
             "team_video__video", "team_video", "assignee", "subtitle_version").get(
@@ -541,6 +548,12 @@ def approved_notification(task_pk, published=False):
         subject = ugettext(u"Your subtitles have been approved and published!")
         template_txt = "messages/team-task-approved-published.txt"
         template_html ="messages/email/team-task-approved-published.html"
+        # Not sure whether it is the right place to send notification
+        # but should work around the approval when there is no new sub version
+        version = task.get_subtitle_version()
+        TeamNotificationSetting.objects.notify_team(task.team.pk, TeamNotificationSetting.EVENT_SUBTITLE_APPROVED,
+                                                    video_id=version.video.video_id,
+                                                    language_pk=version.subtitle_language.pk, version_pk=version.pk)
     else:
         template_txt = "messages/team-task-approved-sentback.txt"
         template_html ="messages/email/team-task-approved-sentback.html"

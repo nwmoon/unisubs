@@ -1,6 +1,7 @@
 {% extends "messages/base.html" %}
 
 {% load paginator i18n %}
+{% load url from future %}
 
 {% block title %}
     {% trans 'Messages - Inbox' %} | Amara
@@ -10,7 +11,7 @@
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% url messages:rpc_api %}" type="text/javascript"></script>
+    <script src="{% url "messages:rpc_api" %}" type="text/javascript"></script>
     <script type="text/javascript">
         window.REPLY_MSG_DATA = {% if reply_msg %}{{ reply_msg.json_data|safe }}{% else %}null{% endif %};
         window.STATIC_URL = '{{ STATIC_URL }}';
@@ -29,7 +30,7 @@
         {% if is_paginated %}{% paginator %}{% endif %}
 
         <p class="view-notice">
-            You <strong>are {% if not user_info.notify_by_email %}not {% endif %}receiving</strong> message notifications via email. <a href="{% url profiles:account %}">Edit preferences</a>.
+            You <strong>are {% if not user_info.notify_by_email %}not {% endif %}receiving</strong> message notifications via email. <a href="{% url "profiles:account" %}">Edit preferences</a>.
         </p>
         <ul class="listing messages">
             {% for msg in message_list %}

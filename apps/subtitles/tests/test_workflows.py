@@ -17,6 +17,8 @@
 
 from __future__ import absolute_import
 
+import functools
+
 from django.test import TestCase
 from nose.tools import *
 from datetime import datetime, timedelta
@@ -33,7 +35,18 @@ class TestAction(workflows.Action):
     def __init__(self, name, complete=None):
         self.name = self.label = name
         self.complete = complete
-        self.do_perform = mock.Mock()
+        self.call_order = []
+        self.perform = mock.Mock()
+        self.update_language = mock.Mock()
+        def on_method_call(method_name, *args, **kwargs):
+            self.call_order.append(method_name)
+            orig_method = getattr(workflows.Action, method_name)
+            return orig_method(self, *args, **kwargs)
+
+        self.perform.side_effect = functools.partial(
+            on_method_call, 'perform')
+        self.update_language.side_effect = functools.partial(
+            on_method_call, 'update_language')
 
 class ActionsTest(TestCase):
     def setUp(self):
@@ -57,8 +70,13 @@ class ActionsTest(TestCase):
         version = pipeline.add_subtitles(self.video, 'en',
                                          SubtitleSetFactory(num_subs=10))
         self.perform_action('action1')
-        self.action1.do_perform.assert_called_with(
-            self.user, self.video, version.subtitle_language, None)
+        assert_equal(
+            self.action1.update_language.call_args,
+            mock.call(self.user, self.video, version.subtitle_language, None))
+        assert_equal(
+            self.action1.perform.call_args,
+            mock.call(self.user, self.video, version.subtitle_language, None))
+        assert_equal(self.action1.call_order, ['update_language', 'perform'])
 
     def test_add_subtitles_with_action(self):
         action = self.workflow.lookup_action(self.user, 'en', 'action1')
@@ -67,7 +85,7 @@ class ActionsTest(TestCase):
                                          action=None)
         action.perform(self.user, self.video, version.subtitle_language,
                        version)
-        self.action1.do_perform.assert_called_with(
+        self.action1.perform.assert_called_with(
             self.user, self.video, version.subtitle_language, version)
 
     def test_perform_with_invalid_action(self):
@@ -75,15 +93,15 @@ class ActionsTest(TestCase):
             self.perform_action('other-action')
 
     def test_needs_complete_subtitles(self):
-        # With 0 subtitles, we shouldn't be able to perform an action with
-        # complete=True
+        # With 0 subtitles and complete=True, validate() should raise an
+        # error.
         action = self.workflow.lookup_action(self.user, 'en', 'action1')
         version = pipeline.add_subtitles(self.video, 'en',
                                          SubtitleSetFactory(num_subs=0),
                                          action=None)
         with assert_raises(ActionError):
-            action.perform(self.user, self.video, version.subtitle_language,
-                           version)
+            action.validate(self.user, self.video, version.subtitle_language,
+                            version)
 
 class SubtitleNotesTest(TestCase):
     def setUp(self):

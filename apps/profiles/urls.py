@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see 
 # http://www.gnu.org/licenses/agpl-3.0.html.
-from django.conf.urls.defaults import url, patterns
+from django.conf.urls import url, patterns
 
 from profiles.views import rpc_router
 

@@ -17,6 +17,7 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
 from django.contrib.auth.models import UserManager, User as BaseUser
+from django.core.cache import cache
 from django.db import models
 from django.db.models.signals import post_save
 from django.conf import settings
@@ -24,18 +25,12 @@ import urllib
 import hashlib
 import hmac
 import uuid
-try:
-    from hashlib import sha1
-except ImportError:
-    import sha
-    sha1 = sha.sha
 from django.utils.translation import ugettext_lazy as _, ugettext
 from django.utils.http import urlquote
 from django.core.exceptions import MultipleObjectsReturned
 from utils.amazon import S3EnabledImageField
 from datetime import datetime, timedelta
 from django.core.cache import cache
-from django.utils.hashcompat import sha_constructor
 from utils.metrics import Meter
 from random import random
 from django.contrib.sites.models import Site
@@ -43,10 +38,17 @@ from django.core.urlresolvers import reverse
 
 from tastypie.models import ApiKey
 
+from caching import CacheGroup, ModelCacheManager
 from utils.tasks import send_templated_email_async
+from utils import translation
 
 ALL_LANGUAGES = [(val, _(name))for val, name in settings.ALL_LANGUAGES]
 EMAIL_CONFIRMATION_DAYS = getattr(settings, 'EMAIL_CONFIRMATION_DAYS', 3)
+
+class AnonymousUserCacheGroup(CacheGroup):
+    def __init__(self):
+        super(AnonymousUserCacheGroup, self).__init__('user:anon',
+                                                      cache_pattern='user')
 
 class CustomUser(BaseUser):
     AUTOPLAY_ON_BROWSER = 1
@@ -86,6 +88,8 @@ class CustomUser(BaseUser):
     can_send_messages = models.BooleanField(default=True)
 
     objects = UserManager()
+
+    cache = ModelCacheManager(default_cache_pattern='user')
 
     class Meta:
         verbose_name = 'User'
@@ -140,9 +144,11 @@ class CustomUser(BaseUser):
         return qs
 
     def unread_messages_count(self, hidden_meassage_id=None):
-        if not hasattr(self, '_unread_messages_count'):
-            self._unread_messages_count = self.unread_messages(hidden_meassage_id=hidden_meassage_id).count()
-        return self._unread_messages_count
+        return self.unread_messages(hidden_meassage_id).count()
+
+    @classmethod
+    def displayable_users(self, ids):
+        return self.objects.filter(pk__in=ids).values_list('pk', 'first_name', 'last_name', 'username')
 
     @classmethod
     def video_followers_change_handler(cls, sender, instance, action, reverse, model, pk_set, **kwargs):
@@ -209,19 +215,27 @@ class CustomUser(BaseUser):
                 .exclude(customuser__followed_languages__video=instance.video).delete()
 
     def get_languages(self):
-        """
-        Just to control this query
-        """
-        languages = cache.get('user_languages_%s' % self.pk)
+        """Get a list of language codes that the user speaks."""
+        return self.cache.get_or_calc("languages", self.calc_languages)
 
-        if languages is None:
-            languages = self.userlanguage_set.all()
-            cache.set('user_languages_%s' % self.pk, languages, 60*24*7)
+    def calc_languages(self):
+        return list(self.userlanguage_set.values_list('language', flat=True))
 
-        return languages
+    def get_language_names(self):
+        """Get a list of language names that the user speaks."""
+        return [translation.get_language_label(lc)
+                for lc in self.get_languages()]
 
     def speaks_language(self, language_code):
         return language_code in [l.language for l in self.get_languages()]
+
+    def is_team_manager(self):
+        cached_value = self.cache.get('is-manager')
+        if cached_value is not None:
+            return cached_value
+        is_manager = self.managed_teams().exists()
+        self.cache.set('is-manager', is_manager)
+        return is_manager
 
     def managed_teams(self, include_manager=True):
         from teams.models import TeamMember
@@ -281,18 +295,15 @@ class CustomUser(BaseUser):
         if user_languages:
             return user_languages[0].language
 
-        from utils.translation import get_user_languages_from_request
-
         if request:
-            languages = get_user_languages_from_request(request)
+            languages = translation.get_user_languages_from_request(request)
             if languages:
                 return languages[0]
 
         return 'en'
 
     def guess_is_rtl(self, request=None):
-        from utils.translation import is_rtl
-        return is_rtl(self.guess_best_lang(request))
+        return translation.is_rtl(self.guess_best_lang(request))
 
     @models.permalink
     def profile_url(self):
@@ -401,18 +412,20 @@ class UserLanguage(models.Model):
     user = models.ForeignKey(CustomUser)
     language = models.CharField(max_length=16, choices=ALL_LANGUAGES, verbose_name='languages')
     proficiency = models.IntegerField(choices=PROFICIENCY_CHOICES, default=1)
-    follow_requests = models.BooleanField(verbose_name=_('follow requests in language'))
+    follow_requests = models.BooleanField(
+        default=False,
+        verbose_name=_('follow requests in language'))
 
     class Meta:
         unique_together = ['user', 'language']
 
     def save(self, *args, **kwargs):
         super(UserLanguage, self).save(*args, **kwargs)
-        cache.delete('user_languages_%s' % self.user_id)
+        CustomUser.cache.invalidate_by_pk(self.user_id)
 
     def delete(self, *args, **kwargs):
-        cache.delete('user_languages_%s' % self.user_id)
-        return super(UserLanguage, self).delete(*args, **kwargs)
+        super(UserLanguage, self).delete(*args, **kwargs)
+        CustomUser.cache.invalidate_by_pk(self.user_id)
 
 class Announcement(models.Model):
     content = models.CharField(max_length=500)
@@ -440,15 +453,17 @@ class Announcement(models.Model):
 
     @classmethod
     def last(cls, hidden_date=None):
-        last = cache.get(cls.cache_key, '')
+        last = cache.get(cls.cache_key)
+        if last == 0:
+            return None
 
-        if last == '':
+        if last is None:
             try:
                 qs = cls.objects.filter(created__lte=datetime.today()) \
                     .filter(hidden=False)
                 last = qs[0:1].get()
             except cls.DoesNotExist:
-                last = None
+                last = 0
             cache.set(cls.cache_key, last, 60*60)
 
         if hidden_date and last and last.created < hidden_date:
@@ -477,8 +492,8 @@ class EmailConfirmationManager(models.Manager):
 
         self.filter(user=user).delete()
 
-        salt = sha_constructor(str(random())+settings.SECRET_KEY).hexdigest()[:5]
-        confirmation_key = sha_constructor(salt + user.email.encode('utf-8')).hexdigest()
+        salt = hashlib.sha1(str(random())+settings.SECRET_KEY).hexdigest()[:5]
+        confirmation_key = hashlib.sha1(salt + user.email.encode('utf-8')).hexdigest()
         try:
             current_site = Site.objects.get_current()
         except Site.DoesNotExist:
@@ -530,7 +545,7 @@ class LoginTokenManager(models.Manager):
 
     def generate_token(self, user):
         new_uuid = uuid.uuid4()
-        return hmac.new("%s%s" % (user.pk, str(new_uuid)), digestmod=sha1).hexdigest()
+        return hmac.new("%s%s" % (user.pk, str(new_uuid)), digestmod=hashlib.sha1).hexdigest()
 
     def for_user(self, user, updates=True):
         try:

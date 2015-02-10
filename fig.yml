@@ -58,7 +58,7 @@ bash:
 sslapp:
   image: amara-app
   entrypoint: /usr/bin/env
-  command: /usr/bin/python manage.py runserverssl 0.0.0.0:8000 --nostatic
+  command: /usr/bin/python manage.py runsslserver 0.0.0.0:8000
   environment:
       DJANGO_SETTINGS_MODULE: dev_settings
 
@@ -75,7 +75,7 @@ sslapp:
 worker:
   image: amara-app
   entrypoint: /usr/bin/env
-  command: /usr/bin/python manage.py celery worker --scheduler=djcelery.schedulers.DatabaseScheduler --loglevel=DEBUG -B -E --settings=dev_settings
+  command: /usr/bin/python manage.py celery worker -Q celery,feeds --scheduler=djcelery.schedulers.DatabaseScheduler --loglevel=DEBUG -B -E --settings=dev_settings
   volumes:
     - .:/opt/apps/unisubs
   links:

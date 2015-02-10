@@ -16,7 +16,7 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from django.conf.urls.defaults import url, patterns
+from django.conf.urls import url, patterns
 from subtitles.views import SubtitleEditor
 
 urlpatterns = patterns('subtitles.views',

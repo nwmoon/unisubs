@@ -1,6 +1,7 @@
 {% extends 'videos/_feedback_form.html' %}
 
 {% load i18n %}
+{% load url from future %}
 
 {% block form_title %}
     {% if error == 500 %}
@@ -10,7 +11,7 @@
     {% endif %}
 {% endblock %}
 
-{% block action %}{% url videos:feedback_error %}{% endblock %}
+{% block action %}{% url "videos:feedback_error" %}{% endblock %}
 
 {% block hidden_fields %}
     {{ form.error }}

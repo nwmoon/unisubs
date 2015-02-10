@@ -16,7 +16,8 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from django.conf.urls.defaults import url, patterns
+from django.views.generic.base import TemplateView
+from django.conf.urls import url, patterns
 from teams.rpc import rpc_router
 
 urlpatterns = patterns('teams.views',
@@ -40,6 +41,7 @@ urlpatterns = patterns('teams.views',
     url(r'^move/$', 'move_video', name='move_video'),
     url(r'^add/video/(?P<slug>[-\w]+)/$', 'add_video', name='add_video'),
     url(r'^add/videos/(?P<slug>[-\w]+)/$', 'add_videos', name='add_videos'),
+    url(r'^add-video-to-team/(?P<video_id>(\w|-)+)/', 'add_video_to_team', name='add_video_to_team'),
     url(r'^edit/video/(?P<team_video_pk>\d+)/$', 'team_video', name='team_video'),
     url(r'^remove/video/(?P<team_video_pk>\d+)/$', 'remove_video', name='remove_video'),
     url(r'^remove/members/(?P<slug>[-\w]+)/(?P<user_pk>\d+)/$', 'remove_member', name='remove_member'),
@@ -51,6 +53,12 @@ urlpatterns = patterns('teams.views',
     url(r'^(?P<slug>[-\w]+)/members/search/$', 'search_members', name='search_members'),
     url(r'^(?P<slug>[-\w]+)/members/(?P<role>[-\w]+)/$', 'detail_members', name='detail_members_role'),
     url(r'^(?P<slug>[-\w]+)/activity/$', 'activity', name='activity'),
+    url(r'^(?P<slug>[-\w]+)/activity/team/$', 'team_activity',
+        name='team-activity'),
+    url(r'^(?P<slug>[-\w]+)/activity/videosstatistics/$', 'videosstatistics_activity',
+        name='videosstatistics-activity'),
+    url(r'^(?P<slug>[-\w]+)/activity/teamstatistics/$', 'teamstatistics_activity',
+        name='teamstatistics-activity'),
     url(r'^(?P<slug>[-\w]+)/projects/$', 'project_list', name='project_list'),
     url(r'^(?P<slug>[-\w]+)/tasks/$', 'team_tasks', name='team_tasks'),
     url(r'^(?P<slug>[-\w]+)/create-task/(?P<team_video_pk>\d+)/$', 'create_task', name='create_task'),
@@ -79,9 +87,8 @@ urlpatterns = patterns('teams.views',
 )
 
 urlpatterns += patterns('',
-    (r'^t1$', 'django.views.generic.simple.direct_to_template', {
-        'template': 'jsdemo/teams_profile.html'
-    }),
+    (r'^t1$',
+     TemplateView.as_view(template_name='jsdemo/teams_profile.html')),
 )
 
 # settings views that are handled by other apps

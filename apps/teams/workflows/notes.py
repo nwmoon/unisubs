@@ -26,10 +26,9 @@ from subtitles.workflows import EditorNotes
 from teams.models import TeamSubtitleNote
 
 class TeamEditorNotes(EditorNotes):
-    def __init__(self, team_video, language_code):
-        self.team = team_video.team
-        self.video = team_video.video
-        self.team_video = team_video
+    def __init__(self, team, video, language_code):
+        self.team = team
+        self.video = video
         self.language_code = language_code
         self.heading = _('Team Notes')
         self.notes = list(TeamSubtitleNote.objects

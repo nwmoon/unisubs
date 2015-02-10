@@ -1,2 +1,3 @@
+{% load url from future %}
 Oops! Someone just got an error after clicking "finished" in the subtitling dialog. You can 
-see their client-side session log at {% url uslogging:widget_log log_pk %}.
+see their client-side session log at {% url "uslogging:widget_log" log_pk %}.

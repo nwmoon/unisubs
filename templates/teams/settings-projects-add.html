@@ -1,5 +1,6 @@
 {% extends "teams/base.html" %}
 {% load i18n teams_tags paginator %}
+{% load url from future %}
 
 {% block title %}
     {{ team }} {% trans 'Settings' %} | Amara
@@ -15,7 +16,7 @@
             {% with "projects" as current_sub %}
                 {% include "teams/_subnav_settings.html" %}
             {% endwith %}
-            <!-- <a class="button project-add" href="{% url teams:add_project slug=team.slug %}">{% trans 'Add Project' %}</a> -->
+            <!-- <a class="button project-add" href="{% url "teams:add_project" slug=team.slug %}">{% trans 'Add Project' %}</a> -->
         </div>
 
         <form action="" method="POST" class="settings">
@@ -51,7 +52,7 @@
     
                             <label for="id_autocreate_translate">
                                 {{ workflow_form.autocreate_translate }}
-                                {% trans 'Automatically create translation tasks for preferred languages' %} (<a href="{% url teams:settings_languages slug=team.slug %}">{% trans 'manage languages' %}</a>)
+                                {% trans 'Automatically create translation tasks for preferred languages' %} (<a href="{% url "teams:settings_languages" slug=team.slug %}">{% trans 'manage languages' %}</a>)
                             </label>
     
                             <label for="id_review_allowed">{% trans 'Review' %}</label>
@@ -64,7 +65,7 @@
                 </div>
 
             <div class="submit">
-                <a class="button cancel project-cancel" href="{% url teams:settings_projects slug=team.slug %}">{% trans 'Cancel' %}</a>
+                <a class="button cancel project-cancel" href="{% url "teams:settings_projects" slug=team.slug %}">{% trans 'Cancel' %}</a>
                 <input type="submit" class="submit save" value="Save Changes" name="save" />
             </div>
         </form>

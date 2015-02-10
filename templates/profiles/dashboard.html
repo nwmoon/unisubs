@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load to_json i18n messages_tags media_bundle recent_activity auth_tags profiles_tags teams_tags query_string videos_tags %}
+{% load url from future %}
 
 {% block body_attrs %}class="v1 dashboard"{% endblock %}
 {% block html_attrs %}id="user_dashboard"{% endblock %}
@@ -10,7 +11,7 @@
 {% block scripts %}
     {{ block.super }}
     {% media_bundle "teams.js" %}
-    <script src="{% url teams:rpc_api %}" type="text/javascript"></script>
+    <script src="{% url "teams:rpc_api" %}" type="text/javascript"></script>
     <script type="text/javascript">
         window.WIDGET_SETTINGS = {{ widget_settings|to_json|safe }};
     </script>
@@ -26,7 +27,7 @@
             <div class="section messages">
                 <p>
                     {% trans "You have " %}
-                    <a href="{% url messages:inbox %}" title="{% trans 'Go to your inbox' %}" class="messages">
+                    <a href="{% url "messages:inbox" %}" title="{% trans 'Go to your inbox' %}" class="messages">
                         {{ user.unread_messages.count }}
                         {% trans "unread message" %}{{ user.unread_messages.count|pluralize }}
                     </a>
@@ -60,7 +61,7 @@
                                     {% if can_decline %}
                                         <li>
                                             <a href="#" class="action-decline">{% trans "I can't do this" %}</a>
-                                            <form class="hidden" action="{% url teams:assign_task slug=task.team.slug %}" method="post">
+                                            <form class="hidden" action="{% url "teams:assign_task" slug=task.team.slug %}" method="post">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next" value="{{ request.path }}{% query_string request.GET %}" />
                                                 <input type="hidden" name="task" value="{{ task.id }}" />
@@ -96,7 +97,7 @@
                             {% blocktrans %}
                                 You haven't shared any videos yet.
                             {% endblocktrans %}
-                            <a href="{% url videos:create %}">Add one now!</a>
+                            <a href="{% url "videos:create" %}">Add one now!</a>
                         {% endif %}
                     {% endwith %}
                 </p>

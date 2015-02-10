@@ -16,20 +16,8 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from optparse import make_option
-
 from django.conf import settings
-from sslserver.management.commands import runsslserver
 
 from staticmedia import utils
 
 settings.STATIC_URL = utils.static_url()
-
-# hack to patch the runsslserver command.  We want to set use_static_handler
-# to false, but there's not actually an option to do it.  So we create the
-# option ourself
-
-runsslserver.Command.option_list += (
-        make_option("--nostatic", dest='use_static_handler',
-                    action='store_false', default=True),
-)

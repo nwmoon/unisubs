@@ -25,13 +25,13 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime
-import oauth2
-import simplejson
+import json
 import urllib
 
 from vidscraper.metasearch import defaults
 from vidscraper.metasearch import util as metasearch_util
 from vidscraper.sites import vimeo as vimeo_scraper
+import oauth2
 
 def parse_entry(entry):
     parsed = {
@@ -71,9 +71,9 @@ def get_entries(include_terms, exclude_terms=None,
                                vimeo_scraper.VIMEO_API_SECRET)
     client = oauth2.Client(consumer)
     request = client.request(url)
-    json = simplejson.loads(request[1])
+    data = json.loads(request[1])
 
-    return [parse_entry(entry) for entry in json['videos']['video']]
+    return [parse_entry(entry) for entry in data['videos']['video']]
 
 SUITE = {
     'id': 'vimeo',

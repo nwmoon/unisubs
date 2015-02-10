@@ -24,6 +24,9 @@ from utils.translation import get_user_languages_from_request
 def run_locally(request):
     return {"RUN_LOCALLY": getattr(settings, "RUN_LOCALLY", False)}
 
+def experiments(request):
+    return {"EXPERIMENTS_CODE": getattr(settings, "EXPERIMENTS_CODE", False)}
+
 def current_site(request):
     try:
         site = Site.objects.get_current() 

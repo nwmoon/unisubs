@@ -16,17 +16,19 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
+import json
+
 from django.db import models
-from auth.models import CustomUser as User
+from django.core.cache import cache
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.conf import settings
-from django.utils import simplejson as json
 from django.db.models.signals import post_save
 from django.core.urlresolvers import reverse
 from django.utils.html import escape, urlize
-Q = models.Q
+
+from auth.models import CustomUser as User
 
 MESSAGE_MAX_LENGTH = getattr(settings,'MESSAGE_MAX_LENGTH', 1000)
 
@@ -41,6 +43,11 @@ class MessageManager(models.Manager):
 
     def unread(self):
         return self.get_query_set().filter(read=False)
+
+    def bulk_create(self, object_list, **kwargs):
+        super(MessageManager, self).bulk_create(object_list, **kwargs)
+        for user_id in set(m.user_id for m in object_list):
+            User.cache.invalidate_by_pk(user_id)
 
 class Message(models.Model):
     user = models.ForeignKey(User)

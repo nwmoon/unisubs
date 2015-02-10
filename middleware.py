@@ -1,3 +1,4 @@
+import hashlib
 import re
 import random
 import time
@@ -10,7 +11,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv4_address
 from django.db.backends.mysql.base import CursorWrapper as _CursorWrapper
 from django.utils.cache import patch_vary_headers
-from django.utils.hashcompat import sha_constructor
 from django.utils.http import cookie_date
 
 from utils.metrics import ManualTimer, Meter, Timer
@@ -22,77 +22,6 @@ SECTIONS = {
     'api2': 'api-v2',
     'teams': 'teams',
 }
-
-
-class SaveUserIp(object):
-    def process_request(self, request):
-        if request.user.is_authenticated():
-            ip = request.META.get('REMOTE_ADDR', '')
-            try:
-                validate_ipv4_address(ip)
-                if request.user.last_ip != ip:
-                    request.user.last_ip = ip
-                    request.user.save()
-            except ValidationError:
-                pass
-
-class ResponseTimeMiddleware(object):
-    """Middleware for recording response times.
-
-    Writes the time this request took to process, as a cookie in the response.
-    In order for it to work, it must be the very first middleware in settings.py
-
-    Also records the response type and time and sends them along to Riemann.
-
-    If the request was for a section of the site we want to track, sends that
-    information to Riemann as well.
-
-    """
-    def process_request(self, request):
-        request.init_time = time.time()
-        Meter('requests.started').inc()
-
-        # Tracking the section of the site isn't trivial, because sometimes we
-        # have the language prefix, like "/en/foo".
-        paths = request.path.lstrip('/').split('/')[:2]
-        p1 = paths[0] if len(paths) >= 1 else None
-        p2 = paths[1] if len(paths) >= 2 else None
-
-        if p1 in SECTIONS:
-            request._metrics_section = SECTIONS[paths[0]]
-        elif p2 in SECTIONS:
-            request._metrics_section = SECTIONS[paths[1]]
-        else:
-            request._metrics_section = None
-
-        if request._metrics_section:
-            label = 'site-sections.%s-response-time' % request._metrics_section
-            Meter(label).inc()
-
-        return None
-
-    def process_response(self, request, response):
-        if hasattr(request, "init_time"):
-            delta = time.time() - request.init_time
-            ms = delta * 1000
-
-            Meter('requests.completed').inc()
-
-            try:
-                response_type = response.status_code / 100 * 100
-            except:
-                response_type = 'unknown'
-            Meter('requests.response-types.%s' % response_type).inc()
-
-            response.set_cookie('response_time', str(ms))
-
-            ManualTimer('response-time').record(ms)
-
-            if request._metrics_section:
-                label = 'site-sections.%s-response-time' % request._metrics_section
-                ManualTimer(label).record(ms)
-
-        return response
 
 class P3PHeaderMiddleware(object):
     def process_response(self, request, response):
@@ -113,7 +42,7 @@ UUID_COOKIE_NAME = getattr(settings, 'UUID_COOKIE_NAME', 'unisub-user-uuid')
 UUID_COOKIE_DOMAIN = getattr(settings, 'UUID_COOKIE_DOMAIN', None)
 
 def _get_new_csrf_key():
-    return sha_constructor("%s%s"
+    return hashlib.sha1("%s%s"
                 % (randrange(0, _MAX_CSRF_KEY), settings.SECRET_KEY)).hexdigest()
 
 class UserUUIDMiddleware(object):

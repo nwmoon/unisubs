@@ -1,4 +1,5 @@
-{% load i18n paginator %}
+{% load i18n %}
+{% load url from future %}
 <div class="tab" id="revisions-tab">
     {% if revisions|length > 1 %}
     <div class="tools">
@@ -18,9 +19,9 @@
             {% if not item.subtitle_language.language_code %}
             {# Hack to work around SubtitleLanguages with blank language attributes. #}
             {# Once those are gone we can remove this. #}
-            <a href="{% url videos:subtitleversion_detail video_id=item.video.video_id,lang="unknown",lang_id=item.language.id,version_id=item.pk %}">{% trans "Revision" %} {{ item.version_number }} - {{ item.revision_time }}</a>
+            <a href="{% url "videos:subtitleversion_detail" video_id=item.video.video_id lang="unknown" lang_id=item.language.id version_id=item.pk %}">{% trans "Revision" %} {{ item.version_number }} - {{ item.revision_time }}</a>
             {% else %}
-            <a href="{% url videos:subtitleversion_detail video_id=item.video.video_id,lang=item.subtitle_language.language_code,lang_id=item.subtitle_language.id,version_id=item.pk %}">{% trans "Revision" %} {{ item.version_number }} - {{ item.revision_time }}</a>
+            <a href="{% url "videos:subtitleversion_detail" video_id=item.video.video_id lang=item.subtitle_language.language_code lang_id=item.subtitle_language.id version_id=item.pk %}">{% trans "Revision" %} {{ item.version_number }} - {{ item.revision_time }}</a>
             {% endif %}
 
             {% if item.moderation_status == 'waiting_moderation' %}
@@ -28,7 +29,7 @@
             {% endif %}
         </h3>
         {% if item.author %}
-        <p>{% trans "by" %} <a href="{% url profiles:profile item.author.pk %}">{{ item.author }}</a></p>
+        <p>{% trans "by" %} <a href="{% url "profiles:profile" item.author.pk %}">{{ item.author }}</a></p>
         {% endif %}
         {% if item.note %}
         <p>{{ item.note }}</p>
@@ -50,13 +51,17 @@
             <li><h4>{% trans "Text" %}: {{ item.text_change }}</h4></li>
             {% endcomment %}
             {% if user.is_staff and perms.videos.edit_video %}
-            <li><h4><a style="color: #417690;" href="{% url admin:subtitles_subtitleversion_change item.pk %}">{% trans "Edit in Django Admin" %}</a></h4></li>
+            <li><h4><a style="color: #417690;" href="{% url "admin:subtitles_subtitleversion_change" item.pk %}">{% trans "Edit in Django Admin" %}</a></h4></li>
             {% endif %}
         </ul>
         </li>
         {% endfor %}
     </ul>
-    {% paginator %}
+
+    {% if page_obj.has_next %}
+    <div class="pagination"><a class="" href="?tab=revisions&revisions_per_page={{ more }}&page=1" rel="next">&#8595; {% trans 'Show More' %} &#8595;</a></div>
+    {% endif %}
+
    {% else %}
    <p class="empty">{% trans 'No subtitles for this language.' %}</p>
    {% endif %}

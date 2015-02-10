@@ -56,6 +56,7 @@ a nutshell:
 
 from django.db import transaction
 
+from videos.models import Video
 from subtitles.models import (
     SubtitleLanguage, SubtitleVersion, ORIGIN_ROLLBACK, ORIGIN_API,
     ORIGIN_UPLOAD, ORIGIN_WEB_EDITOR
@@ -317,19 +318,6 @@ def _update_followers(subtitle_language, author):
     if author:
         subtitle_language.followers.add(author)
 
-def _update_video_data(subtitle_language, version):
-    if version.is_public() and subtitle_language.is_primary_audio_language():
-        video = version.video
-        video_changed = False
-        if version.title and video.title != version.title:
-            video.title = version.title
-            video_changed = True
-        if version.description and video.description != version.description:
-            video.description = version.description
-            video_changed = True
-        if video_changed:
-            video.save()
-
 def _fork_dependents(subtitle_language):
     for dsl in subtitle_language.get_dependent_subtitle_languages(direct=True):
         dsl.fork()
@@ -365,8 +353,11 @@ def _get_language(video, language_code):
 
     """
     try:
-        sl = SubtitleLanguage.objects.get(video=video,
-                                          language_code=language_code)
+        # Use select_for_update() to lock the row for the language we're about
+        # to update.  Since we know that we're going to do some work, then
+        # update the language, locking at the start prevents deadlocks.
+        sl = (SubtitleLanguage.objects.select_for_update()
+              .get(video=video, language_code=language_code))
         language_needs_save = False
     except SubtitleLanguage.DoesNotExist:
         sl = SubtitleLanguage(video=video, language_code=language_code)
@@ -397,6 +388,10 @@ def _add_subtitles(video, language_code, subtitles, title, description, author,
     This function is the meat of the subtitle pipeline.  The user-facing
     add_subtitles is a thin wrappers around this.
     """
+    # Use select_for_update() to lock the row for our video.  We know
+    # that we're going to do some work, then potentially update the video,
+    # locking at the start prevents deadlocks.
+    Video.objects.select_for_update(id=video.id)
     sl, language_needs_save = _get_language(video, language_code)
     if language_needs_save:
         sl.save()
@@ -412,9 +407,9 @@ def _add_subtitles(video, language_code, subtitles, title, description, author,
     version = sl.add_version(subtitles=subtitles, **data)
     _perform_team_operations(version, committer, action)
     if action:
-        action.perform(author, video, sl, version)
+        action.validate(author, video, sl, version)
+        action.update_language(author, video, sl, version)
 
-    _update_video_data(sl, version)
     _update_followers(sl, author)
 
     if origin in (ORIGIN_UPLOAD, ORIGIN_API):
@@ -426,9 +421,6 @@ def _add_subtitles(video, language_code, subtitles, title, description, author,
         # entire concept of forking.
         sl.fork()
         _fork_dependents(sl)
-
-    if action:
-        action.send_signals(sl, version)
 
     return version
 
@@ -548,10 +540,14 @@ def add_subtitles(video, language_code, subtitles,
     if action:
         visibility = action.subtitle_visibility
     with transaction.commit_on_success():
-        return _add_subtitles(video, language_code, subtitles, title,
-                              description, author, visibility,
-                              visibility_override, parents, None, committer,
-                              created, note, origin, metadata, action)
+        version = _add_subtitles(video, language_code, subtitles, title,
+                                 description, author, visibility,
+                                 visibility_override, parents, None, committer,
+                                 created, note, origin, metadata, action)
+    if action:
+        action.perform(author, video, version.subtitle_language, version)
+    video.cache.invalidate()
+    return version
 
 def _calc_action_for_add_subtitles(video, language_code, author, complete,
                                    action_name):
@@ -605,6 +601,8 @@ def rollback_to(video, language_code, version_number,
 
     """
     with transaction.commit_on_success():
-        return _rollback_to(video, language_code, version_number,
-                            rollback_author)
+        version = _rollback_to(video, language_code, version_number,
+                               rollback_author)
+    video.cache.invalidate()
+    return version
 

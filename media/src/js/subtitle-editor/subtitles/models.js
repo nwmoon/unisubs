@@ -690,7 +690,9 @@ var angular = angular || null;
             return this.title || this.video.title;
         },
         getDescription: function() {
-            if(this.language.isPrimaryAudioLanguage) {
+            if(!this.language) {
+                return '';
+            } else if(this.language.isPrimaryAudioLanguage) {
                 return this.description || this.video.description;
             } else {
                 return this.description;

@@ -1,6 +1,7 @@
 {% extends "teams/base.html" %}
 
 {% load i18n l10n teams_tags %}
+{% load url from future %}
 
 {% block title %}
     {{ team }} | Amara
@@ -17,7 +18,7 @@
 
         <div class="tools group">
             {% if can_create_feed %}
-            <a href="{% url teams:add_videos slug=team.slug %}" class="button reduced">{% trans "Add Video Feed" %}</a>
+            <a href="{% url "teams:add_videos" slug=team.slug %}" class="button reduced">{% trans "Add Video Feed" %}</a>
             {% endif %}
         </div>
 
@@ -25,7 +26,7 @@
             <ul class="feeds listing">
             {% for feed in feeds %}
                 <li>
-                    <a href="{% url teams:video_feed slug=team.slug feed_id=feed.id %}"><h3>{{ feed.url }}</h3></a>
+                    <a href="{% url "teams:video_feed" slug=team.slug feed_id=feed.id %}"><h3>{{ feed.url }}</h3></a>
                     {% if feed.last_update %}
                     {% blocktrans with feed.last_update|localize as last_update %}
                     Last import attempt: {{ last_update }}

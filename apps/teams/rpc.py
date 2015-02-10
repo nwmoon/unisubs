@@ -21,11 +21,11 @@ from django.utils.translation import ugettext as _
 
 from messages import tasks as notifier
 from teams.models import (
-    Team, TeamMember, Application, Project, ALL_LANGUAGES
+    Team, TeamMember, Application, Project
 )
 from teams.permissions import roles_user_can_assign, save_role
+from utils import translation
 from utils.rpc import Error, Msg, RpcRouter
-
 
 class TeamsApiClass(object):
     def create_application(self, team_id, msg, user):
@@ -143,7 +143,7 @@ class TeamsApiV2Class(object):
 
         langs = []
         writeable_languages = team.get_writable_langs()
-        for code, name in [l for l in ALL_LANGUAGES if l[0] in writeable_languages]:
+        for code, name in [l for l in translation.SUPPORTED_LANGUAGE_CHOICES if l[0] in writeable_languages]:
             lang = {
                 'selected': True if code in current_languages else False,
                 'code': code,

@@ -25,6 +25,7 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import datetime
+import json
 import re
 import urllib
 
@@ -33,7 +34,6 @@ from lxml import etree
 from lxml.html import builder as E
 from lxml.html import tostring
 import oauth2
-import simplejson
 
 from vidscraper.decorators import provide_shortmem, parse_url, returns_unicode
 from vidscraper import util
@@ -65,7 +65,7 @@ def get_shortmem(url):
             reponse = urllib.urlopen(apiurl)
             
             api_raw_data = response.read()
-            api_data = simplejson.loads(api_raw_data)
+            api_data = json.loads(api_raw_data)
         except Exception as e:
             finalexcept = e
             continue

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 
 {% load i18n search_tags media_bundle %}
+{% load url from future %}
 
 {% block body_attrs %}id="watch_results"{% endblock %}
 
 {% block scripts %}
     {{ block.super }}
-    <script src="{% url videos:rpc_api %}" type="text/javascript"></script>
-    <script src="{% url search:rpc_api %}" type="text/javascript"></script> 
+    <script src="{% url "videos:rpc_api" %}" type="text/javascript"></script>
+    <script src="{% url "search:rpc_api" %}" type="text/javascript"></script> 
     {% media_bundle 'ajax-paginator.js' %}
     <script type="text/javascript">
         jQuery(function($){

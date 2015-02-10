@@ -26,7 +26,6 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils.http import cookie_date
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic.list_detail import object_list
 
 from auth.models import CustomUser as User
 from auth.models import UserLanguage
@@ -35,6 +34,7 @@ from messages.models import Message
 from messages.rpc import MessagesApiClass
 from messages.tasks import send_new_message_notification, send_new_messages_notifications
 from utils import render_to_json, render_to
+from utils.objectlist import object_list
 from utils.rpc import RpcRouter
 
 rpc_router = RpcRouter('messages:rpc_router', {

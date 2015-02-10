@@ -1,22 +1,23 @@
 {% extends "base.html" %}
 
 {% load i18n %}
+{% load url from future %}
 
 {% block body_attrs %}class="{% block body-class %}messages v1{% endblock %}"{% endblock %}
 
 {% block main_content %}
     <h2>Message Center</h2>
     <div class="grid_4 context alpha">
-        <a class="button reduced big" href="{% url messages:new %}">{% trans "New message" %}</a>
+        <a class="button reduced big" href="{% url "messages:new" %}">{% trans "New message" %}</a>
         <h3>Folders</h3>
         <ul>
             <li{% if request.path_info = '/messages/' %} class="selected"{% endif %}>
-                <a href="{% url messages:inbox %}">
+                <a href="{% url "messages:inbox" %}">
                     {% trans "Inbox" %}
                 </a>
             </li>
             <li{% if request.path_info = '/messages/sent/' %} class="selected"{% endif %}>
-                <a href="{% url messages:sent %}">
+                <a href="{% url "messages:sent" %}">
                     {% trans "Sent" %}
                 </a>
             </li>

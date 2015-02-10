@@ -1,6 +1,7 @@
 {% extends "profiles/base.html" %}
 
 {% load i18n messages_tags %}
+{% load url from future %}
 
 {% block title %}{{ user_info }} | Amara{% endblock %}
 
@@ -18,7 +19,7 @@
                 </fieldset>
             </div>
             <div class="submit remove">
-                <a class="button reduced" href="{% url profiles:account %}">{% trans 'Cancel' %}</a>
+                <a class="button reduced" href="{% url "profiles:account" %}">{% trans 'Cancel' %}</a>
                 <button class="button delete" type="submit" value="Remove">
                     {% trans 'Remove account' %}
                 </button>

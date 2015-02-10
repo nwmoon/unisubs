@@ -122,7 +122,6 @@ TEMPLATE_LOADERS = (
 
 
 MIDDLEWARE_CLASSES = (
-    'middleware.ResponseTimeMiddleware',
     'middleware.StripGoogleAnalyticsCookieMiddleware',
     'utils.ajaxmiddleware.AjaxErrorMiddleware',
     'localeurl.middleware.LocaleURLMiddleware',
@@ -130,15 +129,15 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'auth.middleware.AmaraAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'openid_consumer.middleware.OpenIDMiddleware',
     'middleware.P3PHeaderMiddleware',
     'middleware.UserUUIDMiddleware',
-    'middleware.SaveUserIp',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'unisubs.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -156,6 +155,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'utils.context_processors.custom',
     'utils.context_processors.user_languages',
     'utils.context_processors.run_locally',
+    'utils.context_processors.experiments',
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.i18n',
     'staticmedia.context_processors.staticmedia',
@@ -168,17 +168,14 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.markup',
     'django.contrib.sessions',
     'django.contrib.sitemaps',
     'django.contrib.sites',
     'django.contrib.webdesign',
     # third party apps
-    'django_extensions',
     'djcelery',
     'haystack',
-    'rosetta',
-    'raven.contrib.django',
+    'raven.contrib.django.raven_compat',
     'south',
     'rest_framework',
     'tastypie',
@@ -191,19 +188,17 @@ INSTALLED_APPS = (
     'amaradotorg',
     'amaracelery',
     'api',
+    'caching',
     'comments',
     'externalsites',
     'messages',
     'profiles',
     'search',
     'staticmedia',
-    'statistic',
     'teams',
     'testhelpers',
     'thirdpartyaccounts',
-    'unisubs', #dirty hack to fix http://code.djangoproject.com/ticket/5494 ,
     'unisubs_compressor',
-    'uslogging',
     'utils',
     'videos',
     'widget',
@@ -224,22 +219,36 @@ STARTUP_MODULES = [
 # This allow know are workers online or not: python manage.py celerybeat
 
 CELERY_IGNORE_RESULT = True
-CELERY_DISABLE_RATE_LIMITS = True
 CELERY_SEND_EVENTS = False
 CELERY_SEND_TASK_ERROR_EMAILS = True
-CELERY_RESULT_BACKEND = 'redis'
-
-BROKER_BACKEND = 'kombu_backends.amazonsqs.Transport'
-BROKER_USER = AWS_ACCESS_KEY_ID = ""
-BROKER_PASSWORD = AWS_SECRET_ACCESS_KEY = ""
-BROKER_HOST = "localhost"
 BROKER_POOL_LIMIT = 10
 
 REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.YAMLParser',
+        'rest_framework.parsers.XMLParser',
+        'rest_framework.parsers.FormParser',
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.YAMLRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.XMLRenderer',
+    ),
+    'URL_FORMAT_OVERRIDE': 'format',
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS':
+        'api.negotiation.AmaraContentNegotiation',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'api.auth.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-    )
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_PAGINATION_SERIALIZER_CLASS':
+        'api.pagination.AmaraPaginationSerializer',
+    'ORDERING_PARAM': 'order_by',
 }
 
 #################
@@ -253,7 +262,9 @@ LOCALE_INDEPENDENT_PATHS = (
     re.compile('^/jstest/'),
     re.compile('^/sitemap.*.xml'),
     re.compile('^/externalsites/youtube-callback'),
+    re.compile('^/providers/'),
     re.compile('^/crossdomain.xml'),
+    re.compile('^/embedder-widget-iframe/'),
 )
 
 #Haystack configuration
@@ -276,6 +287,9 @@ FACEBOOK_SECRET_KEY = ''
 VIMEO_API_KEY = None
 VIMEO_API_SECRET = None
 
+# NOTE: all of these backends store the User.id value in the session data,
+# which we rely on in AmaraAuthenticationMiddleware.  Other backends should
+# use the same system.
 AUTHENTICATION_BACKENDS = (
    'auth.backends.CustomUserBackend',
    'thirdpartyaccounts.auth_backends.TwitterAuthBackend',
@@ -320,6 +334,7 @@ ANONYMOUS_USER_ID = 10000
 
 #Use on production
 GOOGLE_ANALYTICS_NUMBER = 'UA-163840-22'
+EXPERIMENTS_CODE = "QL2-1BUpSyeABVHp9b6G8w"
 MIXPANEL_TOKEN = '44205f56e929f08b602ccc9b4605edc3'
 
 try:
@@ -357,12 +372,7 @@ ROSETTA_EXCLUDED_APPLICATIONS = (
 )
 
 INSTALLED_APPS += optionalapps.get_apps()
-try:
-    from integration_settings import *
-except ImportError:
-    pass
-# paths from MEDIA URL
-# this needs to run after the integration player has loaded
+
 MEDIA_BUNDLES = {
     "base.css": {
         "files": (
@@ -404,7 +414,6 @@ MEDIA_BUNDLES = {
     },
     "hands_home.css": {
         "files": (
-            "css/hands-header-footer.css",
             "css/hands-static.css",
             "css/hands-main.css",
          )
@@ -432,6 +441,13 @@ MEDIA_BUNDLES = {
             "js/libs/chosen.ajax.jquery.js",
             "js/libs/jquery.cookie.js",
             "js/unisubs.site.js",
+            "src/js/unisubs.variations.js",
+        ),
+    },
+    "graphs.js": {
+        "files": (
+            "js/libs/pygal-tooltips.js",
+            "js/libs/svg.jquery.js",
         ),
     },
     "teams.js": {
@@ -450,7 +466,7 @@ MEDIA_BUNDLES = {
             'src/js/third-party/jquery-1.10.1.js',
             'js/jquery.form.js',
             'src/js/third-party/jquery.autosize.js',
-            'src/js/third-party/angular.1.2.0.js',
+            'src/js/third-party/angular.1.2.7.js',
             'src/js/third-party/angular-cookies.js',
             'src/js/third-party/underscore.1.4.4.js',
             'src/js/third-party/popcorn.js',
@@ -587,7 +603,7 @@ LOGGING = {
             'formatter': 'verbose'
         },
         'sentry': {
-            'level': 'INFO',
+            'level': 'WARN',
             'class': 'raven.contrib.django.handlers.SentryHandler',
         },
     },
@@ -617,7 +633,7 @@ LOGGING = {
             'handlers': ['sentry', 'console'],
             'propagate': False
         },
-        'youtube': {
+        'utils.youtube': {
             'level': 'INFO',
             'handlers': ['sentry', 'console'],
             'propagate': False
@@ -630,42 +646,35 @@ LOGGING = {
     },
 }
 
-from periodic_tasks_settings import CELERYBEAT_SCHEDULE
+from task_settings import *
 
-try:
+if DEBUG:
     import debug_toolbar
 
-    EVERYONE_CAN_DEBUG = False
     INSTALLED_APPS += ('debug_toolbar',)
-    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+    MIDDLEWARE_CLASSES = (
+        ('debug_toolbar.middleware.DebugToolbarMiddleware',) +
+        MIDDLEWARE_CLASSES
+    )
+    DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
     DEBUG_TOOLBAR_PANELS = (
-        'debug_toolbar.panels.timer.TimerDebugPanel',
-        # 'apps.testhelpers.debug_toolbar_extra.ProfilingPanel',
-        # 'apps.testhelpers.debug_toolbar_extra.HaystackDebugPanel',
-        'debug_toolbar.panels.request_vars.RequestVarsDebugPanel',
-        'debug_toolbar.panels.template.TemplateDebugPanel',
-        'debug_toolbar.panels.sql.SQLDebugPanel',
+        'debug_toolbar.panels.timer.TimerPanel',
+        'debug_toolbar.panels.request.RequestPanel',
+        'debug_toolbar.panels.templates.TemplatesPanel',
+        'debug_toolbar.panels.sql.SQLPanel',
+        'caching.debug_toolbar_panels.CachePanel',
     )
 
     def custom_show_toolbar(request):
-        from django.conf import settings
-        can_debug = settings.EVERYONE_CAN_DEBUG or request.user.is_staff
-
-        if can_debug:
-            if '__debug__/m/' in request.path or 'debug_toolbar' in request.GET:
-                return True
-
-        return False
+        return 'debug_toolbar' in request.GET
 
     DEBUG_TOOLBAR_CONFIG = {
         'INTERCEPT_REDIRECTS': False,
-        'SHOW_TOOLBAR_CALLBACK': custom_show_toolbar,
+        'SHOW_TOOLBAR_CALLBACK': 'settings.custom_show_toolbar',
         'EXTRA_SIGNALS': [],
         'HIDE_DJANGO_SQL': False,
         'TAG': 'div',
     }
-except ImportError:
-    pass
 
 optionalapps.add_extra_settings(globals(), locals())

@@ -33,16 +33,14 @@ class TestCaseEntryExit(WebdriverTestCase):
         cls.user = UserFactory.create()
         cls.video_pg.log_in(cls.user.username, 'password')
 
-
     def test_exit_to_legacy(self):
         """Open legacy editor from new.
 
         """
 
-        data = {'url': 'http://www.youtube.com/watch?v=WqJineyEszo',
-                 'video__title': ('X Factor Audition - Stop Looking At My '
-                                  'Mom Rap - Brian Bradley'),
-                                  'type': 'Y'
+        data = {'video_url': 'http://www.youtube.com/watch?v=WqJineyEszo',
+                'title': ('X Factor Audition - Stop Looking At My '
+                          'Mom Rap - Brian Bradley'),
                }
         video = self.data_utils.create_video(**data)
         self.data_utils.add_subs(video=video)

@@ -38,13 +38,6 @@ def setup_path():
     # add paths from optional repositories
     import optionalapps
     sys.path.extend(optionalapps.get_repository_paths())
-    # hack to make the unisubs package available.  We alter the path so that
-    # we can import it, then undo the changes.  We don't want to be able to
-    # import any other python modules that happen to live in the directory
-    # above root_dir.
-    sys.path.append(os.path.dirname(root_dir))
-    import unisubs
-    sys.path.pop()
 
 def setup_patch_reverse():
     from localeurl import patch_reverse

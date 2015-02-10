@@ -55,7 +55,7 @@ var angular = angular || null;
                 return item.version_no;
             }).reverse();
 
-            $scope.versionNumber = getLastPublicVersion();
+            $scope.versionNumber = getInitialVersion();
             if($scope.versionNumber !== null) {
                 loadSubtitles();
             } else {
@@ -63,13 +63,15 @@ var angular = angular || null;
             }
         };
 
-        function getLastPublicVersion() {
-            for(var i=0; i < $scope.versions.length; i++) {
-                if($scope.versions[i].visibility == 'public') {
-                    return $scope.versions[i].version_no.toString();
-                }
+
+        function getInitialVersion() {
+            // Get the version to select when a user first switches to a
+            // language.
+            if($scope.versions.length > 0) {
+                return $scope.versions[0].version_no.toString();
+            } else {
+                return null;
             }
-            return null;
         }
         $scope.findVersion = function(versionNumber) {
             for(var i = 0; i < $scope.versions.length; i++) {
@@ -94,14 +96,10 @@ var angular = angular || null;
                     return;
                 }
 
-                if(newVersion.visibility == 'public') {
-                    $scope.currentVersion = newVersion;
-                    $scope.referenceSubtitles.getSubtitles(
-                        $scope.language.code, newVersion.version_no);
-                    $scope.adjustReferenceSize();
-                } else {
-                    loadEmptySubtitles();
-                }
+                $scope.currentVersion = newVersion;
+                $scope.referenceSubtitles.getSubtitles(
+                    $scope.language.code, newVersion.version_no);
+                $scope.adjustReferenceSize();
             });
         }
 
@@ -128,7 +126,9 @@ var angular = angular || null;
         }
 
         $scope.setInitialDisplayLanguage = function(allLanguages) {
-            $scope.languages = allLanguages;
+            $scope.languages = _.filter(allLanguages, function(l) {
+                return l.versions.length > 0;
+            })
             $scope.language = pickInitialLanguage();
             $scope.languageChanged();
         }

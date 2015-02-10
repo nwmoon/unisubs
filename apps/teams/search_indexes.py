@@ -31,9 +31,6 @@ from subtitles.models import SubtitleLanguage
 from haystack.exceptions import AlreadyRegistered
 
 
-LANGUAGES_DICT = dict(settings.ALL_LANGUAGES)
-
-
 class TeamVideoLanguagesIndex(SearchIndex):
     text = CharField(
         document=True, use_template=True,

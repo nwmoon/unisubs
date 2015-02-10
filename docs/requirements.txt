@@ -3,6 +3,26 @@ sphinxcontrib-httpdomain
 sphinxcontrib-napoleon
 sphinx_rtd_theme
 -e git+https://github.com/pculture/unilangs.git#egg=unilangs
+-e git+https://github.com/pculture/babelsubs.git#egg=babelsubs
 celery==3.0.11
 django-celery==3.0.10
-raven==1.8.2
+raven==5.1.1
+django-haystack==1.2.7
+django-extensions
+pysolr==2.0.14
+South==0.7.4
+djangorestframework==2.4.2
+django-tastypie==0.9.11
+boto==2.1.0
+redis==2.4.5
+easy-thumbnails==1.4
+lxml==2.3
+requests==0.13.1
+-e git+https://github.com/jsocol/bleach.git@105b4cfc2f00cc1954bcab3b39b16fbfaf8863e0#egg=bleach
+oauth2==1.5.211
+feedparser
+unidecode
+gdata==2.0.16
+django-math-captcha==0.1
+django-registration
+pygal

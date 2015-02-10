@@ -24,7 +24,9 @@ import base64
 import calendar
 import os
 import rfc822
-import simplejson
+# FIXME: we should just call the module "json" but that conflicts with our
+# variable names
+import json as simplejson
 import sys
 import tempfile
 import textwrap

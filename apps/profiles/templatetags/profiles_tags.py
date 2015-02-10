@@ -17,7 +17,7 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 from django import template
 from django.conf import settings
-from rosetta.views import can_translate as can_translate_func
+from django.template.loader import render_to_string
 
 from auth.models import CustomUser as User
 from profiles.forms import SelectLanguageForm
@@ -28,10 +28,6 @@ from videos.models import Action
 register = template.Library()
 
 ACTIONS_ON_PAGE = getattr(settings, 'ACTIONS_ON_PAGE', 10)
-
-@register.filter
-def can_translate(user):
-    return can_translate_func(user)
 
 @register.inclusion_tag('profiles/_require_email_dialog.html', takes_context=True)
 def require_email_dialog(context):
@@ -101,7 +97,3 @@ def user_avatar(context, user_obj):
 @register.filter
 def custom_avatar(user, size):
     return user._get_avatar_by_size(size)
-
-@register.inclusion_tag('profiles/_top_user_panel.html', takes_context=True)
-def top_user_panel(context):
-    return context

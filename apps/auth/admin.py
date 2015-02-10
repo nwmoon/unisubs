@@ -20,6 +20,7 @@ from datetime import datetime
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import widgets
+from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -41,6 +42,20 @@ class CustomUserCreationForm(UserCreationForm):
         model = CustomUser
         fields = ("username", "email")
 
+class UserChangeList(ChangeList):
+    def get_ordering(self, request, queryset):
+        # The default ChangeList code adds CustomUser.id to the list of
+        # ordering fields to make things deterministic.  However this kills
+        # performance because the ORDER BY clause includes columns from 2
+        # different tables (auth_user.username, auth_customuser.id).
+        #
+        # Also, sorting by any column other than user also kills performance
+        # since our user table is quite large at this point.
+        #
+        # So we just override everything and force the sort to be username.
+        # Username is a unique key so the sort will be fast and deterministic.
+        return ['username']
+
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff',
@@ -52,6 +67,9 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('username', 'email', 'password1', 'password2')}
         ),
     )
+
+    def get_changelist(self, request, **kwargs):
+        return UserChangeList
 
 class AnnouncementAdmin(admin.ModelAdmin):
     formfield_overrides = {

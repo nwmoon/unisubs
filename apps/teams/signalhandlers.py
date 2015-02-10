@@ -17,8 +17,10 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
 from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
 
-from teams.models import TeamVideo
+from auth.models import CustomUser as User
+from teams.models import TeamVideo, TeamMember, MembershipNarrowing
 from teams.signals import api_teamvideo_new
 from videos.signals import feed_imported
 
@@ -31,3 +33,16 @@ def on_feed_imported(signal, sender, new_videos, **kwargs):
             video=video, team=sender.team, added_by=sender.user,
             description=video.description)
         api_teamvideo_new.send(tv)
+
+@receiver(post_save, sender=TeamMember)
+@receiver(post_delete, sender=TeamMember)
+def on_team_member_change(sender, instance, **kwargs):
+    User.cache.invalidate_by_pk(instance.user_id)
+
+@receiver(post_save, sender=MembershipNarrowing)
+@receiver(post_delete, sender=MembershipNarrowing)
+def on_membership_narrowing_change(sender, instance, **kwargs):
+    try:
+        User.cache.invalidate_by_pk(instance.member.user_id)
+    except TeamMember.DoesNotExist:
+        pass

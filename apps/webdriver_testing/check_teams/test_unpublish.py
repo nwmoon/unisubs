@@ -1,18 +1,13 @@
 import os
 import time
-
+from caching.tests.utils import assert_invalidates_model_cache
 from django.core import management
-
+from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing.pages.site_pages import watch_page
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import VideoUrlFactory
-from webdriver_testing.data_factories import TeamVideoFactory
-from webdriver_testing.data_factories import TeamMemberFactory
-from webdriver_testing.data_factories import WorkflowFactory
 from webdriver_testing.data_factories import TeamLangPrefFactory
 from webdriver_testing.data_factories import UserLangFactory
 from webdriver_testing.pages.site_pages import editor_page
@@ -76,15 +71,15 @@ class TestCaseUnpublishLast(WebdriverTestCase):
         cls.logger.info('Setting visibility override on v3 to private')
         cls.en = cls.video.subtitle_language('en')
         en_v3 = cls.en.get_tip(full=True)
-        en_v3.visibility_override = 'private'
-        en_v3.save() 
+        with assert_invalidates_model_cache(cls.video): 
+            en_v3.visibility_override = 'private'
+            en_v3.save() 
         cls.tasks_tab.open_page('teams/%s/tasks/?assignee=anyone'
                                  % cls.team.slug)
  
 
 
     def tearDown(self):
-        self.browser.get_screenshot_as_file("%s.png" % self.id())
         self.tasks_tab.open_team_page(self.team.slug)
         self.tasks_tab.handle_js_alert('accept')
 
@@ -138,7 +133,7 @@ class TestCaseUnpublishLast(WebdriverTestCase):
         """Deleting last source can review
 
         """
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.owner.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?lang=ru&assignee=anyone'
                                  % self.team.slug)
 
@@ -154,7 +149,7 @@ class TestCaseUnpublishLast(WebdriverTestCase):
     def test_unpublish_last_perform_approve(self):
         """Deleting last source can approve
         """
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.owner.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?lang=de&assignee=anyone'
                                  % self.team.slug)
 
@@ -316,7 +311,7 @@ class TestCaseDeleteLast(WebdriverTestCase):
         """Deleting last source can review
 
         """
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.owner.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?lang=ru&assignee=anyone'
                                  % self.team.slug)
         self.tasks_tab.perform_task('Review Russian Subtitles', 
@@ -330,7 +325,7 @@ class TestCaseDeleteLast(WebdriverTestCase):
     def test_delete_last_perform_approve(self):
         """Deleting last source can approve
         """
-        self.tasks_tab.log_in(self.owner, 'password')
+        self.tasks_tab.log_in(self.owner.username, 'password')
         self.tasks_tab.open_page('teams/%s/tasks/?lang=de&assignee=anyone'
                                  % self.team.slug)
 

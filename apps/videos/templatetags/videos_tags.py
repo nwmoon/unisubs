@@ -17,6 +17,7 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django import template
 
@@ -24,21 +25,12 @@ register = template.Library()
 
 from django.contrib.sites.models import Site
 
+from staticmedia import utils
+from utils.basexconverter import base62
+from videos.views import LanguageList
 from videos.types import video_type_registrar, VideoTypeError
 from videos import permissions
-
-from utils.basexconverter import base62
-
-@register.inclusion_tag('videos/_video.html', takes_context=True)
-def render_video(context, video, display_views='total'):
-    context['video'] = video
-
-    if display_views and hasattr(video, '%s_views' % display_views):
-        context['video_views'] = getattr(video, '%s_views' % display_views)
-    else:
-        context['video_views'] = video.total_views
-
-    return context
+from videos import share_utils
 
 @register.inclusion_tag('videos/_feature_video.html', takes_context=True)
 def feature_video(context, video):
@@ -54,7 +46,7 @@ def is_follower(obj, user):
     if not obj:
         return False
 
-    return obj.followers.filter(pk=user.pk).exists()
+    return obj.user_is_follower(user)
 
 @register.filter
 def can_user_edit_video_urls(video, user):
@@ -212,3 +204,37 @@ def multi_video_create_subtitles_data_attrs(video):
                       video.primary_audio_language_code))
     return mark_safe(' '.join('%s="%s"' % (key, value)
                               for (key, value) in attrs))
+
+@register.simple_tag(name='language-list')
+def language_list(video):
+    cached = video.cache.get('language-list')
+    if cached is not None:
+        return cached
+    video.prefetch_languages(with_public_tips=True,
+                             with_private_tips=True)
+    content = render_to_string('videos/_language-list.html', {
+        'video': video,
+        'language_list': LanguageList(video),
+        'STATIC_URL': utils.static_url(),
+    })
+    video.cache.set('language-list', content)
+    return content
+
+@register.simple_tag(name='video-metadata', takes_context=True)
+def video_metadata(context, video):
+    request = context['request']
+    metadata = video.get_metadata_for_locale(request.LANGUAGE_CODE)
+    return "\n".join(
+        u'<h4>{0}: {1}</h4>'.format(field['label'], field['content'])
+        for field in metadata.convert_for_display()
+    )
+
+@register.simple_tag(name='sharing-widget-for-video')
+def sharing_widget_for_video(video):
+    cached = video.cache.get('sharing-widget')
+    if cached is not None:
+        return cached
+    context = share_utils.share_panel_context_for_video(video)
+    content = render_to_string('_sharing_widget.html', context)
+    video.cache.set("sharing-widget", content)
+    return content

@@ -82,9 +82,7 @@ fi
 cd $APP_DIR
 python ./deploy/create_commit_file.py
 
-if [ "$UPDATE_VIRTUALENV" ]; then
-    cd deploy
-    # install dependencies
-    pip install -r requirements.txt
-    cd $APP_DIR
-fi
+pushd deploy
+# install dependencies
+pip install -r requirements.txt
+popd

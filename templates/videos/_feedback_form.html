@@ -1,7 +1,8 @@
 {% load i18n %}
+{% load url from future %}
 <div style="{% if not error %}display: none{% endif %}" class="feedback-form-container" id="feedback_container">
   <div class="feedback_bg">
-  <form method="post" action="{% block action %}{% url videos:feedback %}{% endblock %}" id="feedback_form">
+  <form method="post" action="{% block action %}{% url "videos:feedback" %}{% endblock %}" id="feedback_form">
       {% csrf_token %}
   <h2>{% block form_title %}{% trans 'How are you using Amara?  What would make it better?' %}{% endblock %}</h2>
   {% block hidden_fields %}{% endblock %}

@@ -24,65 +24,6 @@ var Site = function(Site) {
 
     var that = this;
 
-    /*
-     * use AHAH to load tabs
-     */
-    function AHAHTabLoader(onComplete) {
-        this.tabContainer = $('#tab-container');
-        this.tabCache = {};
-        this.cacheContents(window.location.href);
-        this.onComplete = onComplete;
-    }
-
-    AHAHTabLoader.prototype = {
-        cacheContents: function(url) {
-            this.tabCache[url] = this.tabContainer.contents();
-        },
-        changeCurrentTab: function(url) {
-            var tab = url.match(/tab=([^&]+)/)[1];
-            $('.tabs li').removeClass('current');
-            $('#' + tab + '-tab-header').addClass('current');
-        },
-        updateLocation: function(url) {
-            if(history && history.pushState) {
-                history.pushState(null, null, url);
-            }
-        },
-        addLinks: function(selector) {
-            var self = this;
-            $('a', $(selector)).each(function() {
-                var link = $(this);
-                if(!link.data('AHAHTabLoaderConnected')) {
-                    link.click(function(evt) {
-                        self.handleClick(evt, link);
-                    });
-                    link.data('AHAHTabLoaderConnected', true);
-                }
-            });
-        },
-        handleClick: function(evt, link) {
-            var url = link[0].href;
-            this.changeCurrentTab(url);
-            this.updateLocation(url);
-            this.tabContainer.empty();
-            if(this.tabCache.hasOwnProperty(url)) {
-                this.tabContainer.append(this.tabCache[url]);
-                if(this.onComplete) {
-                    this.onComplete(this.tabContainer);
-                }
-            } else {
-                var self = this;
-                this.tabContainer.load(url, null, function() {
-                    self.cacheContents(url);
-                    if(self.onComplete) {
-                        self.onComplete(this);
-                    }
-                });
-            }
-            evt.stopPropagation();
-            evt.preventDefault();
-        }
-    };
     this.init = function() {
 
         // Global cached jQuery objects
@@ -134,7 +75,17 @@ var Site = function(Site) {
          *     that.Utils.chosenify();
          *
          */
-
+	parsedQuery: function() {
+	    var query = window.location.search;
+	    var output = {};
+	    if (query && query[0] === '?')
+		query.slice(1).split('&').forEach(function(x) {
+		    var vals = x.split('=');
+		    if (vals.length == 2)
+			output[vals[0]] = vals[1];
+		});
+	    return output;
+	},
         chosenify: function() {
             $('select', '.v1 .content').not('.raw-select').filter(function() {
                 if ($(this).parents('div').hasClass('ajaxChosen')) {
@@ -350,6 +301,16 @@ var Site = function(Site) {
             });
         }
     };
+    this.analytics = function() {
+        if (typeof sendAnalytics !== 'undefined')
+            sendAnalytics.apply(undefined, Array.prototype.slice.call(arguments, 0));
+    };
+    this.setupSearchBox = function() {
+	var closure = this;
+        $('form.search-form').submit(function(ev) {
+	    closure.analytics('website', 'search', $('#id_q').val());
+        });
+    };
     this.setupModalDialogs = function($rootElt) {
         $('a.open-modal', $rootElt).each(function() {
             var $link = $(this);
@@ -481,11 +442,16 @@ var Site = function(Site) {
                     $('.filters').toggle();
                     $(this).children('span').toggleClass('open');
                 });
+		if ($('#sort-filter').hasClass("default-open")) {
+                    $('.filters').show();
+                    $('#sort-filter').children('span').addClass('open');
+		}
                 $('select', '.filters:not(.no-ajax)').change(function(e) {
                     window.location = $(this).children('option:selected').attr('value');
                 });
             }
             that.setupModalDialogs();
+            that.setupSearchBox();
             $.fn.tabs = function(options){
                 this.each(function(){
                     var $this = $(this);
@@ -690,17 +656,6 @@ var Site = function(Site) {
                 });
             }
             setupRevisions();
-            var tabLoader = new AHAHTabLoader(function($container) {
-                that.setupModalDialogs($container);
-                // We may load new pagination links, in that case make sure
-                // they're loaded.
-                tabLoader.addLinks('.pagination');
-                // If we loaded the revisions tab, we need to attach our js to
-                // it
-                setupRevisions();
-            });
-            tabLoader.addLinks('.tabs');
-            tabLoader.addLinks('.pagination');
 
             $('#edit_subtitles_button').click( function(e) {
                 if (!(localStorage && localStorage.getItem)) {
@@ -715,12 +670,6 @@ var Site = function(Site) {
             });
             that.Utils.truncateTextBlocks($('div.description'), 90);
         },
-        video_view: function() {
-            var tabLoader = new AHAHTabLoader(function($container) {
-                that.setupModalDialogs($container);
-            });
-            tabLoader.addLinks('.tabs');
-        },
         video_set_language: function() {
             that.Utils.chosenify();
         },
@@ -732,6 +681,30 @@ var Site = function(Site) {
             that.Utils.chosenify();
             that.Utils.bulkCheckboxes($('input.bulk-select'), $('input.bulkable'), $('a.bulk-select'));
 	},
+        teams_activity: function() {
+            function onMoreClicked(e) {
+                var parameters = that.Utils.parsedQuery();
+                var $link = $(this);
+                parameters["page"] = $link.attr("data-page");
+                var loadingIcon = $('img.loading-icon');
+                e.preventDefault();
+                var href = "?";
+                for (var key in parameters)
+                    href +=  key + "=" + parameters[key] + "&";
+                $link.attr("href", href);
+                loadingIcon.show();
+                $link.remove();
+                $.get($link.attr('href'), function(data) {
+                    var $data = $(data);
+                    $('#activity-list ul').append($data.find('li'));
+                    $('.pagination').append($data.find('a.show-more'));
+                    $('div.pagination a').click(onMoreClicked);
+                    loadingIcon.hide();
+                });
+            }
+            that.Utils.chosenify();
+            $('div.pagination a').click(onMoreClicked);
+        },
         move_videos: function() {
             that.Utils.chosenify();
             that.Utils.bulkCheckboxes($('input.bulk-select'), $('input.bulkable'), $('a.bulk-select'));

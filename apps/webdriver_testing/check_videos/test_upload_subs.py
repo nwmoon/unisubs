@@ -1,12 +1,13 @@
+import os
+import codecs
+
+from subtitles import pipeline
+from utils.factories import *
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import VideoUrlFactory
 from webdriver_testing.pages.site_pages import editor_page 
-import codecs
-import os
 
 class TestCaseUntimedText(WebdriverTestCase):
     """TestSuite for uploading subtitles with untimed text.  """
@@ -16,10 +17,10 @@ class TestCaseUntimedText(WebdriverTestCase):
     def setUpClass(cls):
         super(TestCaseUntimedText, cls).setUpClass()
         cls.data_utils = data_helpers.DataHelpers()
-        cls.user = UserFactory.create(username = 'user')
+        cls.user = UserFactory()
         cls.video_pg = video_page.VideoPage(cls)
         cls.editor_pg = editor_page.EditorPage(cls)
-        cls.test_video = VideoUrlFactory().video
+        cls.test_video = VideoFactory()
         cls.subs_data_dir = os.path.join(os.getcwd(), 'apps', 
             'webdriver_testing', 'subtitle_data')
         cls.video_pg.open_video_page(cls.test_video.video_id)
@@ -42,6 +43,7 @@ class TestCaseUntimedText(WebdriverTestCase):
         subtitle_lang = self.test_video.subtitle_language('en') 
         self.assertEqual(43, subtitle_lang.get_subtitle_count())
         self.video_pg.open_page('videos/' + self.test_video.video_id + '/en/')
+        self.assertIn("English", self.video_pg.subtitle_languages())
 
 
     def test_untimed_txt(self):
@@ -98,9 +100,10 @@ class TestCaseUntimedText(WebdriverTestCase):
         Uploaded subs replace the existing version even if the existing
         version has subs created from it.
         """
-        tv = VideoUrlFactory(url='http://www.example.com/3.mp4').video
+        tv = VideoFactory()
+        pipeline.add_subtitles(tv, 'ru', SubtitleSetFactory(),
+                               action='publish')
 
-        video_list = self.data_utils.create_videos_with_fake_subs()
         test_file = 'Untimed_text.srt'
         sub_file = os.path.join(self.subs_data_dir, test_file)
         self.video_pg.open_video_page(tv.video_id)
@@ -117,8 +120,9 @@ class TestCaseUntimedText(WebdriverTestCase):
         Uploaded subs replace the existing version of original lang text.
         """
 
-        tv = VideoUrlFactory(url='http://www.example.com/4.mp4').video
-        video_list = self.data_utils.create_videos_with_fake_subs()
+        tv = VideoFactory()
+        pipeline.add_subtitles(tv, 'ar', SubtitleSetFactory(),
+                               action='publish')
         test_file = 'Untimed_text.srt'
         sub_file = os.path.join(self.subs_data_dir, test_file) 
         self.video_pg.open_video_page(tv.video_id)
@@ -136,8 +140,7 @@ class TestCaseUntimedText(WebdriverTestCase):
 
         New language is created as a new version.
         """
-        tv = VideoUrlFactory().video
-        video_list = self.data_utils.create_videos_with_fake_subs()
+        tv = VideoFactory()
         test_file = 'Untimed_text.srt'
         sub_file = os.path.join(self.subs_data_dir, test_file) 
         self.video_pg.open_video_page(tv.video_id)
@@ -207,10 +210,10 @@ class TestCaseTimedText(WebdriverTestCase):
     @classmethod 
     def setUpClass(cls):
         super(TestCaseTimedText, cls).setUpClass()
-        cls.user = UserFactory.create(username = 'user')
+        cls.user = UserFactory()
         cls.video_pg = video_page.VideoPage(cls)
         cls.video_lang_pg =  video_language_page.VideoLanguagePage(cls)
-        cls.test_video = VideoUrlFactory().video
+        cls.test_video = VideoFactory()
         cls.subs_data_dir = os.path.join(os.getcwd(), 'apps', 
             'webdriver_testing', 'subtitle_data')
         cls.video_pg.open_video_page(cls.test_video.video_id)
@@ -235,6 +238,7 @@ class TestCaseTimedText(WebdriverTestCase):
         self.assertEqual(expected_count, subtitle_lang.get_subtitle_count())
         self.video_lang_pg.open_video_lang_page(self.test_video.video_id, lang_code)
         self.assertEqual(expected_count, len(self.video_lang_pg.displayed_lines()))
+        self.assertIn(lang, self.video_pg.subtitle_languages())
 
     def test_timed_txt(self):
         """Upload timed subs (en) in a txt file.

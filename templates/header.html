@@ -1,4 +1,5 @@
-{% load i18n profiles_tags auth_tags %}
+{% load i18n profiles_tags auth_tags videos_tags %}
+{% load url from future %}
 <header class="navbar navbar-static-top" id="top" role="banner">
   <div class="container">
     <div class="navbar-header">
@@ -14,13 +15,13 @@
       <span>
         <ul class="nav navbar-nav">
           <li id="nav_submit">
-            <a href="{% url videos:create %}">{% trans 'Subtitle Video' %}</a>
+            <a href="{% url "videos:create" %}">{% trans 'Subtitle Video' %}</a>
           </li>
           <li>
             <a href="/community">{% trans "Community" %}</a>
           </li>
           <li>
-            <a href="//pro.amara.org">{% trans "Professional Solutions" %}</a>
+            <a id="proamara-link" href="//pro.amara.org">{% trans "Professional Solutions" %}</a>
           </li>
           <li>
             <a class="search-icon" href="/videos/watch/">
@@ -30,15 +31,7 @@
         </ul><!-- .nav navbar-nav -->
 
         <ul class="nav navbar-nav navbar-right">
-          {% if user.is_authenticated %}
-            <li id="me_menu">
-              {% top_user_panel %}
-            </li>
-          {% else %}
-            <li>
-              <a href="{% url auth:login %}?next={{ request.path_info|urlencode }}">{% trans 'Log in &raquo' %}</a>
-            </li>
-          {% endif %}
+            {% include "profiles/_user_menu.html" %}
         </ul>
       </span>
     </nav>

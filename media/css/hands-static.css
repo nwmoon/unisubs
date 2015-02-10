@@ -3,6 +3,7 @@
 .top-banner h1 {
 	margin-top: 80px;
 	width: 90%;
+	font-weight: 300;
 }
 
 .whitespace-tall {
@@ -44,6 +45,10 @@ ul {
 	background: url(../images/index-bg-hands.png) no-repeat center;
 }
 
+#index-banner h5 {
+	font-weight: 200;
+}
+
 #index-two-tone {
 	background: #277F6A; /* Old browsers */
 	background: -moz-linear-gradient(left,  #277F6A 50%, #3EA286 50%); /* FF3.6+ */
@@ -74,7 +79,6 @@ ul {
 	color: #f2f2f3;
 	text-decoration:none;
 	margin-top: 16.5em;
-	font-weight: 400;
 }
 
 .infobox h4 a:hover {
@@ -139,6 +143,10 @@ ul {
 	margin-left: 5%;
 	color: #297e6a;
 	font-weight: 300;
+}
+
+.index-video-description h3 {
+	font-weight: 400;
 }
 
 /* INDEX-INDIVIDUALS */

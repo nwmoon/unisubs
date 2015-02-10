@@ -2,7 +2,7 @@ from django.shortcuts import render_to_response, redirect
 from django.contrib import messages
 from django.template import RequestContext
 from django.contrib.auth import authenticate, login
-from django.http import HttpResponseRedirect, HttpResponse, get_host
+from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -37,7 +37,7 @@ def get_url_host(request):
         protocol = 'https'
     else:
         protocol = 'http'
-    host = get_host(request)
+    host = request.get_host()
     return '%s://%s' % (protocol, host)
 
 def login_page(request):

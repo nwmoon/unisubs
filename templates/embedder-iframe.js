@@ -9,6 +9,7 @@ var THIS_JS_FILE = scriptFiles[scriptFiles.length-1].src;
 	var loadingDivs = [];
 	var timers = [];
 	var iframeDomain = '';
+	var absoluteURL = new RegExp('^(?:[a-z]+:)?//', 'i');
 	var resize = function(index, width, height) {
             if (iframes[index].style.visibility == "visible")
                 iframes[index].parentNode.style.height = "";
@@ -52,7 +53,7 @@ var THIS_JS_FILE = scriptFiles[scriptFiles.length-1].src;
 		var currentDiv = elements[i];
 		var noanalytics = false;
                 var loadingDiv = document.createElement("DIV");
-                if (currentDiv.dataset.noanalytics)
+                if (currentDiv.dataset.noanalytics && (currentDiv.dataset.noanalytics == "true"))
                     noanalytics = true;
                 if (currentDiv.dataset.width)
                     currentDiv.style.width = currentDiv.dataset.width;
@@ -67,7 +68,10 @@ var THIS_JS_FILE = scriptFiles[scriptFiles.length-1].src;
 		loadingDiv.style.paddingLeft = loadingDiv.style.paddingRight = "50px";
                 loadingDiv.style.textAlign = "center";
                 loadingImg = document.createElement("IMG");
-                loadingImg.src = "{% static_url %}images/embedder/loading.gif";
+                if (absoluteURL.test("{% static_url %}"))
+                    loadingImg.src = "{% static_url %}images/embedder/loading.gif";
+                else
+                    loadingImg.src = parser.protocol + "//" + parser.host + "{% static_url %}images/embedder/loading.gif";
                 loadingDiv.appendChild(loadingImg);
                 currentDiv.appendChild(loadingDiv); 
 

@@ -22,8 +22,9 @@ from urlparse import urlparse
 from django.core.urlresolvers import reverse
 from django.core import mail
 from django.test import TestCase
-from auth.models import CustomUser as User
+from auth.models import CustomUser as User, UserLanguage
 from auth.models import LoginToken
+from caching.tests.utils import assert_invalidates_model_cache
 from utils.factories import *
 
 class VideosFieldTest(TestCase):
@@ -74,6 +75,14 @@ class UserCreationTest(TestCase):
         user.set_password("secret")
         user.save()
         self.assertEqual(len(mail.outbox), 1)
+
+class UserCacheTest(TestCase):
+    def test_user_language_change_invalidates_cache(self):
+        user = UserFactory()
+        with assert_invalidates_model_cache(user):
+            user_lang = UserLanguage.objects.create(user=user, language='en')
+        with assert_invalidates_model_cache(user):
+            user_lang.delete()
 
 class LoginTokenModelTest(TestCase):
     def test_creation(self):

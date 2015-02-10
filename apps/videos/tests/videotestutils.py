@@ -19,10 +19,10 @@
 
 from datetime import datetime
 
-import math_captcha
 import babelsubs
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from nose.tools import *
 
 from auth.models import CustomUser as User
 from subtitles.pipeline import add_subtitles
@@ -30,13 +30,10 @@ from utils.factories import *
 from videos.models import Video, SubtitleLanguage, SubtitleVersion
 from videos.tests.data import get_user
 
-math_captcha.forms.math_clean = lambda form: None
-
 SRT = u"""1
 00:00:00,004 --> 00:00:02,093
 We\n started <b>Universal Subtitles</b> <i>because</i> we <u>believe</u>
 """
-
 
 def create_langs_and_versions(video, langs, user=None):
     from subtitles import pipeline
@@ -106,5 +103,3 @@ class WebUseTest(TestCase):
             self.client.login(username=user.username, password='password')
         else:
             self._login(get_user(200))
-
-

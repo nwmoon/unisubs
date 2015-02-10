@@ -81,12 +81,19 @@ var angular = angular || null;
         $scope.uploadError = false;
         $scope.exiting = false;
         $scope.translating = function() {
-            return ($scope.workingSubtitles.language.code !=  $scope.referenceSubtitles.language.code);
-        }
+            return ($scope.referenceSubtitles.language && $scope.workingSubtitles.language.code !=  $scope.referenceSubtitles.language.code);
+        };
+        $scope.analytics = function() {
+            if (typeof sendAnalytics !== 'undefined')
+		sendAnalytics.apply(this, Array.prototype.slice.call(arguments, 0));
+        };
+        $scope.analytics('editor', 'launched');
         if (EditorData.customCss)
-	    $scope.customCSSs = [{"href": EditorData.customCss}];
+            $scope.customCSSs = [{"href": EditorData.customCss}];
         if (EditorData.teamAttributes) {
             $scope.teamName = EditorData.teamAttributes.teamName
+            if (EditorData.teamAttributes.type && EditorData.teamAttributes.type != "O")
+                $scope.noLinkToLegacy = true;
             if (EditorData.teamAttributes.guidelines &&
 		(EditorData.teamAttributes.guidelines['subtitle'] ||
 		 EditorData.teamAttributes.guidelines['translate'] ||
@@ -215,12 +222,37 @@ var angular = angular || null;
             }
         });
 
+        function authHeaders() {
+            // authHeaders copied from subtitles/services.js.  We should
+            // remove this as part of #1830
+
+            var rv = {};
+            // The following code converts the values of
+            // EditorData.authHeaders into utf-8 encoded bytestrings to send
+            // back to the server.  The unescape/encodeURIComponent part seems
+            // pretty hacky, but it should work for all browsers
+            // (http://monsur.hossa.in/2012/07/20/utf-8-in-javascript.html)
+            for (var key in EditorData.authHeaders) {
+                var val = EditorData.authHeaders[key];
+                var utfVal = unescape(encodeURIComponent(val));
+                rv[key] = utfVal;
+            }
+            return rv;
+        }
+
         $scope.submitUploadForm = function($event) {
             $scope.uploading = true;
             $scope.uploadError = false;
-	    $('#upload-subtitles-form').ajaxSubmit({
-              dataType: 'json',
-              success: function(data, status, xhr, $form){
+            var form = $('#upload-subtitles-form')[0];
+            $.ajax({
+              url: form.action,
+              type: 'POST',
+              data: new FormData(form),
+              dataType: 'JSON',
+              headers: authHeaders(),
+              processData: false,
+              contentType: false,
+              success: function(data, status, xhr) {
 		  if (data && data.success)
                       location.reload();
 		  else {
@@ -228,7 +260,7 @@ var angular = angular || null;
                       $scope.uploadError = true;
 		  }
               },
-              error: function(data, status, xhr, $form){
+              error: function(xhr, status, error) {
                   $scope.uploading = false;
                   $scope.uploadError = true;
               }
@@ -311,10 +343,12 @@ var angular = angular || null;
             notes: EditorData.savedNotes
         };
         $scope.exitEditor = function() {
+            $scope.analytics('editor', 'exit');
             $scope.exiting = true;
             $window.location = EditorData.redirectUrl;
         }
         $scope.exitToLegacyEditor = function() {
+            $scope.analytics('editor', 'exit-to-legacy');
             $scope.exiting = true;
             $window.location = EditorData.oldEditorURL;
         }

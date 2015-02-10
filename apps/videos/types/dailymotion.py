@@ -16,14 +16,15 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
-from base import VideoType, VideoTypeError
 import httplib
-from django.utils import simplejson as json
+import json
 import re
+
 from django.utils.translation import ugettext_lazy as _
 
-DAILYMOTION_REGEX = re.compile(r'https?://(?:[^/]+[.])?dailymotion.com/video/(?P<video_id>[-0-9a-zA-Z]+)(?:_.*)?')
+from base import VideoType, VideoTypeError
 
+DAILYMOTION_REGEX = re.compile(r'https?://(?:[^/]+[.])?dailymotion.com/video/(?P<video_id>[-0-9a-zA-Z]+)(?:_.*)?')
 
 class DailymotionVideoType(VideoType):
 
@@ -77,7 +78,7 @@ class DailymotionVideoType(VideoType):
             body = response.read()
             try:
                 return json.loads(body)
-            except json.JSONDecodeError:
+            except ValueError:
                 raise VideoTypeError(_(u'Video is unavailable'))
         except httplib.BadStatusLine:
             return {}

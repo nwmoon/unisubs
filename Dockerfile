@@ -1,19 +1,12 @@
-FROM ubuntu:12.04
+FROM ubuntu:14.04
 MAINTAINER Amara "http://amara.org"
-
-RUN (echo "deb http://archive.ubuntu.com/ubuntu precise main universe multiverse" > /etc/apt/sources.list)
-RUN (echo "deb-src http://archive.ubuntu.com/ubuntu precise main universe multiverse" >> /etc/apt/sources.list)
-RUN (echo "deb http://archive.ubuntu.com/ubuntu precise-updates main universe multiverse" >> /etc/apt/sources.list)
-RUN (echo "deb-src http://archive.ubuntu.com/ubuntu precise-updates main universe multiverse" >> /etc/apt/sources.list)
-RUN (echo "deb http://ppa.launchpad.net/mozillateam/firefox-next/ubuntu precise main" >> /etc/apt/sources.list)
-RUN (echo "deb-src http://ppa.launchpad.net/mozillateam/firefox-next/ubuntu precise main" >> /etc/apt/sources.list)
+RUN (echo "deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse" > /etc/apt/sources.list)
+RUN (echo "deb-src http://archive.ubuntu.com/ubuntu trusty main universe multiverse" >> /etc/apt/sources.list)
+RUN (echo "deb http://archive.ubuntu.com/ubuntu trusty-updates main universe multiverse" >> /etc/apt/sources.list)
+RUN (echo "deb-src http://archive.ubuntu.com/ubuntu trusty-updates main universe multiverse" >> /etc/apt/sources.list)
 RUN apt-get update
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -y --force-yes install wget python-dev python-setuptools make gcc s3cmd libmysqlclient-dev libmemcached-dev supervisor libxml2-dev libxslt-dev zlib1g-dev swig libssl-dev libyaml-dev git-core python-m2crypto subversion openjdk-6-jre libjpeg-dev libfreetype6-dev gettext build-essential gcc dialog mysql-client firefox flashplugin-installer xvfb node-uglify ruby-sass
-# fix PIL
-RUN ln -s /usr/lib/`uname -i`-linux-gnu/libfreetype.so /usr/lib/
-RUN ln -s /usr/lib/`uname -i`-linux-gnu/libjpeg.so /usr/lib/
-RUN ln -s /usr/lib/`uname -i`-linux-gnu/libz.so /usr/lib/
 ADD . /opt/apps/unisubs
 RUN mkdir -p /opt/extras/pictures
 RUN mkdir -p /opt/extras/videos
@@ -30,6 +23,7 @@ ADD .docker/run_migrations.sh /usr/local/bin/run_migrations
 ADD .docker/rebuild_index.sh /usr/local/bin/rebuild_index
 ADD .docker/update_index.sh /usr/local/bin/update_index
 ADD .docker/master-worker.sh /usr/local/bin/master-worker
+ADD .docker/feed-worker.sh /usr/local/bin/feed-worker
 ADD .docker/worker.sh /usr/local/bin/worker
 ADD .docker/test_app.sh /usr/local/bin/test_app
 ADD .docker/update_translations.sh /usr/local/bin/update_translations

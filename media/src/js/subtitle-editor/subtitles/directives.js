@@ -282,7 +282,6 @@ var USER_IDLE_MINUTES = 15;
                         startEditOn(newValue);
                     }
                 });
-
                 elm.on('click', function(evt) {
                     var action = findSubtitleClick(evt.target);
                     var subtitle = findSubtitleData(evt.target);
@@ -408,32 +407,34 @@ var USER_IDLE_MINUTES = 15;
 
             function startEditOn(draft) {
                 var li = subtitleMap[draft.storedSubtitle.id];
-                li.addClass('edit');
-                var textarea = $('<textarea class="subtitle-edit" placeholder="Type a subtitle and press Enter"/>');
-                textarea.val(draft.markdown);
-                li.append(textarea);
-                textarea.autosize();
-                textarea.focus();
-                if(draft.initialCaretPos === undefined) {
-                    var caretPos = draft.markdown.length;
-                } else {
-                    var caretPos = draft.initialCaretPos;
-                }
-                DomUtil.setSelectionRange(textarea[0], caretPos, caretPos);
-                textarea.on('keyup input propertychange', function(evt) {
-                    var val = textarea.val();
-                    if(val != draft.markdown) {
-                        $scope.$apply(function() {
-                            draft.markdown = val;
+		if (li) {
+                    li.addClass('edit');
+                    var textarea = $('<textarea class="subtitle-edit" placeholder="Type a subtitle and press Enter"/>');
+                    textarea.val(draft.markdown);
+                    li.append(textarea);
+                    textarea.autosize();
+                    textarea.focus();
+                    if(draft.initialCaretPos === undefined) {
+                        var caretPos = draft.markdown.length;
+                    } else {
+                        var caretPos = draft.initialCaretPos;
+                    }
+                    DomUtil.setSelectionRange(textarea[0], caretPos, caretPos);
+                    textarea.on('keyup input propertychange', function(evt) {
+                        var val = textarea.val();
+                        if(val != draft.markdown) {
+                            $scope.$apply(function() {
+                                draft.markdown = val;
+                            });
+                        }
+                    });
+                    if($scope.onEditKeydown) {
+                        textarea.on('keydown', function(evt) {
+                            $scope.$apply(function() {
+                                $scope.onEditKeydown(evt);
+                            });
                         });
                     }
-                });
-                if($scope.onEditKeydown) {
-                    textarea.on('keydown', function(evt) {
-                        $scope.$apply(function() {
-                            $scope.onEditKeydown(evt);
-                        });
-                    });
                 }
             }
             function stopEditOn(draft) {
@@ -441,6 +442,9 @@ var USER_IDLE_MINUTES = 15;
                 if(li) {
                     li.removeClass('edit');
                     $('textarea.subtitle-edit', li).remove();
+                    if ((draft.storedSubtitle.content().length == 0) && (subtitleMap[draft.storedSubtitle.id].next().html() == undefined) && (subtitleList.length() > 1)) {
+                        subtitleList.removeSubtitle(draft.storedSubtitle);
+                    }
                 }
             }
 

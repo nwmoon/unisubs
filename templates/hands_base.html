@@ -1,11 +1,13 @@
 {% load i18n announcement_tags messages_tags profiles_tags media_bundle media_compressor auth_tags %}
+{% load url from future %}
 
 <!DOCTYPE html>
 <html {% if LANGUAGE_BIDI %}dir="rtl"{% endif %} xmlns:og="http://opengraphprotocol.org/schema/" xmlns:fb="http://www.facebook.com/2008/fbml" xml:lang="en" lang="en" {% block html_attrs %}{% endblock %} class="base">
 
 <head>
   <title>{% block title %}Amara - {% trans 'Caption, translate, subtitle and transcribe video.' %}{% endblock %}</title>
-  <link href='//fonts.googleapis.com/css?family=Raleway:500,400,300,200' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Raleway:200,300' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Roboto:300,400' rel='stylesheet' type='text/css'>
 
   <!-- Latest compiled and minified CSS -->
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
@@ -53,9 +55,9 @@
 
   {% media_bundle "site.js" %}
   {% media_bundle "hands_home.js" %}
-  <script type="text/javascript" src="{% url js_i18n_catalog %}"></script>
-  <script src="{% url profiles:rpc_api %}" type="text/javascript"></script>
-  <script type="text/javascript" src='{% url embedder_iframe %}'>
+  <script type="text/javascript" src="{% url "js_i18n_catalog" %}"></script>
+  <script src="{% url "profiles:rpc_api" %}" type="text/javascript"></script>
+  <script type="text/javascript" src='{% url "embedder_iframe" %}'>
   </script>
   {% block scripts %}
   {% endblock %}
@@ -88,23 +90,20 @@
       {% include 'footer.html' %}
   {% endblock %}
 </div>
-  {% if user.is_staff or user|can_translate %}
+  {% if user.is_staff %}
     <div id="admin_controls">
       <ul id="site_controls">
         {% if user.is_staff %}
-          <li><a target="_blank" href="{% url admin:index %}">{% trans 'Admin' %}</a></li>
+          <li><a target="_blank" href="{% url "admin:index" %}">{% trans 'Admin' %}</a></li>
         {% endif %}
         {% if user.is_superuser %}
           <li><a target="_blank" href="//sentry.pculture.org:9000">{% trans 'Sentry' %}</a></li>
         {% endif %}
-        {% if user|can_translate %}
-          <li><a target="_blank" href="{% url rosetta-pick-file %}"><span>{% trans 'Rosetta' %}</span></a></li>
+        {% if user.is_superuser %}
+          <li><a target="_blank" href="{% url "auth:login_trap" %}">{% trans 'Impersonate' %}</a></li>
         {% endif %}
         {% if user.is_superuser %}
-          <li><a target="_blank" href="{% url auth:login_trap %}">{% trans 'Impersonate' %}</a></li>
-        {% endif %}
-        {% if user.is_superuser %}
-          <li><a target="_blank" href="{% url billing %}">{% trans 'Billing' %}</a></li>
+          <li><a target="_blank" href="{% url "billing" %}">{% trans 'Billing' %}</a></li>
         {% endif %}
         <li><a href="//github.com/pculture/unisubs/commit/{{ LAST_COMMIT_GUID }}" title="{{ LAST_COMMIT_GUID }}">Github</a></li>
       </ul>

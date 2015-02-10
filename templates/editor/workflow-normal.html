@@ -3,8 +3,8 @@
     <li ng-class="workflow.stageCSSClass('typing')">
         <h3>{% trans "Type what you hear" %}</h3>
         <p>{% trans "Is all the content subtitled?" %}</p>
-        <button ng-disabled="!workflow.canCompleteStage('typing')"
-            ng-click="workflow.completeStage('typing')">
+        <button ng-class="{disabled:!workflow.canCompleteStage('typing')}"
+            ng-click="workflow.canCompleteStage('typing') && workflow.completeStage('typing')">
             {% trans "Yes, start syncing" %}
         </button>
     </li>
@@ -16,8 +16,8 @@
             synced subtitles: {{ count }} / {{ total }}
             {% endblocktrans %}
         </p>
-        <button ng-disabled="!workflow.canCompleteStage('syncing')"
-            ng-click="workflow.completeStage('syncing')">
+        <button  ng-class="{disabled:!workflow.canCompleteStage('syncing')}"
+            ng-click="workflow.canCompleteStage('syncing') && workflow.completeStage('syncing')">
             {% trans "Start review" %}
         </button>
     </li>
@@ -29,7 +29,7 @@
         </p>
         <p class="error" ng-show="!workflow.subtitleList.isComplete()">{% trans "Not all lines completed" %}</p>
 
-        <button ng-repeat="action in actions" ng-disabled="!action.canPerform()" ng-class="action.class" ng-click="action.perform()">
+        <button ng-repeat="action in actions" ng-class="action.class;{disabled:!action.canPerform()}" ng-click="action.canPerform() && action.perform()">
             [[ action.label ]]
         </button>
     </li>

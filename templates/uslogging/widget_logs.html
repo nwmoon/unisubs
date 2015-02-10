@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load paginator %}
+{% load url from future %}
 
 {% block main_content %}
 <h2>widget logs</h2>
@@ -8,7 +9,7 @@
 {% for log in log_list %}
 <p>{{ log.date_saved }}<br/>
 draft pk: {{ log.draft_pk }}<br/>
-<a href="{% url uslogging:widget_log log.id %}">View log</a>
+<a href="{% url "uslogging:widget_log" log.id %}">View log</a>
 </p>
 {% endfor %}
 {% endblock %}

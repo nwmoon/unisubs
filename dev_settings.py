@@ -70,9 +70,6 @@ TWITTER_CONSUMER_SECRET = 'ApkJPIIbBKp3Wph0JBoAg2Nsk1Z5EG6PFTevNpd5Y00'
 
 MEDIA_URL = "http://unisubs.example.com:8000/user-data/"
 
-VIMEO_API_KEY = 'e1a46f832f8dfa99652781ee0b39df12'
-VIMEO_API_SECRET = 'bdaeb531298eeee1'
-
 FACEBOOK_APP_KEY = FACEBOOK_APP_ID = '255603057797860'
 FACEBOOK_SECRET_KEY = '2a18604dac1ad7e9817f80f3aa3a69f2'
 
@@ -100,61 +97,8 @@ CACHE_TIMEOUT = 0
 
 COMPRESS_MEDIA = not DEBUG
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': True,
-    'root': {
-        'level': 'WARNING',
-        'handlers': ['console'],
-    },
-    'formatters': {
-        'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
-        },
-    },
-    'handlers': {
-        'null': {
-            'level':'DEBUG',
-            'class':'django.utils.log.NullHandler',
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-        'sentry': {
-            'level': 'DEBUG',
-            'class': 'raven.contrib.django.handlers.SentryHandler',
-        },
-    },
-    'loggers': {
-        'django.db.backends': {
-            'level': 'ERROR',
-            'handlers': ['console'],
-            'propagate': False,
-        },
-        'raven': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-            'propagate': False,
-        },
-        'sentry.errors': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-            'propagate': False,
-        },
-        'bleach': {
-            'level': 'ERROR',
-            'handlers': ['null'],
-            'propagate': False,
-        },
-        'timing': {
-            'level': 'DEBUG',
-            'handlers': ['console'],
-            'propagate': False
-        },
-    },
-}
+# disable sentry logging
+LOGGING['handlers']['sentry']['class'] = 'logging.NullHandler'
 
 try:
     from dev_settings_local import *

@@ -4,10 +4,10 @@ https://bitbucket.org/fernandotakai/tender-multipass/src/0a8c0020e7bb/tender_mul
 """
 import base64
 import hashlib
+import json
 from datetime import datetime, timedelta
 from itertools import izip, cycle
 
-import simplejson as json
 from M2Crypto import EVP
 from dateutil import parser
 from dateutil.tz import tzutc

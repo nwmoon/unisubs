@@ -3,6 +3,7 @@
 {% block body_attrs %}id="video"{% endblock %}
 
 {% load paginator widget comments i18n subtitles_tags teams_tags %}
+{% load url from future %}
 
 {% block scripts %}
 <script type="text/javascript">
@@ -11,7 +12,7 @@ jQuery(function($) {
          e.preventDefault();
          $('#loading').show();
          $.ajax({
-                    url: '{% url videos:reset_metadata video.video_id  %}',
+                    url: '{% url "videos:reset_metadata" video.video_id  %}',
                     success: function() {
                         $('#loading').hide();
                         alert("Task queued. It might take about 30 seconds to complete.");
@@ -72,7 +73,7 @@ jQuery(function($) {
 
 <p><a href="javascript:void(0)" id="reset_metadata" class="btn">Reset metadata for this video</a> <span id="loading" style="display: none">loading</span></p>
 
-<table class="debug" cellspacing="0" cellpadding="0">
+<table class="debug new-style" cellspacing="0" cellpadding="0">
     <tr>
         <td>video</td>
         <td><a href="{{ video.get_absolute_url }}">Video {{ video.id }} - {{ video }}</a></td>
@@ -192,7 +193,7 @@ jQuery(function($) {
 </table>
 
 <h2>Languages</h2>
-<table>
+<table class="new-style">
   <tr>
     <th>Language</th>
     <th>Is Original</th>
@@ -216,7 +217,7 @@ jQuery(function($) {
 </table>
 
 <h2>Tasks</h2>
-<table>
+<table class="new-style">
     <tr>
         <th>id</th>
         <th>deleted</th>

@@ -68,15 +68,8 @@ class VideoIndex(CelerySearchIndex):
         self.prepared_data['contributors_count'] = followers
         self.prepared_data['title'] = obj.title_display().strip()
         self.prepared_data['is_public'] = obj.is_public
-        self.prepare_hitcounts(obj)
 
         return self.prepared_data
-
-    def prepare_hitcounts(self, obj):
-        self.prepared_data['week_views'] = obj.views['week']
-        self.prepared_data['month_views'] = obj.views['month']
-        self.prepared_data['year_views'] = obj.views['year']
-        self.prepared_data['today_views'] = obj.views['today']
 
     def _setup_save(self, model):
         pass

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load i18n teams_tags verbatim_templatetag %}
+{% load url from future %}
 
 {% block body_attrs %}id="teams" class="v1"{% endblock %}
 
@@ -38,7 +39,7 @@
     {% if user.is_staff and perms.videos.edit_video %}
         <ul id="page_controls">
             <li>
-                <a href="{% url admin:teams_team_change team.pk %}" target="blank">{% trans 'Edit team' %}</a>
+                <a href="{% url "admin:teams_team_change" team.pk %}" target="blank">{% trans 'Edit team' %}</a>
             </li>
         </ul>
     {% endif %}

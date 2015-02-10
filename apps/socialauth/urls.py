@@ -1,12 +1,13 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from openid_consumer.views import begin, complete, signout
-from django.views.generic.simple import direct_to_template
+from django.views.generic.base import TemplateView
 
 from django.conf import settings
 
 #Login Views
 urlpatterns = patterns('socialauth.views',
-    url(r'^facebook_login/xd_receiver.htm$', direct_to_template, {'template':'socialauth/xd_receiver.htm'}, name='socialauth_xd_receiver'),
+    url(r'^facebook_login/xd_receiver.htm$',
+        TemplateView.as_view(template_name='socialauth/xd_receiver.htm'), name='socialauth_xd_receiver'),
     url(r'^facebook_login/$', 'facebook_login_done', name='socialauth_facebook_login_done'),
     url(r'^login/$', 'login_page', name='socialauth_login_page'),
     url(r'^openid_login/$', 'openid_login_page', name='socialauth_openid_login_page'),

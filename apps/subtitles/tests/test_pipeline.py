@@ -624,7 +624,7 @@ class TestBasicAdding(TestCase):
         mock_get_actions.return_value = [ test_action ]
         version = pipeline.add_subtitles(self.video, 'en', None,
                                          author=user, action='action')
-        test_action.do_perform.assert_called_with(
+        test_action.perform.assert_called_with(
             user, self.video, version.subtitle_language, version)
 
     @test_utils.patch_for_test('subtitles.workflows.DefaultWorkflow.get_actions')
@@ -637,7 +637,7 @@ class TestBasicAdding(TestCase):
                                          author=user, action='action')
 
         self.assertEqual(version.subtitle_language.subtitles_complete, True)
-        test_action.do_perform.assert_called_with(
+        test_action.perform.assert_called_with(
             user, self.video, version.subtitle_language, version)
 
     @test_utils.patch_for_test('subtitles.workflows.DefaultWorkflow.get_actions')

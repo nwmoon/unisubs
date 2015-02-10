@@ -29,7 +29,6 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_unicode, DjangoUnicodeDecodeError
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
-from math_captcha.forms import MathCaptchaForm
 
 from videos.feed_parser import FeedParser
 from videos.models import Video, VideoFeed, UserTestResult, VideoUrl
@@ -70,13 +69,6 @@ class CreateVideoUrlForm(forms.ModelForm):
 
         try:
             video_type = video_type_registrar.video_type_for_url(url)
-
-            video_url = video_type.convert_to_video_url()
-
-            if (video_type.requires_url_exists and
-                not http.url_exists(video_url)):
-                raise forms.ValidationError(_(u'This URL appears to be a broken link.'))
-
         except VideoTypeError, e:
             raise forms.ValidationError(e)
 
@@ -128,7 +120,7 @@ class UserTestResultForm(forms.ModelForm):
 
 class VideoForm(forms.Form):
     # url validation is within the clean method
-    video_url = forms.URLField(verify_exists=False)
+    video_url = forms.URLField()
 
     def __init__(self, user=None, *args, **kwargs):
         if user and not user.is_authenticated():
@@ -171,9 +163,6 @@ class VideoForm(forms.Form):
                 # redirection (i.e. youtu.be/fdaf/), and django's validator will
                 # choke on redirection (urllib2 for python2.6), see https://unisubs.sifterapp.com/projects/12298/issues/427646/comments
                 video_url = video_type.convert_to_video_url()
-
-                if not http.url_exists(video_url):
-                    raise forms.ValidationError(_(u'This URL appears to be a broken link.'))
 
         return video_url
 
@@ -310,7 +299,7 @@ class FeedbackForm(forms.Form):
             output[key] = '/n'.join([force_unicode(i) for i in value])
         return output
 
-class EmailFriendForm(MathCaptchaForm):
+class EmailFriendForm(forms.Form):
     from_email = forms.EmailField(label='From')
     to_emails = EmailListField(label='To')
     subject = forms.CharField()
@@ -347,7 +336,7 @@ class CreateSubtitlesFormBase(forms.Form):
 
     def setup_subtitle_language_code(self):
         if self.user.is_authenticated():
-            user_langs = [l.language for l in self.user.get_languages()]
+            user_langs = self.user.get_languages()
         else:
             user_langs = get_user_languages_from_request(self.request)
         if not user_langs:
@@ -362,7 +351,9 @@ class CreateSubtitlesFormBase(forms.Form):
         field.choices = sorted(get_language_choices(), key=sort_key)
 
     def set_primary_audio_language(self):
-        video = self.get_video()
+        # Sometimes we are passed in a cached video, which can't be saved.
+        # Make sure we have one from the DB.
+        video = Video.objects.get(pk=self.get_video().pk)
         lang = self.cleaned_data['primary_audio_language_code']
         video.primary_audio_language_code = lang
         video.save()
@@ -410,9 +401,7 @@ class CreateSubtitlesForm(CreateSubtitlesFormBase):
     def setup_subtitle_language_code(self):
         super(CreateSubtitlesForm, self).setup_subtitle_language_code()
         # remove languages that already have subtitles
-        current_langs = set(
-            l.language_code for l in
-            self.video.newsubtitlelanguage_set.having_versions())
+        current_langs = set(self.video.languages_with_versions())
         field = self.fields['subtitle_language_code']
         field.choices = [choice for choice in field.choices
                          if choice[0] not in current_langs]

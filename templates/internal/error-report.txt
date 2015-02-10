@@ -1,3 +1,4 @@
+{% load url from future %}
 
 Total Unresolved Errors: {{errors_count}}
 New errors today: {{new_errors_count}}
@@ -6,11 +7,11 @@ Errors today: {{today_errors_count}}
 New errors today: {% for e in new_errors %}
 {{e.message|safe}} 
  - today: {{e.today_count}}, last week: {{e.last_week_count}}, all time: {{e.total_count}}
- - https://{{base_url}}{% url sentry-group e.pk %}
+ - https://{{base_url}}{% url "sentry-group" e.pk %}
 {%endfor %}
 
 Errors today: {% for e in today_errors %}
 {{e.message|safe}} 
  - today: {{e.today_count}}, last week: {{e.last_week_count}}, all time: {{e.total_count}}
- - https://{{base_url}}{% url sentry-group e.pk %}
+ - https://{{base_url}}{% url "sentry-group" e.pk %}
 {%endfor %}

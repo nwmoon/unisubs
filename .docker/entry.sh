@@ -19,6 +19,9 @@ elif [ "$ACTION" = "update_index" ]; then
 elif [ "$ACTION" = "master_worker" ]; then
     echo "Running master worker..."
     /usr/local/bin/master-worker
+elif [ "$ACTION" = "feed_worker" ]; then
+    echo "Running feed worker..."
+    /usr/local/bin/feed-worker
 elif [ "$ACTION" = "worker" ]; then
     echo "Running worker..."
     /usr/local/bin/worker

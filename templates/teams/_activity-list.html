@@ -1,0 +1,20 @@
+{% load i18n media_bundle %}
+
+{% if activity_list %}
+<ul class="activity listing">
+  {% with 1 as medium_thumb %}
+  {% for item in activity_list %}
+  <li>{{ item.render }}</li>
+  {% endfor %}
+  {% endwith %}
+</ul>
+
+{% if has_more %}
+<div class="pagination">
+  <a class="show-more" href="" data-page="{{ next_page }}">{% trans "Show More" %}</a>
+  <img class="loading-icon" src="{% static_url %}images/ajax-loader.gif">
+</div>
+{% endif %}
+{% else %}
+<p class="empty">{% trans "Sorry, no activity yet" %}...</p>
+{% endif %}

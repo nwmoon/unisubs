@@ -20,6 +20,7 @@ import datetime
 import json
 from unittest2 import skip
 
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import  reverse
 from django.test import TestCase
 
@@ -63,8 +64,7 @@ class EditorViewTest(TestCase):
         video = make_video()
         self._login()
         url = reverse("subtitles:subtitle-editor", args=(video.video_id,'xxxxx'))
-        self.assertRaises(AssertionError, self.client.get, url)
-
+        self.assertRaises(ValidationError, self.client.get, url)
 
     def test_apikey_present(self):
         video = make_video()

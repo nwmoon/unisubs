@@ -16,12 +16,16 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
+import importlib
 import os
 import subprocess
 
 from django.conf import settings
 
-import commit
+try:
+    import commit
+except ImportError:
+    commit = None
 
 def s3_subdirectory():
     """Get the subdirectory to store media in for S3
@@ -33,6 +37,8 @@ def s3_subdirectory():
         - We can set the HTTP cache headers so that servers cache the content
         forever without worrying about stale media files.
     """
+    if commit is None:
+        raise AssertionError("No commit module")
     return commit.LAST_COMMIT_GUID.split('/')[1]
 
 def static_url():
@@ -73,7 +79,7 @@ def run_command(commandline, stdin=None):
 def app_static_media_dirs():
     static_media_dirs = []
     for app in settings.INSTALLED_APPS:
-        module = __import__(app)
+        module = importlib.import_module(app)
         static_dir = os.path.join(os.path.dirname(module.__file__), 'static')
         if os.path.exists(static_dir):
             static_media_dirs.append(static_dir)

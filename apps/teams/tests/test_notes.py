@@ -42,7 +42,7 @@ class TestTeamNotes(TestCase):
 
     def test_post_adds_team_subtitle_note(self):
         assert_equal(TeamSubtitleNote.objects.count(), 0)
-        editor_notes = TeamEditorNotes(self.team_video, 'en')
+        editor_notes = TeamEditorNotes(self.team, self.video, 'en')
         editor_notes.post(self.user, 'note')
         assert_equal(TeamSubtitleNote.objects.count(), 1)
 

@@ -1,8 +1,9 @@
 {% load i18n new_subtitles_tags teams_tags i18n_tags %}
+{% load url from future %}
 <div class="tab" id="transcripts-tab">
     <div class="tools">
         {% if request.user|can_delete_language:language %}
-            <a class="button" href="{% url teams:delete-language video.get_team_video.team.slug language.pk %}">{% trans 'Delete Subtitle Language' %}</a>
+            <a class="button" href="{% url "teams:delete-language" video.get_team_video.team.slug language.pk %}">{% trans 'Delete Subtitle Language' %}</a>
         {% endif %}
 
         {% if language.is_original and request.user|can_create_subtitles_for:video or not language.is_original and request.user|can_create_translations_for:video %}
@@ -41,7 +42,7 @@
                      <li><a href="{% subtitle_download_url version format_name %}">{{format_name|upper}}</a></li>
                   {% endfor %}
                   {% if show_download_all %}
-                  <li><a href="{% url subtitles:download_all video.video_id video.get_download_filename %}">{% trans "DFXP All Languages" %}</a></li>
+                  <li><a href="{% url "subtitles:download_all" video.video_id video.get_download_filename %}">{% trans "DFXP All Languages" %}</a></li>
                   {% endif %}
                 </ul>
             </div>
@@ -60,7 +61,7 @@
                 Showing <strong>Revision {{ version_number }}</strong> created <strong>{{ revision_time }}</strong> by <a href="{{ profile_url}}" title="View {{ author }}'s profile"><strong>{{ author }}</strong></a>.
                 {% endblocktrans %}
                 {% if user.is_staff and perms.videos.edit_video %}
-                    <a style="float: right; color: #417690; margin-right: 7px; font-weight: bold; display: inline-block;" href="{% url admin:subtitles_subtitleversion_change version.pk %}">{% trans "Edit in Django Admin" %}</a>
+                    <a style="float: right; color: #417690; margin-right: 7px; font-weight: bold; display: inline-block;" href="{% url "admin:subtitles_subtitleversion_change" version.pk %}">{% trans "Edit in Django Admin" %}</a>
                 {% endif %}
             </p>
 
@@ -129,7 +130,7 @@
 
     {% if rollback_allowed %}
         <div id="rollback-button">
-            <a href="{% url videos:rollback version.pk %}" class="button" id="rollback">
+            <a href="{% url "videos:rollback" version.pk %}" class="button" id="rollback">
                 {% trans 'Roll back to this version' %}
             </a>
         </div>

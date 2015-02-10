@@ -2,11 +2,7 @@
 
 <ul class="video_list clearfix">
     {% for video in video_list %}
-        {% if video %}
-            {% with display_views|default:'' as display_views %}
-                {% render_video video display_views %}
-            {% endwith %}
-        {% endif %}
+        {% include "videos/_video.html" %}
     {% empty %}
         <p class="empty">
             {% if is_indexing %}

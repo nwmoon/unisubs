@@ -16,13 +16,14 @@
 # along with this program.  If not, see
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
+from functools import update_wrapper
+import json
 import sys
+
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
 from django.http import HttpResponse
-from django.utils import simplejson
 from django.core.serializers.json import DjangoJSONEncoder
-from django.utils.functional import update_wrapper
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -68,8 +69,8 @@ def render_to_json(func):
         if isinstance(result, HttpResponse):
             return result
 
-        json = simplejson.dumps(result, cls=DjangoJSONEncoder)
-        return HttpResponse(json, mimetype="application/json")
+        content = json.dumps(result, cls=DjangoJSONEncoder)
+        return HttpResponse(content, mimetype="application/json")
     return update_wrapper(wrapper, func)
 
 def send_templated_email(to, subject, body_template, body_dict,

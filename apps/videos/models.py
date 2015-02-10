@@ -17,8 +17,7 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 
 import logging
-logger = logging.getLogger("videos-models")
-
+import json
 import string
 import random
 from datetime import datetime, date
@@ -28,33 +27,35 @@ import urlparse
 
 from django.utils.safestring import mark_safe
 from django.core.cache import cache
-from django.db import models
+from django.dispatch import receiver
+from django.db import models, IntegrityError
 from django.db.models.signals import post_save, pre_delete
 from django.db.models import Q
 from django.db import IntegrityError
 from django.utils.dateformat import format as date_format
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from django.template.defaultfilters import slugify
-from django.utils import simplejson as json
+from django.utils.translation import ugettext
 from django.core.urlresolvers import reverse
 
 from auth.models import CustomUser as User, Awards
+from caching import ModelCacheManager
 from videos import behaviors
 from videos import metadata
 from videos import signals
 from videos.types import video_type_registrar, video_type_choices
 from videos.feed_parser import VideoImporter
 from comments.models import Comment
-from statistic import hitcounts
 from widget import video_cache
-from utils.redis_utils import RedisSimpleField
+from utils import translation
 from utils.amazon import S3EnabledImageField
 from utils.panslugify import pan_slugify
 from utils.subtitles import create_new_subtitles, dfxp_merge
 from utils.text import fmt
 from teams.moderation_const import MODERATION_STATUSES, UNMODERATED
 from raven.contrib.django.models import client
+
+logger = logging.getLogger("videos-models")
 
 NO_SUBTITLES, SUBTITLES_FINISHED = range(2)
 VIDEO_TYPE_HTML5 = 'H'
@@ -102,6 +103,16 @@ WRITELOCK_EXPIRATION = 30 # 30 seconds
 ALL_LANGUAGES = [(val, _(name))for val, name in settings.ALL_LANGUAGES]
 VALID_LANGUAGE_CODES = [unicode(x[0]) for x in ALL_LANGUAGES]
 
+def make_title_from_url(url):
+    url = url.strip('/')
+    if url.startswith('http://'):
+        url = url[7:]
+
+    parts = url.split('/')
+    if len(parts) > 1:
+        return '%s/.../%s' % (parts[0], parts[-1])
+    else:
+        return url
 
 class AlreadyEditingException(Exception):
     def __init__(self, msg):
@@ -163,6 +174,50 @@ class SubtitleLanguageFetcher(object):
         self.cache = {}
         self.all_languages_fetched = False
 
+class VideoCacheManager(ModelCacheManager):
+    def __init__(self, cache_pattern=None):
+        super(VideoCacheManager, self).__init__(cache_pattern)
+        self._video_id_to_pk = {}
+
+    def get_instance(self, pk, cache_pattern=None):
+        video = super(VideoCacheManager, self).get_instance(pk, cache_pattern)
+        # use a cached team_video as well
+        video._cached_teamvideo = self._get_team_video_from_cache(video)
+        return video
+
+    def _get_team_video_from_cache(self, video):
+        from teams.models import TeamVideo
+        try:
+            team_video = video.cache.get_model(TeamVideo, 'teamvideo')
+            if team_video is not None:
+                team_video.video = video
+                return team_video
+        except TeamVideo.DoesNotExist:
+            return None
+        # cache miss
+        team_video = video.get_team_video()
+        video.cache.set_model('teamvideo', team_video)
+        return team_video
+
+    def get_instance_by_video_id(self, video_id, cache_pattern=None):
+        return self.get_instance(self._pk_for_video_id(video_id),
+                                 cache_pattern)
+
+    def _pk_for_video_id(self, video_id):
+        # find the video PK using the video ID.  This should never take a long
+        # time so we cache it in several ways
+        try:
+            return self._video_id_to_pk[video_id]
+        except KeyError:
+            pass
+        cache_key = 'videopk:{0}'.format(video_id)
+        pk = cache.get(cache_key)
+        if pk is None:
+            pk = Video.objects.get(video_id=video_id).pk
+            cache.set(cache_key, pk)
+        self._video_id_to_pk[video_id] = pk
+        return pk
+
 class Video(models.Model):
     """Central object in the system"""
 
@@ -170,7 +225,7 @@ class Video(models.Model):
     title = models.CharField(max_length=2048, blank=True)
     description = models.TextField(blank=True)
     duration = models.PositiveIntegerField(null=True, blank=True, help_text=_(u'in seconds'))
-    allow_community_edits = models.BooleanField()
+    allow_community_edits = models.BooleanField(default=False)
     allow_video_urls_edit = models.BooleanField(default=True)
     writelock_time = models.DateTimeField(null=True, editable=False)
     writelock_session_key = models.CharField(max_length=255, editable=False)
@@ -216,9 +271,11 @@ class Video(models.Model):
     # directely
     is_public = models.BooleanField(default=True)
 
-    primary_audio_language_code = models.CharField(max_length=16, blank=True,
-                                                   default='',
-                                                   choices=ALL_LANGUAGES)
+    primary_audio_language_code = models.CharField(
+        max_length=16, blank=True, default='',
+        choices=translation.ALL_LANGUAGE_CHOICES)
+
+    cache = VideoCacheManager()
 
     objects = models.Manager()
     public  = PublicVideoManager()
@@ -238,35 +295,6 @@ class Video(models.Model):
         from utils.celery_search_index import update_search_index
         update_search_index.delay(self.__class__, self.pk)
 
-    @property
-    def views(self):
-        """Return a dict of the number of views recorded for this video.
-
-        The map will look like:
-
-            {'month': 100, 'week': 5, 'year': 10223, 'total': 20333}
-
-        Caches this map in memcache for two hours.
-
-        """
-        if not hasattr(self, '_video_views_statistic'):
-            cache_key = 'video_views_statistic_%s' % self.pk
-            views_st = cache.get(cache_key)
-
-            if not views_st:
-                views_st = self.views_nocache
-                cache.set(cache_key, views_st, 60*60*2)
-
-            self._video_views_statistic = views_st
-
-        return self._video_views_statistic
-
-    @property
-    def views_nocache(self):
-        views_st = hitcounts.video_hits.get_counts(self)
-        views_st['total'] = self.view_count
-        return views_st
-
     def title_display(self, use_language_title=True):
         """
         Get the full title to display for users
@@ -274,43 +302,25 @@ class Video(models.Model):
         :param use_language_title: should we fetch the title from our primary
         audio language?
         """
-        if use_language_title:
-            language_title = self._title_from_latest_version()
-            if language_title and language_title.strip():
-                return language_title
-
-        if self.title and self.title.strip():
+        if self.title:
             title = self.title
         else:
-            title = self._title_from_videourl()
+            video_url = self.get_primary_videourl_obj()
+            if video_url:
+                title = make_title_from_url(video_url.url)
+            else:
+                title = 'No title'
         return behaviors.make_video_title(self, title, self.get_metadata())
 
-    def _title_from_latest_version(self):
-        latest_version = self.latest_version()
-
-        if latest_version:
-            return latest_version.title_display()
-        else:
-            return ''
-
-    def _title_from_videourl(self):
-        try:
-            url = self.videourl_set.all()[:1].get().url
-            if not url:
-                return 'No title'
-        except models.ObjectDoesNotExist:
-            return 'No title'
-
-        url = url.strip('/')
-
-        if url.startswith('http://'):
-            url = url[7:]
-
-        parts = url.split('/')
-        if len(parts) > 1:
-            return '%s/.../%s' % (parts[0], parts[-1])
-        else:
-            return url
+    def page_title(self):
+        """Get the title that should appear at the top of the video page."""
+        cached = self.cache.get('page-title')
+        if cached is not None:
+            return cached
+        title = fmt(ugettext('%(title)s with subtitles | Amara'),
+                     title=self.title_display())
+        self.cache.set('page-title', title)
+        return title
 
     def get_download_filename(self):
         """Get the filename to download this video as
@@ -322,10 +332,6 @@ class Video(models.Model):
         title = title.replace("\n", ' ')
         # remove any questionable characters
         return re.sub(r'(?u)[^-\w ]', '', title)
-
-    def update_view_counter(self):
-        """Queue a Celery task that will increment the number of views for this video."""
-        hitcounts.video_hits.add_hit(self)
 
     def get_thumbnail(self, fallback=True):
         """Return a URL to this video's thumbnail.
@@ -383,7 +389,8 @@ class Video(models.Model):
             return self._cached_teamvideo
         try:
             team_video = self.teamvideo
-            team_video.video = self
+            if team_video is not None:
+                team_video.video = self
             rv = team_video
         except TeamVideo.DoesNotExist:
             rv = None
@@ -393,6 +400,20 @@ class Video(models.Model):
     def clear_team_video_cache(self):
         if hasattr(self, '_cached_teamvideo'):
             del self._cached_teamvideo
+
+    def get_workflow(self):
+        # need to import here because things are all tangled up
+        from subtitles.workflows import get_workflow
+        if not hasattr(self, '_cached_workflow'):
+            self._cached_workflow = get_workflow(self)
+        return self._cached_workflow
+
+    def clear_workflow_cache(self):
+        if hasattr(self, '_cached_workflow'):
+            del self._cached_workflow
+
+    def can_user_see(self, user):
+        return self.get_workflow().user_can_view_video(user)
 
     def thumbnail_link(self):
         """Return a URL to this video's thumbnail, or '' if there isn't one.
@@ -469,6 +490,12 @@ class Video(models.Model):
         """Return the video URLs for this video."""
         return self.videourl_set.all()
 
+    def url_count(self):
+        return self.cache.get_or_calc('url-count', self._calc_url_count)
+
+    def _calc_url_count(self):
+        return self.videourl_set.count()
+
     @classmethod
     def get_or_create_for_url(cls, video_url=None, vt=None, user=None, timestamp=None, fetch_subs_async=True):
         assert video_url or vt, 'should be video URL or VideoType'
@@ -500,8 +527,8 @@ class Video(models.Model):
             if vt.CAN_IMPORT_SUBTITLES:
                 kwargs['fetch_subs_async'] = fetch_subs_async
             vt.set_values(obj, **kwargs)
-            if obj.title:
-                obj.slug = slugify(obj.title)
+            if not obj.title:
+                obj.title = make_title_from_url(vt.convert_to_video_url())
             obj.user = user
             obj.save()
 
@@ -613,6 +640,10 @@ class Video(models.Model):
         """
         return True if self._original_subtitle_language() else False
 
+    def is_rtl(self):
+        return (self.primary_audio_language_code
+                and translation.is_rtl(self.primary_audio_language_code))
+
     def subtitle_language(self, language_code=None):
         """Get as SubtitleLanguage for this video
 
@@ -628,6 +659,17 @@ class Video(models.Model):
 
     def all_subtitle_languages(self):
         return self._language_fetcher.fetch_all_languages(self)
+
+    def languages_with_versions(self):
+        cached = self.cache.get('langs-with-versions')
+        if cached is not None:
+            return cached
+        languages = [
+            l.language_code for l in
+            self.newsubtitlelanguage_set.having_versions()
+        ]
+        self.cache.set('langs-with-versions', languages)
+        return languages
 
     def language_with_pk(self, language_pk):
         language_pk = int(language_pk)
@@ -797,6 +839,13 @@ class Video(models.Model):
         self.writelock_session_key = ''
         self.writelock_time = None
 
+    def user_is_follower(self, user):
+        followers = self.cache.get('followers')
+        if followers is None:
+            followers = list(self.followers.values_list('id', flat=True))
+            self.cache.set('followers', followers)
+        return user.id in followers
+
     def notification_list(self, exclude=None):
         qs = self.followers.filter(notify_by_email=True, is_active=True)
         if exclude:
@@ -868,6 +917,13 @@ class Video(models.Model):
     def get_metadata(self):
         return metadata.get_metadata_for_video(self)
 
+    def get_metadata_for_locale(self, language_code):
+        language_for_locale = self.subtitle_language(language_code)
+        if language_for_locale:
+            return language_for_locale.get_metadata()
+        else:
+            return self.get_metadata()
+
     def update_metadata(self, new_metadata, commit=True):
         metadata.update_video(self, new_metadata, commit)
 
@@ -890,19 +946,6 @@ class Video(models.Model):
 
         return meta
 
-    def can_user_see(self, user):
-        team_video = self.get_team_video()
-
-        if not team_video:
-            return True
-
-        team = team_video.team
-
-        if team and team.is_visible:
-            return True
-
-        return team.is_member(user)
-
     @property
     def translations(self):
         from subtitles.models import SubtitleLanguage as SL
@@ -910,16 +953,21 @@ class Video(models.Model):
                 language_code=self.primary_audio_language_code)
 
     def comment_count(self):
-        if hasattr(self, '_comment_count'):
-            return self._comment_count
-        self._comment_count = Comment.get_for_object(self).count()
-        return self._comment_count
+        return self.cache.get_or_calc('comment-count',
+                                      self._calc_comment_count)
+
+    def _calc_comment_count(self):
+        return Comment.get_for_object(self).count()
 
     class Meta(object):
         permissions = (
             ("can_moderate_version"   , "Can moderate version" ,),
         )
 
+@receiver(post_save, sender=Comment)
+def on_comment_save(sender, instance, **kwargs):
+    if isinstance(instance.content_object, Video):
+        instance.content_object.cache.invalidate()
 
 def create_video_id(sender, instance, **kwargs):
     """Generate (and set) a random video_id for this video before saving.
@@ -940,7 +988,6 @@ def video_delete_handler(sender, instance, **kwargs):
     from haystack import site
     search_index = site.get_index(Video)
     search_index.backend.remove(instance)
-
 
 models.signals.pre_save.connect(create_video_id, sender=Video)
 models.signals.pre_delete.connect(video_delete_handler, sender=Video)
@@ -1021,7 +1068,7 @@ class VideoMetadata(models.Model):
 # SubtitleLanguage
 class SubtitleLanguage(models.Model):
     video = models.ForeignKey(Video)
-    is_original = models.BooleanField()
+    is_original = models.BooleanField(default=False)
     language = models.CharField(max_length=16, choices=ALL_LANGUAGES, blank=True)
     writelock_time = models.DateTimeField(null=True, editable=False)
     writelock_session_key = models.CharField(max_length=255, blank=True, editable=False)
@@ -1480,36 +1527,22 @@ class ActionRenderer(object):
         return fmt(msg, **kwargs)
 
 class ActionManager(models.Manager):
-    def for_team(self, team, ids=False):
-        '''Return the actions for the given team.
-
-        If ids is True, instead of returning Action objects it will return
-        a values_list of their IDs.  This can be useful if you need to work
-        around some MySQL brokenness.
-
-        '''
-        result = self.filter(
-            Q(team=team) |
-            Q(video__teamvideo__team=team)
-        )
-
-        if ids:
-            result = result.values_list('id', flat=True)
-        else:
-            result = result.select_related(
-                'video', 'user', 'language', 'language__video'
-            )
-
-        return result
-
     def for_user(self, user):
         return self.filter(Q(user=user) | Q(team__in=user.teams.all())).distinct()
 
     def for_user_team_activity(self, user):
-        return self.filter(team__in=user.teams.all()).exclude(user=user)
+        return self.extra(
+            tables=['teams_teammember'],
+            where=['teams_teammember.team_id = videos_action.team_id',
+                   'teams_teammember.user_id=%s'],
+            params=[user.id]).exclude(user=user)
 
     def for_user_video_activity(self, user):
-        return self.filter(video__in=user.videos.all()).exclude(user=user)
+        return self.extra(
+            tables=['auth_customuser_videos'],
+            where=['auth_customuser_videos.video_id = videos_action.video_id',
+                   'auth_customuser_videos.customuser_id=%s'],
+            params=[user.id]).exclude(user=user)
 
     def for_video(self, video):
         return (Action.objects.filter(video=video)
@@ -1553,7 +1586,13 @@ class Action(models.Model):
         (EDIT_URL, _(u'edit url')),
         (DELETE_URL, _(u'delete url')),
     )
-
+    TYPES_CATEGORIES = dict(
+        videos = [(x[0], x[1]) for x in TYPES if x[0] in
+                 [ADD_VIDEO, COMMENT, ADD_VERSION, ADD_VIDEO_URL,
+                  APPROVE_VERSION, REJECT_VERSION, ACCEPT_VERSION,
+                  DECLINE_VERSION, EDIT_URL,DELETE_URL]],
+        team = [(x[0], x[1]) for x in TYPES if x[0] in
+                [MEMBER_LEFT, MEMBER_JOINED, DELETE_VIDEO]])
     renderer = ActionRenderer('videos/_action_tpl.html')
     renderer_for_video = ActionRenderer('videos/_action_tpl_video.html')
 
@@ -1850,6 +1889,30 @@ class VideoUrl(models.Model):
         # set this one to primary
         self.primary = True
         self.save(updates_timestamp=False)
+
+    def remove(self, user):
+        """Remove this URL from our video.
+
+        This method deletes the URL object and stores a DELETE_URL action to
+        log the change.
+
+        Args:
+            user: user removing the URL
+
+        Raises:
+            IntegrityError: called when the primary URL is deleted
+        """
+
+        if self.primary:
+            msg = ugettext("Can't remove the primary video URL")
+            raise IntegrityError(msg)
+
+        action = Action(video=self.video, action_type=Action.DELETE_URL)
+        action.new_video_title = self.url
+        action.created = datetime.now()
+        action.user = user
+        action.save()
+        self.delete()
 
     def fix_owner_username(self):
         """Workaround for us changing how owner_usernames work.

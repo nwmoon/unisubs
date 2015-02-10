@@ -20,10 +20,10 @@
 
 from collections import namedtuple
 from lxml import etree
+import json
 import logging
 import urllib
 import re
-import simplejson as json
 
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -238,6 +238,9 @@ def _parse_8601_duration(duration):
 
 def get_video_info(video_id):
     try:
+        logger.info("youtube.get_video_info()", extra={
+            'stack': True,
+        })
         return _get_video_info(video_id)
     except APIError, e:
         logger.error("Youtube API Error: %s", e)

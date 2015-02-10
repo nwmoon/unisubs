@@ -34,7 +34,6 @@ from teams.signals import (
     api_subtitles_edited, api_subtitles_approved, api_subtitles_rejected,
     api_language_new, api_language_edited, api_video_edited
 )
-from uslogging.models import WidgetDialogLog
 from utils import send_templated_email
 from utils.forms import flatten_errorlists
 from utils.metrics import Meter
@@ -79,10 +78,6 @@ def add_general_settings(request, dict):
 class Rpc(BaseRpc):
     # Logging
     def log_session(self, request,  log):
-        dialog_log = WidgetDialogLog(
-            browser_id=request.browser_id,
-            log=log)
-        dialog_log.save()
         Meter('templated-emails-sent-by-type.subtitle-save-failure').inc()
         send_templated_email(
             settings.WIDGET_LOG_EMAIL,
@@ -211,10 +206,6 @@ class Rpc(BaseRpc):
         # played from amara or other sites, however it wasn't very useful
         # since most other sites din't use it.  So when we switched to the new
         # statistics system we just removed the functionality.
-        #
-        # It would be great to re-implement this, and connect it to
-        # statistics.hitcounts.subtitle_views.  However, we need to figure how
-        # to deal the external sites.
 
         return { 'response': 'ok' }
 

@@ -18,8 +18,9 @@
 
 """externalsites.syncing.brightcove -- Sync subtitles to/from brightcove"""
 
+import json
+
 import requests
-from django.utils import simplejson as json
 
 from externalsites.exceptions import SyncingError
 

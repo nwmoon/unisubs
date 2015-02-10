@@ -29,7 +29,10 @@ from auth.models import CustomUser as User
 class TokenAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         username = request.META.get('HTTP_X_API_USERNAME')
-        api_key = request.META.get('HTTP_X_APIKEY')
+        api_key = request.META.get('HTTP_X_API_KEY')
+        if api_key is None:
+            # fall back on the old header name
+            api_key = request.META.get('HTTP_X_APIKEY')
 
         if not username:
             return None

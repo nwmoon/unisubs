@@ -6,7 +6,6 @@
 
 Requires:
   python-twitter
-  simplejson
   oauth
 '''
 
@@ -16,10 +15,10 @@ __version__ = "0.1"
 
 from twitter import Api, User
 
-import simplejson
+# FIXME: we should just call the module "json" but that conflicts with our
+# variable names
+import json as simplejson
 from oauth import oauth
-
-
 
 # Taken from oauth implementation at: http://github.com/harperreed/twitteroauth-python/tree/master
 REQUEST_TOKEN_URL = 'https://twitter.com/oauth/request_token'

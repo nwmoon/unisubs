@@ -8,6 +8,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoAlertPresentException
 from selenium.webdriver.common.keys import Keys
 
@@ -29,8 +30,11 @@ class Page(object):
 
     def _safe_find(self, element):
         if isinstance(element, basestring):
-            self.wait_for_element_present(element)
-            return self.browser.find_element_by_css_selector(element)
+            try:#self.wait_for_element_present(element)
+                return self.browser.find_element_by_css_selector(element)
+            except:
+                self.wait_for_element_present(element)
+                return self.browser.find_element_by_css_selector(element)
         else:
             return element
 
@@ -182,7 +186,11 @@ class Page(object):
         """
         elem = self._safe_find(element)
         self.logger.info( 'submit')
-        elem.submit()
+        try:
+            elem.submit()
+        except TimeoutException as e:
+            self.logger.info(e)
+            pass
         self.logger.info( '** done')
 
     def clear_text(self, element):
@@ -425,11 +433,11 @@ class Page(object):
         """
         self._poll_for_condition(
             lambda: self.is_element_visible(element),
-            20,
-            'The element %s is not visible after 20 seconds' % element)
+            5,
+            'The element %s is not visible after 5 seconds' % element)
 
     def wait_for_element_not_visible(self, element):
-        """Wait for element (by css) to be hidden on page, within 20 seconds.
+        """Wait for element (by css) to be hidden on page, within 10 seconds.
 
         """
 
@@ -441,8 +449,8 @@ class Page(object):
                 return True
             else:
                 return False
-        msg = 'The element: %s is still visible after 20 seconds' % element
-        return self._poll_for_condition(check_not_visible, 20, msg)
+        msg = 'The element: %s is still visible after 10 seconds' % element
+        return self._poll_for_condition(check_not_visible, 10, msg)
 
     def get_absolute_url(self, url):
         """Return the full url.
@@ -489,14 +497,16 @@ class Page(object):
         except NoSuchElementException:
             return None
 
-    def open_page(self, url, alert_check=False):
+    def open_page(self, url):
         """Open a page by the full url.
 
         """
-        self.browser.get(self.get_absolute_url(url))
-        if alert_check:
-            self.handle_js_alert('accept')
-        self.wait_for_element_visible('div')
+        #self.browser.execute_script("window.stop()")
+        try:
+            self.browser.get(self.get_absolute_url(url))
+        except TimeoutException as e:
+            self.logger.info(e)
+            pass
 
     def go_back(self):
         """Go back to previous page.  """

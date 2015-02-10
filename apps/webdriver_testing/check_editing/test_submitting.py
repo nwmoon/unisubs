@@ -30,7 +30,7 @@ class TestCaseSubmittable(WebdriverTestCase):
 
         cls.user = UserFactory.create(username = 'user')
         cls.sub_editor = subtitle_editor.SubtitleEditor(cls)
-        td = {'url': ('http://qa.pculture.org/amara_tests/'
+        td = {'video_url': ('http://qa.pculture.org/amara_tests/'
                      'Birds_short.mp4')
              }
         cls.test_video = cls.data_utils.create_video(**td)

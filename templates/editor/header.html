@@ -1,7 +1,7 @@
 {% load i18n %}
 <header class="main group">
     <div class="site">
-        <h1>Amara</h1>
+        <h1>{{ title }}</h1>
         <div class="video-title">
             <a title="{% trans "Edit title and description" %}" href="#" ng-click="onTitleClicked($event)"><img src="{{ STATIC_URL }}images/subtitle-editor/glyphicons_030_pencil.png"></img></a>
             <a title="{% trans "Edit title and description" %}" href="#" ng-click="onTitleClicked($event)">[[ displayedTitle() ]]
@@ -13,7 +13,7 @@
         <button href="#" ng-click="dialogManager.onOpenClick('debug', $event)">Debug</button>
         {% endif %}
         <button class="discard" ng-click="onExitClicked($event)">Exit</button>
-        <button class="go-to-legacy-editor" ng-click="onLegacyEditorClicked($event)">Legacy Editor</button>
+        <button ng-hide="noLinkToLegacy" class="go-to-legacy-editor" ng-click="onLegacyEditorClicked($event)">Legacy Editor</button>
         <button class="save" ng-disabled="!session.subtitlesChanged" ng-click="onSaveDraftClicked($event)">{% trans "Save Draft" %}</button>
     </div>
 </header>

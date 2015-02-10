@@ -10,7 +10,6 @@ class EditorPage(UnisubsPage):
     """
      This is the NEW subtitle editor.
     """
-
     _URL = "subtitles/editor/{0}/{1}/"  # (video_id, lang_code)
     EXIT_BUTTON = 'div.exit'
     _EXIT = 'button.discard'
@@ -28,6 +27,7 @@ class EditorPage(UnisubsPage):
                         "upload them to the system later.")
     _SAVE_SUBS = 'div.download textarea'
     _MAIN = 'section.main'
+    _EDIT_TITLE = "textarea[fixsize-bind='currentSubtitles.title']" 
 
     #LEFT COLUMN
     _HELP_KEYS = 'div.help-panel ul li span.key'
@@ -47,7 +47,7 @@ class EditorPage(UnisubsPage):
     _SYNC_HELP = 'div.sync-help'
     _INFO_TRAY = 'div.info-tray'
     _INFO_DETAILS = 'div.info-tray tr'
-    _ADD_SUB_TO_END = 'a.end'
+    _ADD_SUB_TO_END = 'div[ng-switch="bottomState()"] a'
     _TIMELINE_DISPLAY = 'a.show-timeline span'
     _WORKING_METADATA_EXPANDER = 'div.working div.metadata a'
     _TOOLS_MENU = 'div.toolbox-inside a'
@@ -67,10 +67,11 @@ class EditorPage(UnisubsPage):
 
     #RIGHT COLUMN
 
-    _NEXT_STEP = 'button.next-step'
-    _ENDORSE = 'button.endorse' #when completing subtitling.
-    _COLLAB_ENDORSE = 'button.endorse'
+    _NEXT_STEP = 'li.active button'
+    _COMPLETE = 'li.active button' #when completing subtitling.
+    _COLLAB_ENDORSE = 'button'
     _COLLAB_SENDBACK = 'div.actions button.send-back'
+    _COLLAB_BUTTON = 'div.actions button'
     # COLLAB PANEL
     _COLLAB_PANEL = 'div.workflow'
     _SEND_BACK = 'button.send-back'
@@ -129,6 +130,10 @@ class EditorPage(UnisubsPage):
         self.select_option_by_text(self._REFERENCE_SELECT, language)
         time.sleep(2)
 
+    def reference_languages(self):
+        els = self.get_elements_list(self._REFERENCE_SELECT)
+        return [el.text for el in els]
+
     def select_ref_version(self, version_no):
         """Choose a reference version from the list. """
 
@@ -141,12 +146,15 @@ class EditorPage(UnisubsPage):
         return self.get_text_by_css(self._VIDEO_SUBTITLE)
 
 
+    def session_buttons(self):
+        buttons = self.browser.find_elements_by_css_selector(self._SESSION_BUTTONS)
+        return [el.text for el in buttons] 
+
     def legacy_editor(self):
         buttons = self.browser.find_elements_by_css_selector(self._SESSION_BUTTONS)
         for el in buttons:
             if 'Legacy Editor' in el.text:
                 el.click()
-                time.sleep(2)
                 return
 
     def save(self, save_option):
@@ -277,7 +285,6 @@ class EditorPage(UnisubsPage):
         els = self.get_elements_list("ul.toolbox-menu li")
         menu_list = {}
         for el in els:
-            self.logger.info(el.get_attribute("class"))
             item = el.find_element_by_css_selector("a")
             menu_item = item.get_attribute("class")
             item_properties = { 
@@ -298,11 +305,13 @@ class EditorPage(UnisubsPage):
 
     def upload_subtitles(self, sub_file):
         menu_items = self.tools_menu_items()
-        menu_items['upload-subtitles']['element'].click()
+        self.logger.info(menu_items['upload-subtitles']['element'].tag_name)
+        self.browser.execute_script("document.getElementsByClassName('upload-subtitles')[0].click()")
+        self.wait_for_element_visible('button.upload-subtitles-submit-button-')
         self.type_by_css('input#subtitles-file-field', sub_file)
         self.click_by_css('button.upload-subtitles-submit-button-')
-        time.sleep(3)
-        self.wait_for_element_present(self._TOOLS_MENU)
+        self.wait_for_element_not_visible("aside")
+        time.sleep(4)
 
     def toggle_paragraph(self, position):
         """Toggles the paragraph marker on or off. """
@@ -332,7 +341,8 @@ class EditorPage(UnisubsPage):
         self.toggle_timeline('Show')
         for line in subs:
             self.browser.execute_script("window.location.hash='add-sub-at-end'")
-            self.click_by_css(self._ADD_SUB_TO_END)
+            if not self.is_element_present('textarea.subtitle-edit'):
+                self.click_by_css(self._ADD_SUB_TO_END)
             self.type_by_css('textarea.subtitle-edit', '%s\n' % line)
 
     def add_new_lines(self, lines):
@@ -374,6 +384,18 @@ class EditorPage(UnisubsPage):
                 pass
         self.handle_js_alert('accept')
 
+    def edit_title_displayed(self):
+        els = self.get_elements_list("div.video-title a")
+        return [el.is_displayed() for el in els]
+
+    def edit_title(self, new_title):
+        self.click_by_css("div.video-title a")
+        active_modal = self.is_element_present(self._ACTIVE_MODAL)
+        self.clear_text(self._EDIT_TITLE)
+        self.type_by_css(self._EDIT_TITLE, new_title)
+        done = active_modal.find_element_by_css_selector("button")
+        done.click()
+
     def close_edit_title(self):
         
         active_modal = self.is_element_present(self._ACTIVE_MODAL)
@@ -386,6 +408,10 @@ class EditorPage(UnisubsPage):
 
     def collab_panel_displayed(self):
         return self.is_element_visible(self._COLLAB_PANEL)
+
+    def collab_action(self, action):
+        els = self.get_elements_list("button[ng-repeat='action in actions']")
+        [el.click() for el in els if el.text == action]
 
     def action_buttons(self):
         els = self.get_elements_list("div.actions button")
@@ -421,8 +447,11 @@ class EditorPage(UnisubsPage):
         return fields
 
     def toggle_playback(self):
-        self.wait_for_element_present(self._EMBEDDED_VIDEO)
-        self.type_special_key('TAB', modifier='SHIFT', element='body')
+        els = self.get_elements_list('div.instruction-item')
+        for el in els:
+            if 'Play' in el.text:
+                el.click()
+                return
 
     def buffer_up_subs(self):
         self.toggle_playback()
@@ -436,14 +465,23 @@ class EditorPage(UnisubsPage):
         self.click_by_css(self._NEXT_STEP)
 
     def start_sync(self):
-        self.click_by_css('div.substeps div button.next-step')
+        self.click_by_css(self._NEXT_STEP)
 
     def endorse_subs(self):
-        self.click_by_css(self._ENDORSE, self._ACTIVE_MODAL)
+        self.click_by_css(self._COMPLETE)
+        self.wait_for_element_not_present(self._ACTIVE_MODAL)
 
-    def endorse_collab(self):
-        self.click_by_css(self._COLLAB_ENDORSE)
-        self.wait_for_element_not_present(self._COLLAB_ENDORSE)
+    def endorse_collab(self, action):
+        buttons = self.get_elements_list(self._COLLAB_ENDORSE)
+        for el in buttons:
+            if el.text == action:
+                el.click()
+                time.sleep(3)
+                self.wait_for_element_not_present("aside.freeze-box", 30)
+                return
+            else:
+                self.logger.info("%s button not found" % action)
+
 
     def sendback_collab(self):
         self.click_by_css(self._COLLAB_SENDBACK)

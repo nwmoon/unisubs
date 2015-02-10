@@ -1,23 +1,16 @@
+import json
 import logging
 import time
-import simplejson
 import requests
-
+from django.core import management
 from django.http import HttpResponse
 from django.test.client import RequestFactory, Client
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 
-from videos.models import Video
-from testhelpers.views import _create_videos
 from subtitles import pipeline
-from teams.models import TeamMember
 from babelsubs import load_from_file 
-from teams.models import BillingRecord
-
-from webdriver_testing.data_factories import UserFactory
-from webdriver_testing.data_factories import TeamVideoFactory
-from webdriver_testing.data_factories import VideoUrlFactory
+from utils.factories import *
 
 
 class DataHelpers(object):
@@ -47,18 +40,17 @@ class DataHelpers(object):
                     'X-apikey': api_user.get_api_key(),
                     'X-api-username': api_user.username,
                   }
-        r = getattr(s, request_type)(url, headers=headers, data=simplejson.dumps(kwargs))
+        r = getattr(s, request_type)(url, headers=headers, data=json.dumps(kwargs))
         return r
 
     def create_video(self, **kwargs):
-        v = VideoUrlFactory.create(**kwargs)
-        return v.video
+        return VideoFactory(**kwargs)
            
 
     def super_user(self):
-        superuser = UserFactory.build(is_partner=True, 
-                                 is_staff=True, 
-                                 is_superuser=True) 
+        superuser = UserFactory(is_partner=True, 
+                                is_staff=True, 
+                                is_superuser=True) 
         auth = dict(username=superuser.username, password='password')
         return auth
 
@@ -76,22 +68,22 @@ class DataHelpers(object):
         except:
             c.login(**self.super_user())
         response = c.post(reverse('videos:upload_subtitles'), defaults)
+        time.sleep(1)
 
     def add_subs(self, **kwargs):
         defaults = {
                     'language_code': 'en',
-                    'complete': True, 
-                    'visibility': 'public'
                    }
         defaults.update(kwargs)
-        default_subs = ('apps/webdriver_testing/subtitle_data'
-                       '/basic_subs.dfxp')
-        s = defaults.get('subtitles', default_subs)
-        
-        subs = load_from_file(s, language=defaults['language_code'])
-        sub_items = subs.to_internal()
-        defaults['subtitles'] = sub_items
+        s = defaults.get('subtitles', None)
+        if s:
+            subs = load_from_file(s, language=defaults['language_code'])
+            sub_items = subs.to_internal()
+            defaults['subtitles'] = sub_items
+        else:
+            defaults['subtitles'] = SubtitleSetFactory()
         v = pipeline.add_subtitles(**defaults)
+        time.sleep(1)
         return v
 
     def create_video_with_subs(self, user, **kwargs ):
@@ -104,31 +96,19 @@ class DataHelpers(object):
         return video
 
 
-    def create_several_team_videos_with_subs(self, team, teamowner, data=None):
-        """Uses the helper data from the apps.videos.fixtures to create data.
-
-           The test vidoes are then assigned to the specified team.
+    def create_videos_with_subs(self, team=None, num=5):
+        """Adds some videos with subs, optionally to a team
            Returns the list of video.
         """
-        if not data:
-            testdata = simplejson.load(open('apps/videos/fixtures/teams-list.json'))
-        else:
-            testdata = simplejson.load(open(data))
-        videos = _create_videos(testdata, [])
-        for video in videos:
-            TeamVideoFactory.create(
-                team=team, 
-                video=video, 
-                added_by=teamowner)
-        return videos
-
-
-    def create_videos_with_fake_subs(self, testdata=None):
-        if testdata is None:
-            testdata = simplejson.load(open('apps/videos/fixtures/teams-list.json'))
-        else:
-            testdata = simplejson.load(open(testdata))
-        videos = _create_videos(testdata, [])
+        videos = []
+        for x in range(num):
+            v = VideoFactory()
+            pipeline.add_subtitles(v, 'en', SubtitleSetFactory(),
+                                   action='publish')
+            if team:
+                TeamVideoFactory(team=team, video=v)
+            videos.append(v)
+        management.call_command('update_index', interactive=False)    
         return videos
 
     def complete_review_task(self, tv, status_code, assignee, note=None):

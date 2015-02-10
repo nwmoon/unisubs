@@ -1,11 +1,12 @@
 import os
 
+from caching.tests.utils import assert_invalidates_model_cache
 from webdriver_testing.webdriver_base import WebdriverTestCase
 from webdriver_testing.pages.site_pages import video_page
 from webdriver_testing.pages.site_pages import create_page
 from webdriver_testing.pages.site_pages import video_language_page
 from webdriver_testing import data_helpers
-from webdriver_testing.data_factories import UserFactory
+from utils.factories import *
 
 
 class TestCaseFollowing(WebdriverTestCase):
@@ -19,7 +20,7 @@ class TestCaseFollowing(WebdriverTestCase):
     def setUpClass(cls):
         super(TestCaseFollowing, cls).setUpClass()
         cls.data_utils = data_helpers.DataHelpers()
-        cls.user = UserFactory.create()
+        cls.user = UserFactory()
         cls.video_pg = video_page.VideoPage(cls)
         cls.video_language_pg = video_language_page.VideoLanguagePage(cls)
         cls.create_pg = create_page.CreatePage(cls)
@@ -34,8 +35,8 @@ class TestCaseFollowing(WebdriverTestCase):
         """Video submitter is following video by default.
 
         """
-        self.create_pg.open_create_page()
         self.create_pg.log_in(self.user.username, 'password')
+        self.create_pg.open_create_page()
         url = 'http://www.youtube.com/watch?v=WqJineyEszo'
         self.create_pg.submit_video(url)
         self.assertEqual(self.FOLLOWING, self.video_pg.follow_text())
@@ -86,19 +87,21 @@ class TestCaseFollowing(WebdriverTestCase):
     def test_toggle_following_video(self):
         """Turn on and off following for a video
         """
-        follower = UserFactory.create()
+        follower = UserFactory()
         self.video_pg.log_in(follower.username, 'password')
         self.video_pg.open_video_page(self.video.video_id)
-        self.video_pg.toggle_follow()
+        with assert_invalidates_model_cache(self.video): 
+            self.video_pg.toggle_follow()
         self.assertEqual(self.FOLLOWING, self.video_pg.follow_text())
-        self.video_pg.toggle_follow()
+        with assert_invalidates_model_cache(self.video):
+            self.video_pg.toggle_follow()
         self.assertEqual(self.NOT_FOLLOWING, self.video_pg.follow_text())
 
     def test_toggle_following_language(self):
         """Turn on / off following for a language.
 
         """
-        user = UserFactory.create()
+        user = UserFactory()
         self.video_pg.log_in(user.username, 'password')
         self.video_language_pg.open_video_lang_page(self.video.video_id, 'en')
         self.video_pg.toggle_follow(lang=True)
@@ -110,7 +113,7 @@ class TestCaseFollowing(WebdriverTestCase):
         """Turn on following for a video, follows the languages.
 
         """
-        follower = UserFactory.create()
+        follower = UserFactory()
         self.video_pg.log_in(follower.username, 'password')
         self.video_pg.open_video_page(self.video.video_id)
         self.video_pg.toggle_follow()
@@ -122,7 +125,7 @@ class TestCaseFollowing(WebdriverTestCase):
         """Turn on / off following for a language does not change video setting.
 
         """
-        user = UserFactory.create()
+        user = UserFactory()
         self.video_pg.log_in(user.username, 'password')
         self.video_language_pg.open_video_lang_page(self.video.video_id, 'en')
         self.video_pg.toggle_follow(lang=True)

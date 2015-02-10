@@ -1,22 +1,28 @@
 import collections
 import functools
+import json
 import os
-import simplejson as json
 import urlparse
 
 from celery.task import Task
 from django.conf import settings
 from django.core.cache import cache
 from nose.plugins import Plugin
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_true
 from xvfbwrapper import Xvfb
 import mock
 import mock
 import requests
 import utils.youtube
 
+import optionalapps
+
 def reload_obj(model_obj):
     return model_obj.__class__.objects.get(pk=model_obj.pk)
+
+def assert_saved(model_obj):
+    assert_true(model_obj.__class__.objects.filter(pk=model_obj.pk).exists())
+    assert_equal(model_obj, reload_obj(model_obj))
 
 REQUEST_CALLBACKS = []
 
@@ -217,6 +223,7 @@ class UnisubsTestPlugin(Plugin):
             os.path.join(settings.PROJECT_ROOT, 'libs'),
         ])
         self.vdisplay = None
+        self.include_webdriver_tests = False
 
     def options(self, parser, env=os.environ):
         parser.add_option("--with-webdriver",
@@ -228,11 +235,7 @@ class UnisubsTestPlugin(Plugin):
         # manually specify the plugin in the dev_settings_test.py file.  So
         # it's pretty safe to assume the user wants us enabled.
         self.enabled = True
-        if not options.webdriver:
-            self.directories_to_skip.add(
-                os.path.join(settings.PROJECT_ROOT, 'apps',
-                             'webdriver_testing'),
-            )
+        self.include_webdriver_tests = options.webdriver
 
     def begin(self):
         self.patcher.patch_functions()
@@ -248,9 +251,14 @@ class UnisubsTestPlugin(Plugin):
     def wantDirectory(self, dirname):
         if dirname in self.directories_to_skip:
             return False
+        if not self.include_webdriver_tests and 'webdriver' in dirname:
+            return False
         if dirname == os.path.join(settings.PROJECT_ROOT, 'apps'):
             # force the tests from the apps directory to be loaded, even
             # though it's not a package
+            return True
+        if dirname in optionalapps.get_repository_paths():
+            # same thing for optional app repos
             return True
         return None
 

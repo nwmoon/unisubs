@@ -85,7 +85,7 @@ class TestBuildBundle(TestCase):
         self.assertEquals(self.mock_run_command.call_count, 1)
         self.mock_run_command.assert_called_with([
             'sass',
-            '-t', 'compressed',
+            '-t', 'compressed', '-E', 'utf-8',
             '--load-path', os.path.join(self.static_root, 'css'),
             '--scss',
             '--stdin',
@@ -117,7 +117,7 @@ class TestBuildBundle(TestCase):
         self.assertEquals(self.mock_run_command.call_count, 1)
         self.mock_run_command.assert_called_with([
             'sass',
-            '-t', 'expanded',
+            '-t', 'expanded', '-E', 'utf-8',
             '--load-path', os.path.join(self.static_root, 'css'),
             '--scss',
             '--stdin',

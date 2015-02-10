@@ -8,8 +8,6 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from utils.forms.recapcha import ReCaptchaField
-from utils.validators import UniSubURLValidator
-
 
 assert ReCaptchaField # Shut up, Pyflakes.
 
@@ -25,10 +23,10 @@ class StripRegexField(forms.RegexField):
         value = super(StripRegexField, self).to_python(value)
         return value.strip()
 
-class StripURLField(forms.URLField):
+class UniSubURLField(forms.URLField):
 
     def to_python(self, value):
-        value = super(StripURLField, self).to_python(value)
+        value = super(UniSubURLField, self).to_python(value)
         return value.strip()
 
 class FeedURLValidator(validators.URLValidator):
@@ -41,22 +39,14 @@ class FeedURLValidator(validators.URLValidator):
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
 class FeedURLField(forms.URLField):
-    def __init__(self, max_length=None, min_length=None, verify_exists=False,
-            validator_user_agent=validators.URL_VALIDATOR_USER_AGENT, *args, **kwargs):
+    def __init__(self, max_length=None, min_length=None, *args, **kwargs):
         forms.CharField.__init__(self,max_length, min_length, *args,
                                        **kwargs)
-        self.validators.append(FeedURLValidator(verify_exists=verify_exists, validator_user_agent=validator_user_agent))
+        self.validators.append(FeedURLValidator())
 
     def to_python(self, value):
         value = super(FeedURLField, self).to_python(value)
         return value.strip()
-
-class UniSubURLField(StripURLField):
-    def __init__(self, max_length=None, min_length=None, verify_exists=False,
-            validator_user_agent=validators.URL_VALIDATOR_USER_AGENT, *args, **kwargs):
-        super(forms.URLField, self).__init__(max_length, min_length, *args,
-                                       **kwargs)
-        self.validators.append(UniSubURLValidator(verify_exists=verify_exists, validator_user_agent=validator_user_agent))
 
 class ListField(forms.RegexField):
     def __init__(self, max_length=None, min_length=None, *args, **kwargs):

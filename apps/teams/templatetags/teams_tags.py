@@ -38,6 +38,7 @@ from utils.text import fmt
 from teams.forms import TaskUploadForm
 from teams.permissions import (
     can_view_settings_tab as _can_view_settings_tab,
+    can_view_stats_tab as _can_view_stats_tab,
     can_view_approve_tab as _can_view_approve_tab,
     can_edit_video as _can_edit_video,
     can_rename_team as _can_rename_team,
@@ -78,8 +79,8 @@ def _get_team_video_from_search_record(search_record):
         try:
             return TeamVideo.objects.get(pk=search_record.team_video_pk)
         except TeamVideo.DoesNotExist:
-            from raven.contrib.django.models import client
-            client.create_from_exception()
+            logger.warn('DoesNotExist error when looking up search record',
+                        exc_info=True)
 
         # ok, for some reason, this search record got stale.
         # no idea why.
@@ -191,14 +192,14 @@ def team_metrics(team, member, projects):
                    ngettext('Video', 'Videos', team.videos_count),
                    team.videos_count),
         TeamMetric(reverse('teams:detail_members', args=(team.slug,)),
-                   ngettext('Member', 'Members', team.member_count),
-                   team.member_count),
+                   ngettext('Member', 'Members', team.members_count),
+                   team.members_count),
     ]
     if team.workflow_enabled:
         metrics.append(TeamMetric(
             reverse('teams:team_tasks', args=(team.slug,)),
             ngettext('Task', 'Tasks', team.tasks_count),
-            team.tasks_count))
+            team.get_tasks_count_display()))
     if projects:
         metrics.append(TeamMetric(
             reverse('teams:detail', args=(team.slug,)),
@@ -234,21 +235,6 @@ def share_panel_email_url(context):
         share_panel_email_url = "%s?%s" % (share_panel_email_url, urlencode({'text': message}))
 
     return share_panel_email_url
-
-
-@register.inclusion_tag('teams/_team_add_video_select.html', takes_context=True)
-def team_add_video_select(context):
-    request = context['request']
-
-    #fix problem with encoding "?" in build_absolute_uri. It is not encoded,
-    #so we get not same URL that page has
-    location = request.get_full_path()
-
-    user = context['user']
-    if user.is_authenticated():
-        qs = Team.objects.filter(users=user)
-        context['teams'] = [team for team in qs if can_add_video_somewhere(team, user)]
-    return context
 
 @register.inclusion_tag('teams/_team_move_video_select.html', takes_context=True)
 def team_move_video_select(context):
@@ -372,6 +358,10 @@ def member_projects(context, member, varname):
 @register.filter
 def can_view_settings_tab(team, user):
    return _can_view_settings_tab(team, user)
+
+@register.filter
+def can_view_stats_tab(team, user):
+   return _can_view_stats_tab(team, user)
 
 @register.filter
 def can_view_approve_tab(team, user):
