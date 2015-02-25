@@ -1,7 +1,7 @@
 {% load i18n %}
 <div class="banner" ng-show="showHideNextTime">
   <h1>{% trans "New to Amara? Here are some pointers." %}</h1>
-  <h2>{% trans "Click to hide.  Reopen anytime from the tools menu " %}(<img width="12px" height="12px" src="{{ STATIC_URL }}images/subtitle-editor/glyphicons_halflings_135_wrench.png"></img> &gt; {% trans "Show tutorial" %}).</h2>
+  <h2>{% trans "Click to hide.  Reopen at any step from the tools menu " %}(<img width="12px" height="12px" src="{{ STATIC_URL }}images/subtitle-editor/glyphicons_halflings_135_wrench.png"></img> &gt; {% trans "Show tutorial" %}).</h2>
   <h2 ng-click="handleBadgeMouseClick($event)">
     <label>{% trans "Please go away." %}
       <input type="checkbox" ng-model="hideTutorialNextTime"></label>
