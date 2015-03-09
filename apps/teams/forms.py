@@ -235,7 +235,7 @@ class AddTeamVideoForm(BaseVideoBoundForm):
             if team_video and not team_video.team.deleted:
                 team = team_video.team
                 if team.user_can_view_videos(self.user):
-                    link = '<a href="{}">{}</a>.').format(
+                    link = '<a href="{}">{}</a>.'.format(
                             team_video.team.get_absolute_url(),
                             team_video.team.slug)
                     msg = mark_safe(
