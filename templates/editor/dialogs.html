@@ -385,7 +385,8 @@
                 {{ upload_subtitles_form.language_code }}
             </div>
             <div>
-                <input type="file" name="draft" id="subtitles-file-field" />
+              <input type="file" name="draft" id="subtitles-file-field" />
+              <input type="checkbox" name="complete" />{% trans "Subtitles are complete" %}<br>
             </div>
             <footer class="buttons">
                 <button ng-click="submitUploadForm($event)" class="upload-subtitles-submit-button-" ng-disabled="uploading">
