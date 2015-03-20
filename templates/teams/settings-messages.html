@@ -21,6 +21,23 @@
             {% csrf_token %}
             <input type="hidden" name="team" value="" />
 
+                {% if not team.is_old_style %}
+                <fieldset>
+                    <legend>{% trans 'Custom page text' %}</legend>
+                    <p class="notation">
+                        {% trans 'Customize text on your team pages.' %}
+                    </p>
+
+                    <label for="id_pagetext_welcome_heading">{% trans 'Welcome heading on your landing page for non-members' %}</label>
+                    {{ form.pagetext_welcome_heading.errors }}
+                    {{ form.pagetext_welcome_heading }}
+
+                    <label for="id_pagetext_welcome_heading2">{% trans 'Welcome subheading on your landing page for non-members' %}</label>
+                    {{ form.pagetext_welcome_heading2.errors }}
+                    {{ form.pagetext_welcome_heading2 }}
+                </fieldset>
+                {% endif %}
+
                 <fieldset>
                     <legend>{% trans 'Custom messages' %}</legend>
 

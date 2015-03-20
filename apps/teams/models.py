@@ -57,6 +57,7 @@ from utils import translation
 from utils.amazon import S3EnabledImageField, S3EnabledFileField
 from utils.panslugify import pan_slugify
 from utils.searching import get_terms
+from utils.text import fmt
 from videos.models import (Video, VideoUrl, SubtitleVersion, SubtitleLanguage,
                            Action)
 from videos.tasks import video_changed_tasks
@@ -341,6 +342,27 @@ class Team(models.Model):
         if since:
             sv = sv.filter(created__gt=datetime.datetime.now() - datetime.timedelta(days=since))
         return sv.exclude(author__username="anonymous").values_list('author', 'subtitle_language')
+
+    def get_messages(self, names):
+        """Fetch messages from the settings objects
+
+        This method fetches the messages assocated with names and interpolates
+        them to replace %(team)s with the team name.
+
+        Returns:
+            dict mapping names to message text
+        """
+        messages = {
+            name: Setting.MESSAGE_DEFAULTS.get(name, '')
+            for name in names
+        }
+        for setting in self.settings.with_names(names):
+            if setting.data:
+                messages[setting.key_name] = setting.data
+        return {
+            name: fmt(text, team=self)
+            for name, text in messages.items()
+        }
 
     def render_message(self, msg):
         """Return a string of HTML represention a team header for a notification.
@@ -2558,9 +2580,22 @@ class SettingManager(models.Manager):
 
     def messages_guidelines(self):
         """Return a QS of settings related to team messages or guidelines."""
-        keys = [key for key, name in Setting.KEY_CHOICES
-                if name.startswith('messages_') or name.startswith('guidelines_')]
-        return self.get_query_set().filter(key__in=keys)
+        return self.get_query_set().filter(key__in=Setting.MESSAGE_KEYS)
+
+    def with_names(self, names):
+        return self.filter(key__in=[Setting.KEY_IDS[name] for name in names])
+
+    def all_messages(self):
+        messages = {}
+        for key in Setting.MESSAGE_KEYS:
+            name = Setting.KEY_NAMES[key]
+            messages[name] = Setting.MESSAGE_DEFAULTS.get(name, '')
+        messages.update({
+            s.key_name: s.data
+            for s in self.messages_guidelines()
+            if s.data
+        })
+        return messages
 
 class Setting(models.Model):
     KEY_CHOICES = (
@@ -2584,10 +2619,23 @@ class Setting(models.Model):
         (308, 'block_reviewed_and_sent_back_message'),
         (309, 'block_approved_message'),
         (310, 'block_new_video_message'),
+        # 400 is for text displayed on web pages
+        (401, 'pagetext_welcome_heading'),
+        (402, 'pagetext_welcome_heading2'),
     )
     KEY_NAMES = dict(KEY_CHOICES)
     KEY_IDS = dict([choice[::-1] for choice in KEY_CHOICES])
 
+    MESSAGE_KEYS = [
+        key for key, name in KEY_CHOICES
+        if name.startswith('messages_') or name.startswith('guidelines_')
+        or name.startswith('pagetext_')
+    ]
+    MESSAGE_DEFAULTS = {
+        'pagetext_welcome_heading': _("Help %(team)s reach a world audience"),
+        'pagetext_welcome_heading2': _("Subtitle videos to make them "
+                                       "globally accessible."),
+    }
     key = models.PositiveIntegerField(choices=KEY_CHOICES)
     data = models.TextField(blank=True)
     team = models.ForeignKey(Team, related_name='settings')

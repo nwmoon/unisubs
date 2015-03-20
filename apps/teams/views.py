@@ -264,10 +264,10 @@ def settings_basic(request, team):
 
     return { 'team': team, 'form': form, }
 
-@render_to('teams/settings-guidelines.html')
+@render_to('teams/settings-messages.html')
 @settings_page
 def settings_guidelines(request, team):
-    initial = dict((s.key_name, s.data) for s in team.settings.messages_guidelines())
+    initial = team.settings.all_messages()
     if request.POST:
         form = GuidelinesMessagesForm(request.POST, initial=initial)
 
@@ -2554,4 +2554,8 @@ def video_feed(request, team, feed_id):
 def welcome(request, team):
     return render(request, 'teams/welcome.html', {
         'team': team,
+        'messages': team.get_messages([
+            'pagetext_welcome_heading',
+            'pagetext_welcome_heading2',
+        ]),
     })

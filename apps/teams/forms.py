@@ -484,16 +484,25 @@ class TaskDeleteForm(forms.Form):
 
         return task
 
-class GuidelinesMessagesForm(forms.Form):
-    messages_invite = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
-    messages_manager = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
-    messages_admin = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
-    messages_application = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
-    messages_joins = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
+class MessageTextField(forms.CharField):
+    def __init__(self, *args, **kwargs):
+        super(MessageTextField, self).__init__(
+            max_length=4000, required=False, widget=forms.Textarea,
+            *args, **kwargs)
 
-    guidelines_subtitle = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
-    guidelines_translate = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
-    guidelines_review = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
+class GuidelinesMessagesForm(forms.Form):
+    pagetext_welcome_heading = MessageTextField()
+    pagetext_welcome_heading2 = MessageTextField()
+
+    messages_invite = MessageTextField()
+    messages_manager = MessageTextField()
+    messages_admin = MessageTextField()
+    messages_application = MessageTextField()
+    messages_joins = MessageTextField()
+
+    guidelines_subtitle = MessageTextField()
+    guidelines_translate = MessageTextField()
+    guidelines_review = MessageTextField()
 
 class RenameableSettingsForm(forms.ModelForm):
     logo = forms.ImageField(
