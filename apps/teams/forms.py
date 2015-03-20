@@ -485,6 +485,8 @@ class TaskDeleteForm(forms.Form):
         return task
 
 class GuidelinesMessagesForm(forms.Form):
+    pagetext_welcome = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
+
     messages_invite = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
     messages_manager = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)
     messages_admin = forms.CharField(max_length=4000, required=False, widget=forms.Textarea)

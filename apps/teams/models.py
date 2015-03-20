@@ -2558,9 +2558,25 @@ class SettingManager(models.Manager):
 
     def messages_guidelines(self):
         """Return a QS of settings related to team messages or guidelines."""
-        keys = [key for key, name in Setting.KEY_CHOICES
-                if name.startswith('messages_') or name.startswith('guidelines_')]
-        return self.get_query_set().filter(key__in=keys)
+        return self.get_query_set().filter(key__in=Setting.MESSAGE_KEYS)
+
+    def get_message(self, name):
+        key = Setting.KEY_IDS[name]
+        try:
+            return self.filter(key=key).get().data
+        except Setting.DoesNotExist:
+            return ''
+
+    def get_messages(self):
+        messages = {
+            Setting.KEY_NAMES[key]: '' for key in Setting.MESSAGE_KEYS
+        }
+        messages.update({
+            s.key_name: s.data
+            for s in self.messages_guidelines()
+            if s.data
+        })
+        return messages
 
 class Setting(models.Model):
     KEY_CHOICES = (
@@ -2584,9 +2600,17 @@ class Setting(models.Model):
         (308, 'block_reviewed_and_sent_back_message'),
         (309, 'block_approved_message'),
         (310, 'block_new_video_message'),
+        # 400 is for text displayed on web pages
+        (401, 'pagetext_welcome'),
     )
     KEY_NAMES = dict(KEY_CHOICES)
     KEY_IDS = dict([choice[::-1] for choice in KEY_CHOICES])
+
+    MESSAGE_KEYS = [
+        key for key, name in KEY_CHOICES
+        if name.startswith('messages_') or name.startswith('guidelines_')
+        or name.startswith('pagetext_')
+    ]
 
     key = models.PositiveIntegerField(choices=KEY_CHOICES)
     data = models.TextField(blank=True)

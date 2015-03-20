@@ -264,10 +264,10 @@ def settings_basic(request, team):
 
     return { 'team': team, 'form': form, }
 
-@render_to('teams/settings-guidelines.html')
+@render_to('teams/settings-messages.html')
 @settings_page
 def settings_guidelines(request, team):
-    initial = dict((s.key_name, s.data) for s in team.settings.messages_guidelines())
+    initial = team.settings.get_messages()
     if request.POST:
         form = GuidelinesMessagesForm(request.POST, initial=initial)
 
