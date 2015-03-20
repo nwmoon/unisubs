@@ -2923,6 +2923,37 @@ a.truncated-expand {
     }
 }
 
+body.team-welcome {
+    p {
+        margin-bottom: 1em;
+    }
+
+    h2 {
+        margin-bottom: 10px;
+    }
+
+    .videos {
+        padding-top: 10px;
+    }
+
+    .listing.videos {
+        @include clearfix();
+
+        > li {
+            padding: 0 0 20px 0;
+
+            .thumb a img {
+                margin: 0;
+            }
+            h4 a {
+                left: 0;
+                padding-right: 3em;
+            }
+        }
+    }
+}
+
+
 #teams.video-feed .content {
 
     h2 {

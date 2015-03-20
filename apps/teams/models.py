@@ -367,6 +367,9 @@ class Team(models.Model):
         """Return whether this team's membership is by application only."""
         return self.membership_policy == self.APPLICATION
 
+    def is_invite_only(self):
+        return self.membership_policy not in (Team.OPEN, Team.APPLICATION)
+
     def get_workflow(self):
         """Return the workflow for the given team.
 
