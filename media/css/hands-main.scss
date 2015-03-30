@@ -1,3 +1,9 @@
+/* font weight settings to test
+ */
+
+$weight-normal: 300 !default;
+$weight-bold: 500 !default;
+
 /*! HTML5 Boilerplate v4.3.0 | MIT License | http://h5bp.com/ */
 
 /*
@@ -99,7 +105,7 @@ textarea {
 
 body {
 	font-size: 14px;
-	font-weight: 200;
+	font-weight: $weight-normal;
 	letter-spacing: .03em;
 	word-spacing: 0.04em;
 	font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
@@ -387,7 +393,6 @@ a, a:hover {
 #announce-banner li a, #announce-banner li a:visited, #announce-banner li a:hover {
 	color: #77A700;
 	text-decoration: none;
-	font-weight: 300;
 	padding: 0 10px;
 }
 
@@ -411,7 +416,6 @@ nav span {
 	margin-bottom: 0;
 	border-bottom: 0;
 	background-color: #f2f2f3;
-	font-weight: 300;
 	font-size: 14.2px;
 }
 
@@ -456,7 +460,7 @@ nav span {
 }
 
 .navbar strong {
-	font-weight: 500;
+	font-weight: $weight-bold;
 	color: #77A700;
 }
 
@@ -471,7 +475,6 @@ nav span {
 
 .dropdown-menu > li > a {
 	color: #656565;
-	font-weight: 300;
 }
 
 .dropdown-menu {
@@ -526,7 +529,6 @@ nav span {
 
 .navbar li#me_menu #user_menu #menu_name a {
 	color: #77a700;
-	font-weight: normal;
 	max-width: 101px;
 	overflow: hidden;
 	padding: 18px 0 20px 0;
@@ -591,7 +593,7 @@ nav span {
 .navbar li#me_menu #user_menu #menu ul#dropdown li h4 a {
 	padding: 0 0 0 30px;
 	color: #77a700;
-	font-weight: 500;
+	font-weight: $weight-bold;
 }
 
 .navbar li#me_menu #user_menu #menu ul#dropdown li h4 a:hover {
@@ -656,7 +658,7 @@ nav span {
 }
 
 #footer strong {
-	font-weight: 500;
+	font-weight: $weight-bold;
 }
 
 a #footer-pcf h6:hover {
@@ -672,7 +674,6 @@ a #footer-pcf h6:hover {
 }
 
 #footer-terms li {
-	font-weight: 300;
 	margin: 20px 20px 0 0;
 	float: left;
 }
@@ -702,7 +703,6 @@ a #footer-pcf h6:hover {
 	line-height: 2.1em;
 	float: left;
 	padding-left: 55px;
-	font-weight: 300;
 }
 
 /*HELP BUTTON*/
@@ -740,7 +740,6 @@ a #footer-pcf h6:hover {
 	font-family: "Helvetica Neue", Helvetica, sans-serif;
 	color: #f2f2f3;
 	font-size: 13px;
-	font-weight: 300;
 	letter-spacing: .07em;
 	text-decoration: none;
 }
@@ -773,7 +772,6 @@ a #footer-pcf h6:hover {
 	padding: .5em 1em;
 	text-decoration: none;
 	color: #777;
-	font-weight: 400;
 }
 div.admin-edit-specific-version select {
 	margin: -3px 3px;

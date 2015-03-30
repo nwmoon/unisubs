@@ -417,7 +417,28 @@ MEDIA_BUNDLES = {
     "hands_home.css": {
         "files": (
             "css/hands-static.css",
-            "css/hands-main.css",
+            "css/hands-main.scss",
+         )
+    },
+    "hands_home_25.css": {
+        "files": (
+            "css/weight-200-500.scss",
+            "css/hands-static.css",
+            "css/hands-main.scss",
+         )
+    },
+    "hands_home_34.css": {
+        "files": (
+            "css/weight-300-400.scss",
+            "css/hands-static.css",
+            "css/hands-main.scss",
+         )
+    },
+    "hands_home_36.css": {
+        "files": (
+            "css/weight-300-600.scss",
+            "css/hands-static.css",
+            "css/hands-main.scss",
          )
     },
     "api.css": {

@@ -12,8 +12,7 @@
   <!-- Latest compiled and minified CSS -->
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
 
-  {% media_bundle "hands_home.css" %}
-
+  {% block css %}{% if base_css %}{% media_bundle base_css %}{% else %}{% media_bundle "hands_home.css" %}{% endif %}{% endblock %}
 
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">

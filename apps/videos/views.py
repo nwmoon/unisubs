@@ -174,6 +174,8 @@ def index(request):
         'popular_videos': VideoIndex.get_popular_videos("-today_views")[:VideoIndex.IN_ROW],
         'featured_videos': VideoIndex.get_featured_videos()[:VideoIndex.IN_ROW],
     }
+    if 'base_css' in request.GET:
+        context['base_css'] = request.GET['base_css']
     return render_to_response('index.html', context,
                               context_instance=RequestContext(request))
 
