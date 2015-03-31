@@ -5,11 +5,14 @@
 
 %header-font {
     font-family: "Raleway", "Helvetica Neue", "Roboto", Helvetica, Arial, "Liberation Sans", sans-serif;
-    font-weight: 300;
+    font-weight: 200;
 }
 
 $line-height: 2.4rem;
-$body-font-size: 1.4rem;
+$default-font-size: 1.4rem;
+$larger-font-size: 1.6rem;
+$font-weight-normal: 300;
+$font-weight-bold: 500;
 
 html {
     // Make the root font size 10px by default, for easy sizing with rems
@@ -18,12 +21,56 @@ html {
 
 body {
     @extend %body-font;
-    font-size: $body-font-size;
+    font-size: $default-font-size;
     line-height: $line-height;
     letter-spacing: .03em;
     word-spacing: 0.04em;
 }
 
+p {
+    margin: 0;
+    padding: 0 0 $line-height 0;
+}
+
 strong {
-    font-weight: 600;
+    font-weight: $font-weight-bold;
+}
+
+h1, h2, {
+    @extend %header-font;
+    padding: 0 0 0.5em 0;
+    margin: 0;
+}
+
+h3, h4, h5, h6 {
+    padding: 0 0 0.5em 0;
+    margin: 0;
+    font-weight: $font-weight-bold;
+}
+
+h1 {
+    font-size: 4rem;
+    line-height: 5rem;
+}
+
+h2 {
+    font-size: 2.4rem;
+    line-height: 3.0rem;
+}
+
+h3 {
+    font-size: 2.0rem;
+    line-height: 3.0rem;
+}
+
+h4 {
+    font-size: 2.0rem;
+}
+
+h5 {
+    font-size: 1.6rem;
+}
+
+h6 {
+    font-size: 1.4rem;
 }

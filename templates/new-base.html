@@ -6,8 +6,8 @@
 
 <head>
   <title>{% block title %}Amara - {% trans 'Caption, translate, subtitle and transcribe video.' %}{% endblock %}</title>
-  <link href='//fonts.googleapis.com/css?family=Raleway:300' rel='stylesheet' type='text/css'>
-  <link href='//fonts.googleapis.com/css?family=Roboto:300,600' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Raleway:200' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Roboto:300,500' rel='stylesheet' type='text/css'>
 
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -38,14 +38,14 @@
       <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
 
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   {% media_bundle "new-base.css" %}
   {% media_bundle "new-site.js" %}
 
-  {% block scripts %}
-  {% endblock %}
+  {% block scripts %}{% endblock %}
 </head>
 
-<body {% block body_attrs %}{% endblock %}>
+<body>
   {% csrf_token %}
     {% announcement %}
     {% if user.is_authenticated %}

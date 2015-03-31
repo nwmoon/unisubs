@@ -1,0 +1,11 @@
+button, a.button {
+    display: inline-block;
+    margin: 0;
+    padding: 13px 26px;
+    font-size: 2.0rem;
+    font-weight: $font-weight-normal;
+    background: $light-aqua;
+    border: 1px solid $light-aqua;
+    color: $white;
+    cursor: pointer;
+}

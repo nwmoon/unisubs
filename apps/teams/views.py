@@ -2552,10 +2552,15 @@ def video_feed(request, team, feed_id):
     return context
 
 def welcome(request, team):
+    if team.is_visible:
+        videos = team.videos.order_by('-id')[:3]
+    else:
+        videos = None
     return render(request, 'teams/welcome.html', {
         'team': team,
         'messages': team.get_messages([
             'pagetext_welcome_heading',
             'pagetext_welcome_heading2',
         ]),
+        'videos': videos,
     })

@@ -1,0 +1,39 @@
+#team-welcome {
+    .banner {
+        background: $dark-aqua;
+        padding: 20px 0;
+        margin-bottom: 40px;
+        color: $white;
+
+        ol {
+            margin: 40px 0;
+        }
+
+        li {
+            display: block;
+            float: left;
+            margin-right: 40px;
+            width: 33%;
+
+            &:last-of-type {
+                float: none;
+                width: auto;
+                margin-right: 0;
+            }
+        }
+
+        h4 {
+            text-align: center;
+        }
+
+        .icon {
+            text-align: center;
+            font-size: 80px;
+            line-height: 90px;
+        }
+    }
+
+    .video {
+        padding-bottom: 20px;
+    }
+}
