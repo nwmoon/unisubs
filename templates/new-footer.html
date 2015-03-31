@@ -1,0 +1,44 @@
+{% load i18n %}
+{% load url from future %}
+<div class="content group">
+  <div class="terms">
+    <a href="//amara.org"><img src="{{ STATIC_URL }}images/amara-logotype.png" alt="Amara's green circle logotype" /></a>
+    <ul>
+      <li><a href="//about.amara.org/tos/">{% trans 'Terms' %}</a></li>
+      <li><a href="//pculture.org/pcf/websites-privacy/">{% trans 'Privacy' %}</a></li>
+      <li><a href="/security">{% trans 'Security' %}</a></li>
+    </ul>
+  </div>
+
+  <div class="nav group">
+    <ul>
+      <li><strong>Amara</strong></li>
+      <li><a href="http://about.amara.org/">{% trans 'Blog' %}</a></li>
+      <li><a href="http://support.amara.org/solution/categories/13504">{% trans 'Help' %}</a></li>
+      <li><a href="http://support.amara.org/support/solutions/articles/35517--i-have-a-non-technical-question-about">{% trans 'Contact' %}</a></li>
+    </ul>
+    <ul>
+      <li><strong>{% trans 'Videos' %}</strong></li>
+      <li><a href="/search/#/?q=">{% trans 'Search' %}</a></li>
+      <li><a href="/videos/watch/">{% trans 'Browse' %}</a></li>
+      <li><a href="/videos/watch/featured/">{% trans 'Featured' %}</a></li>
+    </ul>
+    <ul>
+      <li><strong>{% trans 'More' %}</strong></li>
+      <li><a href="//twitter.com/AmaraSubs/">Twitter</a></li>
+      <li><a href="//facebook.com/Amara.Community">Facebook</a></li>
+    </ul>
+    {% if user.is_staff %}
+    <ul>
+      <li><strong>{% trans 'Admin' %}</strong></li>
+      <li><a target="_blank" href="{% url "admin:index" %}">{% trans 'Site Admin' %}</a></li>
+      <li><a href="//github.com/pculture/unisubs/commit/{{ LAST_COMMIT_GUID }}" title="{{ LAST_COMMIT_GUID }}">Github</a></li>
+      {% if user.is_superuser %}
+      <li><a target="_blank" href="//sentry.pculture.org:9000">{% trans 'Sentry' %}</a></li>
+      <li><a target="_blank" href="{% url "auth:login_trap" %}">{% trans 'Impersonate' %}</a></li>
+      <li><a target="_blank" href="{% url "billing" %}">{% trans 'Billing' %}</a></li>
+      {% endif %}
+    </ul>
+    {% endif %}
+  </div>
+</div>

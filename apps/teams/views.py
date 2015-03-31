@@ -1556,7 +1556,10 @@ def _get_task_filters(request):
 
 def dashboard(request, slug):
     team = get_team_for_view(slug, request.user, exclude_private=False)
-    return team.new_workflow.dashboard_view(request, team)
+    if not team.is_old_style() and not team.user_is_member(request.user):
+        return welcome(request, team)
+    else:
+        return team.new_workflow.dashboard_view(request, team)
 
 @render_to('teams/dashboard.html')
 def old_dashboard(request, team):
@@ -2547,3 +2550,8 @@ def video_feed(request, team, feed_id):
     }
     context.update(pagination_info)
     return context
+
+def welcome(request, team):
+    return render(request, 'teams/welcome.html', {
+        'team': team,
+    })

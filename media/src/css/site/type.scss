@@ -1,0 +1,29 @@
+%body-font {
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+    font-weight: 300;
+}
+
+%header-font {
+    font-family: "Raleway", "Helvetica Neue", "Roboto", Helvetica, Arial, "Liberation Sans", sans-serif;
+    font-weight: 300;
+}
+
+$line-height: 2.4rem;
+$body-font-size: 1.4rem;
+
+html {
+    // Make the root font size 10px by default, for easy sizing with rems
+    font-size: 62.5%;
+}
+
+body {
+    @extend %body-font;
+    font-size: $body-font-size;
+    line-height: $line-height;
+    letter-spacing: .03em;
+    word-spacing: 0.04em;
+}
+
+strong {
+    font-weight: 600;
+}

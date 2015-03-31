@@ -1,0 +1,78 @@
+#header {
+    background: $header-gray;
+    border-bottom: 1px solid $light-gray;
+    a {
+        color: $darkish-gray;
+    }
+
+    >nav {
+        @extend .content;
+
+        > a {
+            padding-top: 10px;
+            display: block;
+            float: left;
+        }
+
+        >ul {
+            float: right;
+
+            >li {
+                display: block;
+                float: left;
+                position: relative;
+
+                >a {
+                    padding: 20px 15px;
+                    display: block;
+                }
+            }
+        }
+    }
+}
+
+#user-menu {
+    display: none;
+    position: absolute;
+    border: 1px solid $light-gray;
+    border-top: none;
+    top: 100%;
+    right: 0;
+    width: 200px;
+    background: $header-gray;
+
+    li {
+        float: none;
+        padding: 6px 20px;
+
+        &.teams-start {
+            border-top: 1px solid $light-gray;
+        }
+    }
+
+    .count {
+        float: right;
+    }
+
+    h4 {
+        margin: 0;
+        padding: 0;
+    }
+
+}
+
+#announce-banner {
+    background-color: $header-gray;
+    color: $darkish-gray;
+    text-align: center;
+
+    li {
+        padding: 8px 0;
+        border-bottom: 1px solid $green;
+    }
+
+    a {
+        color: $green;
+        margin-left: 10px;
+    }
+}

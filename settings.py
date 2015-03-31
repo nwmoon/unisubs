@@ -409,6 +409,18 @@ MEDIA_BUNDLES = {
             "css/bootstrap.css",
         ),
     },
+    "new-base.css": {
+        "files": (
+            'src/css/site/colors.scss',
+            'src/css/site/layout.scss',
+            'src/css/site/type.scss',
+            'src/css/site/links.scss',
+            'src/css/site/lists.scss',
+            'src/css/site/header.scss',
+            'src/css/site/footer.scss',
+        ),
+        "include_path": 'src/css/site',
+    },
     "home.css": {
         "files": (
             "css/new_index.css",
@@ -449,6 +461,12 @@ MEDIA_BUNDLES = {
             "js/libs/jquery.cookie.js",
             "js/unisubs.site.js",
             "src/js/unisubs.variations.js",
+        ),
+    },
+    "new-site.js": {
+        "files": (
+            'src/js/third-party/jquery-2.1.3.js',
+            'src/js/site/menus.js',
         ),
     },
     "api.js": {

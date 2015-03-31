@@ -1,0 +1,67 @@
+{% load i18n media_bundle announcement_tags messages_tags auth_tags profiles_tags %}
+{% load url from future %}
+
+<!DOCTYPE html>
+<html {% if LANGUAGE_BIDI %}dir="rtl"{% endif %} {% block html_attrs %}{% endblock %}>
+
+<head>
+  <title>{% block title %}Amara - {% trans 'Caption, translate, subtitle and transcribe video.' %}{% endblock %}</title>
+  <link href='//fonts.googleapis.com/css?family=Raleway:300' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Roboto:300,600' rel='stylesheet' type='text/css'>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Amara is home to the world's largest subtitling community and is a complete solution for captions, subtitles, and translations. Amara makes captioning &amp; translation easier, faster, more affordable.">
+  <meta name="keywords" content="subtitles, captions, transcripts, translation, film, crowdsourcing, Amara, Universal Subtitles">
+  <meta name="application-name" content="Amara - Buy captions, video translations, transcriptions, and crowd subtitling" />
+  <meta name="msapplication-tooltip" content="A platform for collaborative subtitles!" />
+  <meta name="title" content="Crowd Subtitles | Amara - Buy captions, video translations, transcriptions, and crowd subtitling" />
+
+  {% if not current_site.name == 'amara-production' %}
+    <meta name="robots" content="noindex, nofollow"/>
+  {% endif %}
+  {% block opengraph-head %}
+    <meta property="fb:admins" content="539835590"/>
+  {% endblock  %}
+
+  <link rel="shortcut icon" type="image/png" href="{{ STATIC_URL }}images/favicon.png" />
+  <link rel="icon" type="image/png" href="{{ STATIC_URL }}images/favicon.png" />
+
+  <!--[if IE]>
+      <style type="text/css"> .group { display: block; zoom: 1; } </style>
+  <![endif]-->
+  <!--[if gte IE 8]>
+      {% media_bundle "ie8.css" %}
+  <![endif]-->
+  <!--[if lt IE 9]>
+      <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  {% media_bundle "new-base.css" %}
+  {% media_bundle "new-site.js" %}
+
+  {% block scripts %}
+  {% endblock %}
+</head>
+
+<body {% block body_attrs %}{% endblock %}>
+  {% csrf_token %}
+    {% announcement %}
+    {% if user.is_authenticated %}
+        {% messages %}
+        {% block email_confirmation_block %}
+            {% email_confirmation_notification %}
+        {% endblock %}
+    {% endif %}
+    {% require_email_dialog %}
+
+<div id="header">{% block header %}{% include "new-header.html" %}{% endblock %}</div>
+<div id="main-content">{% block content %}{% endblock %}</div>
+<div id="footer">{% block footer %}{% include 'new-footer.html' %}{% endblock %}</div>
+
+{% block bottom_scripts %}{% endblock %}
+
+{% include "_analytics.html" %}
+</body>
+</html>

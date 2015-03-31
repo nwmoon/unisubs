@@ -1,0 +1,22 @@
+{% load i18n %}
+{% load url from future %}
+<nav class="group">
+  <a class"home" href="{% url "home" %}"><img src="{{ STATIC_URL }}images/amara-o.png" /></a>
+  <ul>
+    <li>
+      <a href="{% url "videos:create" %}">{% trans 'Subtitle Video' %}</a>
+    </li>
+    <li>
+      <a href="{% url "community" %}">{% trans "Community" %}</a>
+    </li>
+    <li>
+      <a href="//pro.amara.org">{% trans "Professional Solutions" %}</a>
+    </li>
+    <li>
+      <a href="{% url "videos:watch_page" %}">
+        <img alt="Search" src="{{ STATIC_URL }}images/glyphicons_027_search-light.png">
+      </a>
+    </li>
+    <li class="user">{% include "new-user-menu.html" %}</li>
+  </ul>
+</nav>
