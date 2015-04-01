@@ -34,16 +34,16 @@
 
     <div>
     {% if team.is_open %}
-    <button>{% trans "Join the team" %}</button>
+    <button>{% trans "Join the team" %} &raquo;</button>
     {% elif team.is_by_application %}
-    <button>{% trans "Apply to join the team" %}</button>
+    <button>{% trans "Apply to join the team" %} &raquo;</button>
     {% endif %}
     </div>
   </div>
 </div>
 {% if videos %}
   <div class="content">
-    <h2>{% blocktrans %}{{ team }} Videos{% endblocktrans %}</h2>
+    <h2>{% blocktrans %}Latest {{ team }} Videos{% endblocktrans %}</h2>
     {% for video in videos %}
     <div class="video">
       <div class="amara-embed" data-hide-subtitle-me="true" data-hide-logo="true" data-width="640px" data-height="360px" data-url="{{ video.get_video_url }}" data-show-subtitles-default="true" data-noanalytics="true">

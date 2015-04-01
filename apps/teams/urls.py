@@ -20,7 +20,11 @@ from django.views.generic.base import TemplateView
 from django.conf.urls import url, patterns
 from teams.rpc import rpc_router
 
-urlpatterns = patterns('teams.views',
+urlpatterns = patterns('teams.new_views',
+    url(r'^(?P<slug>[-\w]+)/$', 'dashboard', name='dashboard'),
+)
+
+urlpatterns += patterns('teams.views',
     url(r'^$', 'index', name='index'),
     url(r'^my/$', 'index', {'my_teams': True}, name='user_teams'),
     url(r'^create/$', 'create', name='create'),
@@ -45,7 +49,6 @@ urlpatterns = patterns('teams.views',
     url(r'^edit/video/(?P<team_video_pk>\d+)/$', 'team_video', name='team_video'),
     url(r'^remove/video/(?P<team_video_pk>\d+)/$', 'remove_video', name='remove_video'),
     url(r'^remove/members/(?P<slug>[-\w]+)/(?P<user_pk>\d+)/$', 'remove_member', name='remove_member'),
-    url(r'^(?P<slug>[-\w]+)/$', 'dashboard', name='dashboard'),
     url(r'^(?P<slug>[-\w]+)/videos/$', 'detail', name='detail'),
     url(r'^(?P<slug>[-\w]+)/members/$', 'detail_members', name='detail_members'),
     url(r'^(?P<slug>[-\w]+)/members/role-saved/$', 'role_saved', name='role_saved'),

@@ -1554,13 +1554,6 @@ def _get_task_filters(request):
              'assignee': request.GET.get('assignee'),
              'q': request.GET.get('q'), }
 
-def dashboard(request, slug):
-    team = get_team_for_view(slug, request.user, exclude_private=False)
-    if not team.is_old_style() and not team.user_is_member(request.user):
-        return welcome(request, team)
-    else:
-        return team.new_workflow.dashboard_view(request, team)
-
 @render_to('teams/dashboard.html')
 def old_dashboard(request, team):
     user = request.user if request.user.is_authenticated() else None
@@ -2550,17 +2543,3 @@ def video_feed(request, team, feed_id):
     }
     context.update(pagination_info)
     return context
-
-def welcome(request, team):
-    if team.is_visible:
-        videos = team.videos.order_by('-id')[:3]
-    else:
-        videos = None
-    return render(request, 'teams/welcome.html', {
-        'team': team,
-        'messages': team.get_messages([
-            'pagetext_welcome_heading',
-            'pagetext_welcome_heading2',
-        ]),
-        'videos': videos,
-    })
