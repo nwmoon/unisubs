@@ -2621,7 +2621,6 @@ class Setting(models.Model):
         (310, 'block_new_video_message'),
         # 400 is for text displayed on web pages
         (401, 'pagetext_welcome_heading'),
-        (402, 'pagetext_welcome_heading2'),
     )
     KEY_NAMES = dict(KEY_CHOICES)
     KEY_IDS = dict([choice[::-1] for choice in KEY_CHOICES])
@@ -2633,8 +2632,6 @@ class Setting(models.Model):
     ]
     MESSAGE_DEFAULTS = {
         'pagetext_welcome_heading': _("Help %(team)s reach a world audience"),
-        'pagetext_welcome_heading2': _("Subtitle videos to make them "
-                                       "globally accessible."),
     }
     key = models.PositiveIntegerField(choices=KEY_CHOICES)
     data = models.TextField(blank=True)

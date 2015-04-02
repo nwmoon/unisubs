@@ -1,0 +1,78 @@
+{% extends "new-base.html" %}
+{% load i18n teams_tags %}
+{% load url from future %}
+
+{% block html_attrs %}class="team"{% endblock %}
+
+{% block header %}
+<nav class="group">
+  <ul>
+    <li>
+        <a href="{% url "teams:dashboard" team.slug %}">{% trans "Dashboard" %}</a>
+    </li>
+    {% for page in team.new_workflow.extra_pages %}
+    <li>
+        <a href="{{ page.url }}">{{ page.title }}</a>
+    </li>
+    {% endfor %}
+    <li>
+        <a href="{% url "teams:detail" team.slug %}">{% trans "Videos" %}</a>
+    </li>
+    <li>
+        <a href="{% url "teams:detail_members" team.slug %}">{% trans "Members" %}</a>
+    </li>
+    <li>
+        <a href="{% url "teams:activity" team.slug %}">{% trans "Activity" %}</a>
+    </li>
+    <li>
+      <a href="#" class="menu-toggle" data-menu="settings-menu">{% trans "Settings" %}</a>
+      <ul id="settings-menu">
+        <li>
+          <a href="{% url "teams:settings_basic" slug=team.slug %}">{% trans "Team Settings" %}</a>
+        </li>
+        <li>
+          <a href="{% url "teams:settings_guidelines" slug=team.slug %}">{% trans "Messages" %}</a>
+        </li>
+        <li>
+          <a href="{% url "teams:settings_permissions" slug=team.slug %}">{% trans "Workflows" %}</a>
+        </li>
+        {% for page in team.new_workflow.extra_settings_pages %}
+        <li>
+          <a href="{{ page.url }}">{{ page.title }}</a>
+        </li>
+        {% endfor %}
+        <li>
+          <a href="{% url "teams:settings_projects" slug=team.slug %}">{% trans "Projects" %}</a>
+        </li>
+        <li>
+          <a href="{% url "teams:settings_externalsites" slug=team.slug %}">{% trans "Integrations" %}</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+  <ul class="right">
+    <li>
+      <a class="home" href="{% url "home" %}"><img src="{{ STATIC_URL }}images/amara-o.png" /></a>
+    </li>
+    <li class="user">{% include "new-user-menu.html" %}</li>
+  </ul>
+</nav>
+{% endblock %}
+
+
+{% block content %}
+<div class="banner">
+  <div class="content group">
+    {% if team.logo %}
+    <img class="logo" alt="{{ team }} logo" src="{{ MEDIA_URL }}{{ team.logo }}"/>
+    {% else %}
+    <h1>{{ team }}</h1>
+    {% endif %}
+    {% team_metrics team member projects %}
+  </div>
+</div>
+
+<div class="content">
+  {% block page_content %}{% endblock %}
+</div>
+{% endblock %}

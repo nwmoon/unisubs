@@ -2,7 +2,7 @@
 {% load url from future %}
 {% if user.is_authenticated %}
 {% cache-by-user new-top-panel %}
-<a href="#" class="menu-toggle" data-menu="user-menu">{{ user.username }} &#9662;</a>
+<a href="#" class="menu-toggle" data-menu="user-menu">{{ user.username }}</a>
 <ul id="user-menu">
   <li>
     <a href="{% url "profiles:dashboard" %}">{% trans "Dashboard" %}</a>
@@ -30,8 +30,8 @@
     <a href="{% url "logout" %}?next=/">{% trans 'Logout' %}</a>
   </li>
   {% if user.teams.all %}
-  <li class="teams-start">
-    <h4><a href="{% url "teams:user_teams" %}">{% trans "Your Teams" %}</a></h4>
+  <li class="separator">
+  <strong><a href="{% url "teams:user_teams" %}">{% trans "Your Teams" %}</a></strong>
   </li>
   {% for team in user.teams.all %}
   <li>

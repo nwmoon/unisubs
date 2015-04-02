@@ -492,7 +492,6 @@ class MessageTextField(forms.CharField):
 
 class GuidelinesMessagesForm(forms.Form):
     pagetext_welcome_heading = MessageTextField()
-    pagetext_welcome_heading2 = MessageTextField()
 
     messages_invite = MessageTextField()
     messages_manager = MessageTextField()
@@ -504,29 +503,25 @@ class GuidelinesMessagesForm(forms.Form):
     guidelines_translate = MessageTextField()
     guidelines_review = MessageTextField()
 
-class RenameableSettingsForm(forms.ModelForm):
-    logo = forms.ImageField(
-        validators=[MaxFileSizeValidator(settings.AVATAR_MAX_SIZE)],
-        required=False)
-    square_logo = forms.ImageField(
-        validators=[MaxFileSizeValidator(settings.AVATAR_MAX_SIZE)],
-        required=False)
-
-    class Meta:
-        model = Team
-        fields = ('name', 'description', 'logo', 'square_logo', 'is_visible')
-
 class SettingsForm(forms.ModelForm):
     logo = forms.ImageField(
         validators=[MaxFileSizeValidator(settings.AVATAR_MAX_SIZE)],
+        help_text=_('Max 940 x 235'),
+        widget=forms.FileInput,
         required=False)
     square_logo = forms.ImageField(
         validators=[MaxFileSizeValidator(settings.AVATAR_MAX_SIZE)],
+        help_text=_('Recommended size: 100 x 100'),
+        widget=forms.FileInput,
         required=False)
 
     class Meta:
         model = Team
         fields = ('description', 'logo', 'square_logo', 'is_visible')
+
+class RenameableSettingsForm(SettingsForm):
+    class Meta(SettingsForm.Meta):
+            fields = SettingsForm.Meta.fields + ('name',)
 
 class WorkflowForm(forms.ModelForm):
     class Meta:

@@ -1,5 +1,5 @@
 {% extends "new-base.html" %}
-{% load i18n i18n_tags videos_tags %}
+{% load i18n %}
 {% load url from future %}
 
 {% block scripts %}
@@ -12,7 +12,7 @@
 <div class="banner">
   <div class="content">
     <h1>{{ messages.pagetext_welcome_heading }}</h1>
-    <h2>{{ messages.pagetext_welcome_heading2 }}</h2>
+    {% if team.description %}<p>{{ team.description }}</p>{% endif %}
 
     <ol class="group">
       <li>
@@ -34,19 +34,18 @@
 
     <div>
     {% if team.is_open %}
-    <button>{% trans "Join the team" %} &raquo;</button>
+    <button>{% trans "Join the team" %} <span class="fa fa-angle-double-right"></span></button>
     {% elif team.is_by_application %}
-    <button>{% trans "Apply to join the team" %} &raquo;</button>
+    <button>{% trans "Apply to join the team" %} <span class="fa fa-angle-double-right"></span></button>
     {% endif %}
     </div>
   </div>
 </div>
 {% if videos %}
-  <div class="content">
-    <h2>{% blocktrans %}Latest {{ team }} Videos{% endblocktrans %}</h2>
+  <div class="content group">
     {% for video in videos %}
     <div class="video">
-      <div class="amara-embed" data-hide-subtitle-me="true" data-hide-logo="true" data-width="640px" data-height="360px" data-url="{{ video.get_video_url }}" data-show-subtitles-default="true" data-noanalytics="true">
+      <div class="amara-embed" data-hide-subtitle-me="true" data-hide-logo="true" data-width="560px" data-height="315px" data-url="{{ video.get_video_url }}" data-show-subtitles-default="true" data-noanalytics="true">
       </div>
     </div>
     {% endfor %}

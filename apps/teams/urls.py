@@ -22,6 +22,7 @@ from teams.rpc import rpc_router
 
 urlpatterns = patterns('teams.new_views',
     url(r'^(?P<slug>[-\w]+)/$', 'dashboard', name='dashboard'),
+    url(r'^(?P<slug>[-\w]+)/settings/$', 'settings_basic', name='settings_basic'),
 )
 
 urlpatterns += patterns('teams.views',
@@ -74,7 +75,6 @@ urlpatterns += patterns('teams.views',
     url(r'^(?P<slug>[-\w]+)/tasks/(?P<task_pk>\d+)/perform/$', 'perform_task', name='perform_task'),
     url(r'^(?P<slug>[-\w]+)/feeds/$', 'video_feeds', name='video_feeds'),
     url(r'^(?P<slug>[-\w]+)/feeds/(?P<feed_id>\d+)$', 'video_feed', name='video_feed'),
-    url(r'^(?P<slug>[-\w]+)/settings/$', 'settings_basic', name='settings_basic'),
     url(r'^(?P<slug>[-\w]+)/settings/guidelines/$', 'settings_guidelines', name='settings_guidelines'),
     url(r'^(?P<slug>[-\w]+)/settings/permissions/$', 'settings_permissions', name='settings_permissions'),
     url(r'^(?P<slug>[-\w]+)/settings/languages/$', 'settings_languages', name='settings_languages'),

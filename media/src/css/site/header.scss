@@ -1,8 +1,22 @@
 #header {
-    background: $header-gray;
-    border-bottom: 1px solid $light-gray;
+    background: $off-white;
     a {
         color: $darkish-gray;
+
+        &:hover {
+            text-decoration: none;
+            background-color: $secondary-aqua;
+            color: $white;
+        }
+
+        &.home {
+            padding: 10px 0 0 0;
+
+            &:hover {
+                background-color: inherit;
+                color: $darkish-gray;
+            }
+        }
     }
 
     >nav {
@@ -15,7 +29,9 @@
         }
 
         >ul {
-            float: right;
+            &.right {
+                float: right;
+            }
 
             >li {
                 display: block;
@@ -31,21 +47,33 @@
     }
 }
 
-#user-menu {
+/* Submenus */
+#header a.menu-toggle:after {
+    content: " \25be";
+}
+#header a.menu-toggle.open:after {
+    content: " \25b4";
+}
+
+#header nav ul ul {
     display: none;
     position: absolute;
-    border: 1px solid $light-gray;
-    border-top: none;
     top: 100%;
-    right: 0;
+    left: 0;
     width: 200px;
-    background: $header-gray;
+    background: $off-white;
+    box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.3);
+    z-index: $z-index-menu;
 
     li {
         float: none;
-        padding: 6px 20px;
 
-        &.teams-start {
+        a {
+            display: block;
+            padding: 6px 20px;
+        }
+
+        &.separator {
             border-top: 1px solid $light-gray;
         }
     }
@@ -54,15 +82,19 @@
         float: right;
     }
 
-    h4 {
+    h5 {
         margin: 0;
         padding: 0;
     }
 
 }
 
+#user-menu {
+    right: 0;
+}
+
 #announce-banner {
-    background-color: $header-gray;
+    background-color: $off-white;
     color: $darkish-gray;
     text-align: center;
 

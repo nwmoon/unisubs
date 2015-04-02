@@ -1,18 +1,16 @@
 %body-font {
-    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
-    font-weight: 300;
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
 }
 
 %header-font {
-    font-family: "Raleway", "Helvetica Neue", "Roboto", Helvetica, Arial, "Liberation Sans", sans-serif;
-    font-weight: 200;
+    font-family: "Merriweather", "Helvetica Neue", "Roboto", Helvetica, Arial, "Liberation Sans", sans-serif;
 }
 
 $line-height: 2.4rem;
 $default-font-size: 1.4rem;
-$larger-font-size: 1.6rem;
-$font-weight-normal: 300;
-$font-weight-bold: 500;
+$large-font-size: 1.6rem;
+$font-weight-normal: 400;
+$font-weight-bold: 700;
 
 html {
     // Make the root font size 10px by default, for easy sizing with rems
@@ -23,13 +21,13 @@ body {
     @extend %body-font;
     font-size: $default-font-size;
     line-height: $line-height;
-    letter-spacing: .03em;
-    word-spacing: 0.04em;
+    font-weight: $font-weight-normal;
+    color: $dark-gray;
 }
 
 p {
     margin: 0;
-    padding: 0 0 $line-height 0;
+    padding: 0 0 $line-height/2 0;
 }
 
 strong {
@@ -45,7 +43,6 @@ h1, h2, {
 h3, h4, h5, h6 {
     padding: 0 0 0.5em 0;
     margin: 0;
-    font-weight: $font-weight-bold;
 }
 
 h1 {

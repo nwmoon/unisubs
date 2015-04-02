@@ -1,0 +1,56 @@
+.banner {
+    background: $primary-aqua;
+    margin-bottom: 20px;
+    color: $white;
+    overflow: hidden;
+
+    .content {
+        position: relative;
+    }
+
+    .logo {
+        display: block;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        border-radius: 0 0 5px 5px;
+        background: $white;
+    }
+
+    h1 {
+        padding: 20px 0;
+    }
+
+    ul.metrics {
+        display: block;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+
+        a {
+            display: block;
+            border: 1px solid $off-white;
+            border-left: 0;
+            border-bottom: 0;
+            background: $primary-aqua;
+            color: $white;
+            padding: 5px 20px;
+
+        }
+        span.count {
+            display: block;
+            text-align: center;
+        }
+        li {
+            display: block;
+            float: left;
+        }
+        li:first-of-type a {
+            border-left: 1px solid $off-white;
+            border-radius: 5px 0 0 0;
+        }
+        li:last-of-type a {
+            border-radius: 0 5px 0 0;
+        }
+    }
+}
+

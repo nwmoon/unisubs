@@ -1,9 +1,6 @@
 #team-welcome {
     .banner {
-        background: $dark-aqua;
-        padding: 20px 0;
-        margin-bottom: 40px;
-        color: $white;
+        padding-bottom: 20px;
 
         ol {
             margin: 40px 0;
@@ -34,6 +31,16 @@
     }
 
     .video {
-        padding-bottom: 20px;
+        float: left;
+        margin-bottom: 20px;
+
+        &:first-of-type {
+            margin-right: 80px;
+        }
     }
+}
+
+fieldset.assets>div {
+    float: left;
+    width: 50%;
 }
