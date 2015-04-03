@@ -5,6 +5,7 @@
 {% block html_attrs %}class="team"{% endblock %}
 
 {% block header %}
+{% team_projects team as projects %}
 <nav class="group">
   <div class="burger">
     <button class="menu-toggle-all"><span class="fa fa-bars"></span></button>
@@ -27,6 +28,18 @@
     <li>
         <a href="{% url "teams:activity" team.slug %}">{% trans "Activity" %}</a>
     </li>
+    {% if projects %}
+    <li>
+      <a href="#" class="menu-toggle" data-menu="projects-menu">{% trans "Projects" %}</a>
+      <ul id="projects-menu">
+        {% for project in projects %}
+        <li>
+        <a href="{% url "teams:detail" team.slug %}?project={{ project.slug }}">{{ project }} <span class="count">{{ project.videos_count }}</span></a>
+        </li>
+        {% endfor %}
+      </ul>
+    </li>
+    {% endif %}
     <li>
       <a href="#" class="menu-toggle" data-menu="settings-menu">{% trans "Settings" %}</a>
       <ul id="settings-menu">
