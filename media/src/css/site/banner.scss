@@ -51,6 +51,11 @@
         li:last-of-type a {
             border-radius: 0 5px 0 0;
         }
+
+        @include small-screen {
+            position: static;
+            float: right;
+        }
     }
 }
 

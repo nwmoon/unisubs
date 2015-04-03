@@ -6,6 +6,9 @@
 
 {% block header %}
 <nav class="group">
+  <div class="burger">
+    <button class="menu-toggle-all"><span class="fa fa-bars"></span></button>
+  </div>
   <ul>
     <li>
         <a href="{% url "teams:dashboard" team.slug %}">{% trans "Dashboard" %}</a>

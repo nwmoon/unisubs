@@ -1,6 +1,7 @@
 (function() {
 
 var activeMenu = null;
+var toggleAllActive = false;
 
 function openMenu(linkElt) {
     var menuId = linkElt.data('menu');
@@ -25,6 +26,16 @@ $(document).ready(function() {
         } else {
             closeMenu();
             openMenu(linkElt);
+        }
+    });
+
+    $('button.menu-toggle-all').click(function() {
+        var menus = $('ul', $(this).closest('nav'));
+        toggleAllActive = !toggleAllActive;
+        if(toggleAllActive) {
+            menus.slideDown();
+        } else {
+            menus.slideUp();
         }
     });
 });
